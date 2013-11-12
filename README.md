@@ -4,7 +4,7 @@ Nota eats JSON + your HTML template and excretes pretty PDF documents. Perfect f
 
 Setup
 =====
-Check out setup.sh, which assuming that you will have NodeJS and Ruby installed will set up the environment.
+Check out `setup.sh`, which assuming that you will have NodeJS and Ruby installed will set up the environment.
 
 Usage
 =====
