@@ -15,7 +15,7 @@ node javascript/render-invoice.js
 Which will place an `invoice.pdf` file in the working directory. 
 
 ### Templates
-Right now full template support isn't finished. When developing your own template layout and logic recommend 
+Right now full template support isn't finished. When developing your own template layout and logic I recommend 
 adapting the example at the moment. Just open the template `invoice.html` in your browser and enjoy the
 ease of development in your web-browser of choice.
 
