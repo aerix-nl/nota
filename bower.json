@@ -1,0 +1,24 @@
+{
+  "name": "PDF invoice automator",
+  "version": "1.0.0",
+  "dependencies": {
+    "requirejs": "2.1.9",
+    "jquery": "2.0.3",
+    "backbone": "1.0.0",
+    "underscore": "1.5.2",
+    "underscore.string": "2.3.3",
+    "bootstrap.css": "v2.3.2",
+    "font-awesome": "v4.0.3"
+  },
+  "authors": [
+    "Felix Akkermans <felix.akkermans@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
