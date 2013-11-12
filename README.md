@@ -12,8 +12,8 @@ From the working directory of Nota, run the following line:
 ```
 node javascript/render-invoice.js
 ```
-Or when developing your own template layout and logic, just open the template .html in your browser and enjoy the ease
-of development in your webbrowser of choice.
+Which will place an `invoice.pdf` file in the working directory. When developing your own template layout and logic,
+just open the template .html in your browser and enjoy the ease of development in your web-browser of choice.
 
 ### Templates
 Right now full template support isn't finished.
