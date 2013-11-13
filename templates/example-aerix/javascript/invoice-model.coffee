@@ -1,4 +1,4 @@
-class Nota.InvoiceModel extends Backbone.Model
+class Nota.Templates.AerixInvoiceModel extends Backbone.Model
   validate: ->
     unless _.keys(@attributes).length > 0 then throw "Provided model has no attributes. "+
       "Check the arguments of this model's initialization call."

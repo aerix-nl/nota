@@ -1,5 +1,7 @@
 # Init namespace
 @Nota = {
+  # This is the namespace where you should append your template class, and Nota will use it as an index
+  Templates: {}
   # Probe for the existence of PhantomJS ... signs that we're running in a simulation
   phantomRuntime: window._phantom?
   # Synchronous order in which dependencies must be resolved (array after array)
@@ -17,7 +19,7 @@
       # Core needs Backbone
       "../../javascript/invoice-core.js",
       "../../javascript/invoice-view.js",
-      "../../javascript/invoice-model.js"
+      "javascript/invoice-model.js"
     ]
   ]
 }

@@ -14,4 +14,6 @@ bower install
 # automatically recompiles on change events.
 # Change the paths in case you're working with your own template
 coffee --compile javascript/*.coffee
+# Replace 'example-aerix' with your own template here when you're developing a separate template
+coffee --compile templates/example-aerix/javascript/*.coffee
 sass --compass templates/example-aerix/stylesheets/invoice.css.scss:templates/example-aerix/stylesheets/invoice.css
