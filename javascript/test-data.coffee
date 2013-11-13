@@ -18,7 +18,7 @@ obj = {
 
   validityPeriod: 2*7 # Invoice is valid for two weeks (should be payed by then)
   vatPercentage: 0.21 # Tax
-  currency: "€"
+  currencySymbol: "€"
 
   client:
     organization: 'Client Company Name'

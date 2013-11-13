@@ -96,7 +96,7 @@ class Nota.InvoiceView extends Backbone.View
     roundedValue = Math.round(value*roundingBase)/roundingBase
     [integer, fraction] = roundedValue.toString().split('.')
     fraction = _.str.pad(fraction, decimalPlaces, '0', 'right')
-    currency = @model.get("currency")
+    currency = @model.get("currencySymbol")
     currencySeparator = @model.get("currencySeparator") || ' '
     return currency+currencySeparator+integer+fractionSeparator+fraction
 
