@@ -17,8 +17,10 @@
     [ "../../bower_components/backbone/backbone.js"],
     [
       # Core needs Backbone
-      "../../javascript/invoice-core.js",
-      "../../javascript/invoice-view.js",
+      "../../javascript/nota-core.js",
+      "../../javascript/nota-view.js",
+      # Aerix template model and view logic
+      "javascript/invoice-view.js",
       "javascript/invoice-model.js"
     ]
   ]
