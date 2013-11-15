@@ -2,14 +2,9 @@
 
 /.sass-cache/
 /bower_components/
-
 /node_modules/
 
 /javascript/*.js
-
-/stylesheets/invoice.css
-
-*.pdf
 /javascript/aerix-environment.coffee
-
+/templates/example-aerix/javascript/*.js
 /templates/example-aerix/stylesheets/invoice.css
