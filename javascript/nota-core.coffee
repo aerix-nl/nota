@@ -1,7 +1,7 @@
 @Nota = _.extend @Nota,
 
   initView: ()->
-    @view = new Nota.InvoiceView()
+    @view = new Nota.Templates.AerixInvoiceView()
   
   # Returns true on successful update, false on failure
   update: (model)->

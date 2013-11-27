@@ -12,7 +12,7 @@ class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
     @_mapObjToDOM @model.attributes, @$el, directives, false
     
     @_mapObjToDOM @model.get("client"), @$('p#client-block')
-    @_mapObjToDOM @model.get("origin"), @$('div.company-info, footer')
+    @_mapObjToDOM @model.get("origin"), @$('div.company-info, span#retour-line, footer')
 
     @$(".email").attr 'href', 'mailto:'+@model.get("origin").email
     @$(".website").attr 'href', 'http://'+@model.get("origin").email

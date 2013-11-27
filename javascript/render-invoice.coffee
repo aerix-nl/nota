@@ -1,12 +1,11 @@
-# This script is to be called from the CLI with PhantomJS
 phantom = require 'phantom'
-#system = require('system')
 fs = require('fs')
+argv = require('optimist').argv
 
-model = eval fs.readFileSync('javascript/test-data.js', encoding: 'utf8')
-
-templateFilename = 'templates/example-aerix/invoice.html' #system.args[1];
-outputFilename = 'invoice.pdf' #system.args[2];
+# The configuration, either from the command line options, or these defaults
+model = eval fs.readFileSync(argv.json || 'javascript/test-data.js', encoding: 'utf8')
+templateFilename =       argv.template || 'templates/example-aerix/invoice.html'
+outputFilename =           argv.output || 'invoice.pdf'
 
 phantom.create (phantomInstance) ->
   phantomInstance.createPage (page) ->
@@ -39,7 +38,7 @@ phantom.create (phantomInstance) ->
 
     # A callback for when PhantomJS went through DOM init (hopefully post-DOM-ready event)
     # This will start rendering
-    pageLoaded = (status)->
+    pageLoadedCallback = (status)->
       if status is 'success'
         console.log "Invoice template loaded, waiting for Nota client to finish booting"
         # We sit idle ... Nota will call back up to us when it is ready booting
@@ -47,6 +46,6 @@ phantom.create (phantomInstance) ->
         console.error "Unable to load HMTL: #{status}"
         phantomInstance.exit()
 
-    # The one call that sets the loading of the HTML in motion
-    page.open templateFilename, pageLoaded
+    # The one call that sets everything in motion
+    page.open templateFilename, pageLoadedCallback
 
