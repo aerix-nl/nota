@@ -32,15 +32,11 @@ if not @Nota.phantomRuntime then @Nota.dependencies.push(
 
 @dependencyStage = -1
 # Recursively solve dependencies and then start
-initNota = (testModel)=>
+bootApplication = (testModel)=>
   @dependencyStage = @dependencyStage+1
   # If there is more to resolve, continue recursively
-  if @dependencyStage < @Nota.dependencies.length then require @Nota.dependencies[@dependencyStage], initNota
-  else # We're done
-    # Now let's start
-    @Nota.initView()
-    # If PhantomJS is not present we load the defaults, else the page will sit and wiat for a call from 'above'
-    @Nota.update(testModel) unless @Nota.phantomRuntime
-    if @Nota.phantomRuntime then window.callPhantom 'nota:ready'
+  if @dependencyStage < @Nota.dependencies.length then require @Nota.dependencies[@dependencyStage], bootApplication
+  # Else, we're done
+  else @Nota.init withModel: testModel
 
-initNota()
+bootApplication()
