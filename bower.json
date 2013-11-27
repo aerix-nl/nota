@@ -1,5 +1,5 @@
 {
-  "name": "PDF invoice automator",
+  "name": "Nota",
   "version": "1.0.0",
   "dependencies": {
     "requirejs": "2.1.9",
