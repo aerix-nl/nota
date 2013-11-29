@@ -1,4 +1,5 @@
-@Nota = _.extend @Nota,
+_.extend @Nota,
+
   init: (options)->
     # Get the name of the current template from the DOM, which allows for automatically loading the corresponding
     # classes when opening a template from the filesystem as a .HTML file.
