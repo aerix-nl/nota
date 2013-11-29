@@ -15,6 +15,16 @@ class Nota.InvoiceView extends Backbone.View
     else
       fns = _.filter _.functions(@), (fnName)-> _.str.startsWith fnName, '_render'
       @[renderFnName].call(@) for index, renderFnName of fns
+    
+    # Take all links and bin the text node because during PDF rendering of
+    # modern browser engines, the text node is suffixed with the 'href'
+    # attribute, rendering a link like <a href="http://www.aerix.nl">Aerix</a> like this:
+    #
+    #   <a href="http://www.aerix.nl">Aerix(http://www.aerix.nl)</a>
+    #
+    # By removing the text node we can sort of counter this. A better method (like a
+    # directive for the engine to prevent it from doing this in the first place) is needed. 
+    if Nota.phantomRuntime then $('a').html ''
     @
 
   # Precondition: value must be a number, and the model must have a currency symbol defined
