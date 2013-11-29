@@ -15,7 +15,7 @@ class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
     @_mapObjToDOM @model.get("origin"), @$('div.company-info, span#retour-line, footer')
 
     @$(".email").attr 'href', 'mailto:'+@model.get("origin").email
-    @$(".website").attr 'href', 'http://'+@model.get("origin").email
+    @$(".website").attr 'href', 'http://'+@model.get("origin").website
     
     date = new Date(@model.get('meta').date)
     fullID = date.getUTCFullYear()+'.'+_.str.pad(@model.get('meta').id.toString(), 4, '0')
