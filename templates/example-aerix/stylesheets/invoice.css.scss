@@ -23,12 +23,15 @@ body {
 	color: $textColor !important;
 	margin: 35px auto;
 	width: 210mm;
-	height: 297mm;
+	// height: 297mm; // Actual A4-portrait height, but we want to allow multiple pages, so no limit
+	min-height: 297mm;
+	padding-bottom: 3cm;
 	@include box-shadow(0 0 30px 0 transparentize(black, 0.5));
+	@include box-sizing(border-box);
 	position: relative;
 	font-family: 'Kreon';
 }
-a {
+a, .link {
 	color: $primaryBlue !important;
 	&:hover {
 		color: $secondaryBlue !important;
@@ -149,4 +152,5 @@ footer {
 	padding-top: 1mm;
 	position: absolute;
 	width: auto !important;
+	letter-spacing: 0.013em;
 }
