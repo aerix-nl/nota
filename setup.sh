@@ -25,6 +25,7 @@ npm install coffee-script
 npm install node-sass
 npm install -g bower
 npm install require
+npm install optimist
 npm install node-compass
 
 # Get our clientside dependencies (jQuery, Backbone.js, Underscore.js, Bootstrap, FontAwesome etc.)
