@@ -6,6 +6,7 @@ argv = require('optimist').argv
 model = eval fs.readFileSync(argv.json || 'javascript/test-data.js', encoding: 'utf8')
 templateFilename =       argv.template || 'templates/example-aerix/invoice.html'
 outputFilename =           argv.output || 'invoice.pdf'
+autoFilename =       argv.autoFilename
 
 phantom.create (phantomInstance) ->
   phantomInstance.createPage (page) ->
@@ -27,14 +28,27 @@ phantom.create (phantomInstance) ->
           page.evaluate ( (model)-> @Nota.update model ), (->), model
         when 'nota:updated'
           console.log "Nota client finished rendering new data to DOM"
-          phantomRenderPDF()
+          # Check if the client presents a preferred filename
+          page.evaluate ( -> @Nota.view.filesystemName?() ), phantomRenderPDF
 
     # A callback that will do the actual export to .PDF if everything went OK
-    phantomRenderPDF = (status)->
+    phantomRenderPDF = (proposedFilename)-> 
+      usefulFilename = proposedFilename? and proposedFilename.length > 0
+      if autoFilename
+        if usefulFilename
+          outputFilename = proposedFilename
+        else console.log "Template view did not return a useful filename."+
+          " Ignoring autofilename switch."
       console.log "Nota server started .PDF generation job"
       page.render outputFilename, ->
         console.log "Nota server finished rendering .PDF, exiting PhantomJS thread"
         phantomInstance.exit()
+        if fs.existsSync(outputFilename)
+          console.log "Nota server verified the writing of file:"
+          console.log "\t#{outputFilename}"
+          console.log "Nota server thread will now exit"
+        else
+          console.error "Nota expected the output file to be found now. Something went wrong!"
 
     # A callback for when PhantomJS went through DOM init (hopefully post-DOM-ready event)
     # This will start rendering

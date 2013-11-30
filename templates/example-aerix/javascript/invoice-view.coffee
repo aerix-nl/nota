@@ -1,5 +1,22 @@
 class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
 
+  documentName: -> 'Invoice '+@getFullID()
+
+  filesystemName: ->
+    customer = @model.get("client").organization
+    customer = customer || @model.get("client").contactPerson
+    customer = customer.replace ' ', '-'
+    project = @model.get("projectName")
+    if project?
+      project = project.replace ' ', '-'
+      "#{@getFullID()}_#{customer}_#{project}.pdf"
+    else
+      "#{@getFullID()}_#{customer}.pdf"
+
+  getFullID: ->
+    date = new Date(@model.get('meta').date)
+    date.getUTCFullYear()+'.'+_.str.pad(@model.get('meta').id.toString(), 4, '0')
+
   # Pretty much everything apart from the table
   _renderInvoiceDetails: ->
     directives = 
@@ -15,9 +32,9 @@ class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
     @_mapObjToDOM @model.get("origin"), @$('div.company-info, span#retour-line, footer')
     
     date = new Date(@model.get('meta').date)
-    fullID = date.getUTCFullYear()+'.'+_.str.pad(@model.get('meta').id.toString(), 4, '0')
-    @$('#invoice-id').html fullID
-    $("html head title").html 'Invoice '+fullID
+    
+    @$('#invoice-id').html @getFullID()
+    $("html head title").html @documentName()
 
     monthNames = [ "januari", "feruari", "maart", "april", "mei", "juni",
         "juli", "augustus", "september", "october", "november", "december" ]
