@@ -57,17 +57,13 @@ class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
     @$('div#invoice-body table tbody').empty()
     for index, itemObj of @model.get("invoiceItems")
       $row = $itemPrototype.clone()
-      # Calculate the subtotal of this row (cache it in the object)
-      itemObj.subtotal = itemObj.price * itemObj.quantity
-      # Apply discount over subtotal if it exists
-      if itemObj.discount? > 0 then itemObj.subtotal = itemObj.subtotal * (1-itemObj.discount)
-      $("td.subtotal", $row).html itemObj.subtotal
+      itemObj.subtotal = @model.itemSubtotal(itemObj)
       @_mapObjToDOM itemObj, $row
       @$("div#invoice-body table tbody").append $row
     # Table footer part
     footerAggregate = {}
-    footerAggregate.subtotal = _.reduce @model.get("invoiceItems"), ((sum, item)-> sum + item.subtotal), 0
-    footerAggregate.vat = footerAggregate.subtotal * @model.get("vatPercentage")
+    footerAggregate.subTotal = @model.subTotal()
+    footerAggregate.vat = @model.VAT(footerAggregate.subTotal)
     footerAggregate.total = footerAggregate.subtotal + footerAggregate.vat
     @_mapObjToDOM footerAggregate, @$("div#invoice-body table tfoot")
     @
