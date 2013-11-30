@@ -5,10 +5,10 @@ class Nota.Templates.AerixInvoiceView extends Nota.InvoiceView
   filesystemName: ->
     customer = @model.get("client").organization
     customer = customer || @model.get("client").contactPerson
-    customer = customer.replace ' ', '-'
+    customer = customer.replace /\s/g, '-' # Spaces to dashes using regex
     project = @model.get("projectName")
     if project?
-      project = project.replace ' ', '-'
+      project = project.replace /\s/g, '-' # Spaces to dashes using regex
       "#{@getFullID()}_#{customer}_#{project}.pdf"
     else
       "#{@getFullID()}_#{customer}.pdf"
