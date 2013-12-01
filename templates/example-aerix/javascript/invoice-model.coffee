@@ -1,4 +1,19 @@
 class Nota.Templates.AerixInvoiceModel extends Backbone.Model
+  
+  # Calculates the item subtotal (price times quantity, and then a possible discount applied)
+  itemSubtotal: (itemObj)->
+    # Calculate the subtotal of this item
+    subtotal = itemObj.price * itemObj.quantity
+    # Apply discount over subtotal if it exists
+    if itemObj.discount? > 0 then subtotal = subtotal * (1-itemObj.discount)
+    subtotal
+
+  # Subtotal of all the invoice items without taxes, but including their individual discounts
+  subTotal: -> _.reduce @get("invoiceItems"), ((sum, item)=> sum + @itemSubtotal(item)), 0
+
+  # VAT over the provided value or the invoice subtotal
+  VAT: (value)-> @get("vatPercentage") * (value || @subTotal)
+
   validate: ->
     unless _.keys(@attributes).length > 0 then throw "Provided model has no attributes. "+
       "Check the arguments of this model's initialization call."
