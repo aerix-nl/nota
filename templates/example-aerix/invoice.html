@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="stylesheets/invoice.css" media="all">
   <link rel="stylesheet" href="stylesheets/print.css" media="print">
   <!-- data-main attribute tells require.js to load javascript/main.js after require.js loads. -->
-  <script data-main="../../javascript/nota-init" src="../../bower_components/requirejs/require.js"></script>
+  <script data-main="../../javascript/nota-client-init" src="../../bower_components/requirejs/require.js"></script>
 	<!-- generate .PDF with: -->
 	<!-- node javascript/render-invoice -->
 	<!-- see 'setup.sh' for details and a convenience script that will ensure setup and template compiling -->
@@ -133,7 +133,8 @@
 			o.v.v. het factuurnummer.
 		</p>
 		<p class="span5 offset1">
-			Deze factuur is opgesteld in overeenkomst met onze algemene voorwaarden. Deze zijn te vinden op: <span>www.aerix.nl/algemene-voorwaarden</span>.
+			Deze factuur is opgesteld in overeenkomst met onze algemene voorwaarden. Deze zijn te vinden op:
+			<span class="link">www.aerix.nl/algemene-voorwaarden</span>.
 		</p>
 	</footer>
 </body>
