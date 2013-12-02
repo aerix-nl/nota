@@ -1,4 +1,4 @@
-class Nota.InvoiceView extends Backbone.View
+class Nota.CoreView extends Backbone.View
   initialize: ->
     @setElement $("body") # Set root element
 
