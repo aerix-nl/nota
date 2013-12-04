@@ -63,7 +63,7 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
     # Table footer part
     footerAggregate = {}
     footerAggregate.subTotal = @model.subTotal()
-    footerAggregate.vat = @model.VAT(footerAggregate.subTotal)
+    footerAggregate.vat = @model.VAT(footerAggregate.subtotal)
     footerAggregate.total = footerAggregate.subtotal + footerAggregate.vat
     @_mapObjToDOM footerAggregate, @$("div#invoice-body table tfoot")
     @
