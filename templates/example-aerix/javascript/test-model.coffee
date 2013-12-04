@@ -45,4 +45,4 @@ obj = {
   closing: 'Optional HTML string which replaces default closing when provided'
 }
 # We use define when available (RequireJS function to deliver yielded object as callback argument)
-if define? then define obj else return obj
+if define? then define obj else obj

@@ -1,10 +1,27 @@
+_       = require '../bower_components/underscore/underscore'
 phantom = require 'phantom'
-fs = require('fs')
-argv = require('optimist').argv
+fs      = require 'fs'
+argv    = require('optimist').argv
 
+
+templateDirs = fs.readdirSync('templates')
+templateDirs = _.filter templateDirs, (dir)-> dir.charAt(0) isnt '.'
+# templates = for dir in templateDirs
+#   try
+#     eval fs.readFileSync 'templates/'+dir+'/javascript/define-template.js'
+#     logicLoad = true
+#   catch error
+#     logicLoad = false
+
+#   logic: logicLoad
+#   dirName: dir
+#   name 
 # The configuration, either from the command line options, or these defaults
+template = argv.template || 'Aerix'
+console.log templateDirs
+return
 model = eval fs.readFileSync(argv.json || 'javascript/test-data.js', encoding: 'utf8')
-templateFilename =       argv.template || 'templates/example-aerix/invoice.html'
+templateFilename =        'templates/example-aerix/invoice.html'
 argumentedFilename =       argv.output
 defaultFilename = 'invoice.pdf'
 

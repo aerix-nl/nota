@@ -8,3 +8,6 @@
 /templates/example-aerix/javascript/aerix-environment.coffee
 /templates/example-aerix/javascript/*.js
 /templates/example-aerix/stylesheets/invoice.css
+
+/Nota.sublime-project
+/Nota.sublime-workspace

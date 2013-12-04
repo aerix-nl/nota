@@ -1,4 +1,4 @@
-define ['nota-client', 'nota-view'], (Nota)-> class Nota.Templates.Aerix.View extends Nota.CoreView
+define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.CoreView
   # Used for the html head title element
   documentName: -> 'Invoice '+@getFullID()
 

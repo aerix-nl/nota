@@ -1,4 +1,4 @@
-define ['nota-client', 'nota-model'], (Nota)-> class Nota.Templates.Aerix.Model extends Nota.CoreModel
+define ['nota-client', 'nota-model'], (Nota)-> class InvoiceModel extends Nota.CoreModel
   # Calculates the item subtotal (price times quantity, and then a possible discount applied)
   itemSubtotal: (itemObj)->
     # Calculate the subtotal of this item
