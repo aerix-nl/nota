@@ -1,18 +1,21 @@
-toRoot = "../../../"
-bowerRoot = toRoot + "bower_components/"
-notaClientJavascript = toRoot + "javascript/"
+# Navigate out of the template javascript directory to the application root:
+root = "../../../"
+bowerRoot = root + "bower_components/"
+notaClient = root + "javascript/"
 
 requirejs.config {
   baseUrl: 'javascript'
-  # Navigate out of the template directory to the application root using "../../"
   paths: {
     "jquery":             bowerRoot+"jquery/jquery"
     "underscore":         bowerRoot+"underscore/underscore"
     "underscore.string":  bowerRoot+"underscore.string/lib/underscore.string"
     "backbone":           bowerRoot+"backbone/backbone"
-    "nota-client":        notaClientJavascript+"nota-client"
-    "nota-view":          notaClientJavascript+"nota-view"
-    "nota-model":         notaClientJavascript+"nota-model"
+    "text":               bowerRoot+"requirejs-text/text"
+    "nota-client":        notaClient+"nota-client"
+    "nota-view":          notaClient+"nota-view"
+    "nota-model":         notaClient+"nota-model"
+    # Stub of a future GUI, but because of XHR restrictions I need server
+    # "nota-system.html":   root+"templates/nota-system.html"
   }
   shim: {
     'underscore': {
@@ -53,7 +56,8 @@ require ['nota-client'], (Nota)->
     console.log requireModules
     #alert("Template load error (see console)")
   # Attempt to load the template javascript object
-  require ['define-template'], (template)->
+  require ['text!define-template.json'], (template)->
+    template = JSON.parse template
     # If we got here the template definition is available and we proceeed by
     # loading the template (and it's dependencies) and starting it up.
     dependencies = if Nota.phantomRutime
@@ -69,7 +73,7 @@ require ['nota-client'], (Nota)->
     require dependencies, ->
       # 'unpack' the view, model and test data from the arguments that this
       # require yielded.
-      testJSON = arguments[dependencies.length-1]
+      testJSON = JSON.parse arguments[dependencies.length-1]
       template.view = arguments[dependencies.indexOf(template.view)]
       template.model = arguments[dependencies.indexOf(template.model)]
       # Start nota with this template
