@@ -60,7 +60,7 @@ require ['nota-client'], (Nota)->
     template = JSON.parse template
     # If we got here the template definition is available and we proceeed by
     # loading the template (and it's dependencies) and starting it up.
-    dependencies = if Nota.phantomRutime
+    dependencies = if Nota.phantomRuntime
       template.dependencies
     else 
       # If the Nota god is not present, we'll have to fix our own data. For
@@ -73,13 +73,14 @@ require ['nota-client'], (Nota)->
     require dependencies, ->
       # 'unpack' the view, model and test data from the arguments that this
       # require yielded.
-      testJSON = JSON.parse arguments[dependencies.length-1]
       template.view = arguments[dependencies.indexOf(template.view)]
       template.model = arguments[dependencies.indexOf(template.model)]
+      if not Nota.phantomRuntime
+        previewJSON = JSON.parse arguments[dependencies.indexOf(template.previewJSON)]
       # Start nota with this template
       try
         Nota.init
           withTemplate: template
-          withData: testJSON #if not Nota.phantomRutime 
+          withData: previewJSON #if not Nota.phantomRutime 
       catch error
         console.log error
