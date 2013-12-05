@@ -3,6 +3,8 @@
 /.sass-cache/
 /bower_components/
 /node_modules/
+/json/*
+/2013.0015_Client-Company-Name_Optional-project-name-which-will-be-placed-on-top-of-table.pdf
 
 /javascript/*.js
 /templates/example-aerix/javascript/aerix-environment.coffee
@@ -12,4 +14,3 @@
 /Nota.sublime-project
 /Nota.sublime-workspace
 
-/2013.0015_Client-Company-Name_Optional-project-name-which-will-be-placed-on-top-of-table.pdf
