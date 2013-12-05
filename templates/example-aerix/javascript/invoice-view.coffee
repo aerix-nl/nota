@@ -57,12 +57,12 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
     @$('div#invoice-body table tbody').empty()
     for index, itemObj of @model.get("invoiceItems")
       $row = $itemPrototype.clone()
-      itemObj.subTotal = @model.itemSubtotal(itemObj)
+      itemObj.subtotal = @model.itemSubtotal(itemObj)
       @_mapObjToDOM itemObj, $row
       @$("div#invoice-body table tbody").append $row
     # Table footer part
     footerAggregate = {}
-    footerAggregate.subtotal = @model.subTotal()
+    footerAggregate.subtotal = @model.invoiceSubtotal()
     footerAggregate.vat = @model.VAT(footerAggregate.subtotal)
     footerAggregate.total = footerAggregate.subtotal + footerAggregate.vat
     @_mapObjToDOM footerAggregate, @$("div#invoice-body table tfoot")
