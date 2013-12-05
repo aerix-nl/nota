@@ -3,28 +3,47 @@ phantom = require 'phantom'
 fs      = require 'fs'
 argv    = require('optimist').argv
 
+template = argv.template
+# A template name must have been provided, unless we're just gonna list them
+unless template? or argv.list?
+  console.log "No template selected. Use --template 'name' for this."
+  return
 
 templateDirs = fs.readdirSync('templates')
-templateDirs = _.filter templateDirs, (dir)-> dir.charAt(0) isnt '.'
-# templates = for dir in templateDirs
-#   try
-#     eval fs.readFileSync 'templates/'+dir+'/javascript/define-template.js'
-#     logicLoad = true
-#   catch error
-#     logicLoad = false
+templateDirs = _.filter templateDirs, (dir)-> fs.statSync('templates/'+dir).isDirectory()
 
-#   logic: logicLoad
-#   dirName: dir
-#   name 
-# The configuration, either from the command line options, or these defaults
-template = argv.template || 'Aerix'
-console.log templateDirs
-return
-model = eval fs.readFileSync(argv.json || 'javascript/test-data.js', encoding: 'utf8')
-templateFilename =        'templates/example-aerix/invoice.html'
-argumentedFilename =       argv.output
+templates = {}
+for dir in templateDirs
+  if not fs.existsSync("templates/"+dir+"/template.html")
+    console.log "Template directory has no mandatory 'template.html' file"
+    continue 
+  definitionFile = fs.existsSync("templates/"+dir+"/javascript/define-template.json")
+  if not definitionFile
+    console.log "Template without definition found: #{dir} (omitting)"
+    continue
+  t = JSON.parse fs.readFileSync 'templates/'+dir+'/javascript/define-template.json'
+  t.dir = dir
+  templates[t.name] = t
+
+if argv.list?
+  console.log tenplateName for tenplateName in _.keys templates
+  return
+
+unless templates[template]?
+  console.error "Selected template doesn't exist"
+  return
+
+# Beyond this point we got our template
+template = templates[template]
+
+previewJSON = if template.previewJSON.slice(0,5) is "text!" then template.previewJSON.slice 5
+JSONpath = argv.json || "templates/#{template.dir}/javascript/#{previewJSON}"
+model = JSON.parse fs.readFileSync(JSONpath, encoding: 'utf8')
+
+templateHTML = "templates/#{template.dir}/template.html"
+
+argumentedFilename = argv.output
 defaultFilename = 'invoice.pdf'
-
 phantom.create (phantomInstance) ->
   phantomInstance.createPage (page) ->
     if error?
@@ -59,8 +78,6 @@ phantom.create (phantomInstance) ->
       if argv.output? # But always override it if a filename was specified in the arguments
         outputFilename = argumentedFilename
 
-      else console.log "Template view did not return a useful filename."+
-        " Ignoring autofilename switch."
       console.log "Nota server started .PDF generation job"
       page.render outputFilename, ->
         console.log "Nota server finished rendering .PDF, exiting PhantomJS thread"
@@ -83,5 +100,5 @@ phantom.create (phantomInstance) ->
         phantomInstance.exit()
 
     # The one call that sets everything in motion
-    page.open templateFilename, pageLoadedCallback
+    page.open templateHTML, pageLoadedCallback
 
