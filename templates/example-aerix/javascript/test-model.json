@@ -27,7 +27,6 @@
     "postalCode": "6543TR",
     "place": "Client Town"
   },
-  "opening": "Optional HTML string which replaces default opening when provided",
   "projectName": "Optional project name which will be placed on top of table",
   "invoiceItems": [
     {
@@ -40,6 +39,5 @@
       "price": 10,
       "discount": 0.1
     }
-  ],
-  "closing": "Optional HTML string which replaces default closing when provided"
+  ]
 }

@@ -131,6 +131,10 @@ div#invoice-body {
 			height: 2em;
 			vertical-align: top;
 		}
+		// Case for then there is only one row
+		tbody tr:first-child:last-child {
+		  vertical-align: middle;
+		}
 		tfoot {
 			border-top: 1px solid transparentize($textColor, 0.5);
 			tr:first-child {

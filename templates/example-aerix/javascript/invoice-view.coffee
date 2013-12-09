@@ -23,13 +23,18 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
       vatPercentage: =>
         @model.get("vatPercentage")*100
       companyFullname: =>
-        origin = @model.get('origin') 
+        origin = @model.get('origin')
         origin.companyName+' '+origin.companyLawform
+      clientString: =>
+        @model.get("client").contactPerson || @model.get("client").organization
 
-    @_mapObjToDOM @model.attributes, @$el, directives, false
+    # Do a 'shallow' render of the model. Meaning only direct attributes, not
+    # nested ones like the invoice items, because those require more complex
+    # rendering. Most first order attribues are quite simple in this case.
+    @_mapObjToDOM @model.attributes, null, directives, false
     
     @_mapObjToDOM @model.get("client"), @$('p#client-block')
-    @_mapObjToDOM @model.get("origin"), @$('div.company-info, span#retour-line, footer')
+    @_mapObjToDOM @model.get("origin"), @$('div.company-info, span#retour-line, footer, span#closing')
     
     date = new Date(@model.get('meta').date)
     
@@ -47,9 +52,10 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
     validYear = date.getUTCFullYear()
     validDay = date.getUTCDate()
     @_mapObjToDOM
-      invoiceDate: "#{year} #{month} #{day}"
-      expirationDate: "#{validYear} #{validMonth} #{validDay}"
-      reminderDate: "#{validDay} #{validMonth} #{validYear} "
+      invoiceDate: "#{day} #{month} #{year}"
+      expirationDate: "#{validDay} #{validMonth} #{validYear}"
+
+    @_pluralize itemCount: @model.get("invoiceItems").length
     @
 
   _renderInvoiceTable: ->

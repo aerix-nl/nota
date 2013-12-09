@@ -10,9 +10,11 @@ define ['nota-client', 'nota-model'], (Nota)-> class InvoiceModel extends Nota.C
   # Subtotal of all the invoice items without taxes, but including their individual discounts
   invoiceSubtotal: -> _.reduce @get("invoiceItems"), ((sum, item)=> sum + @itemSubtotal(item)), 0
 
+  invoiceTotal: ->  @invoiceSubtotal() + @VAT()
+  
   # VAT over the provided value or the invoice subtotal
   VAT: (value)-> @get("vatPercentage") * (value || @invoiceSubtotal)
-
+  
   validate: ->
     unless _.keys(@attributes).length > 0 then throw "Provided model has no attributes. "+
       "Check the arguments of this model's initialization call."

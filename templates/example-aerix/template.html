@@ -65,8 +65,11 @@
 	</div>
 	<div id="invoice-body">
 		<p class="opening">
-			Beste Klant Klantnaam,<br><br>
-			Hierbij de factuur voor de volgende geleverde dienst:
+			Beste <span class="client-string">Klant Klantnaam</span>,<br><br>
+			Hierbij de factuur voor de volgende geleverde
+			<span data-pluralize="item-count">
+				<span data-pluralize="1">dienst</span>
+				<span data-pluralize="+">diensten</span></span>:
 		</p>
 		<table>
 			<colgroup>
@@ -118,17 +121,17 @@
 		</table>
 		<span id="closing">
 			<p>
-				Wij verzoeken u hierbij vriendelijk tijdig het totaalbedrag over te maken
+				Wij verzoeken u hierbij vriendelijk tijdig het totaalbedrag van over te maken
 				naar rekeningnummer <span class="iban"></span>, onder vermelding van het factuurnummer.
 			</p><p>
-				Voor vragen over deze factuur kunt u contact opnemen met <span class="email"></span>.
+				Voor vragen over deze factuur kunt u contact opnemen met <span class="email link">address@mail.com</span>.
 			</p>
 		</span>
 	</div>
 	<footer class="row-fluid">
 		<p class="span6">
 			Deze factuur vervalt <span class="validity-period">14</span> dagen na factuurdatum. 
-			Gelieve voor <span id="reminder-date"></span> het totaalbedrag over te maken
+			Gelieve voor <span id="expiration-date"></span> het totaalbedrag over te maken
 			naar <span class="iban"></span> t.n.v. <span class="company-name">Companyname</span>
 			o.v.v. het factuurnummer.
 		</p>
