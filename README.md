@@ -1,6 +1,6 @@
 Nota
 ====
-Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus on the design of your template and writing the logic, while providing you a framework for previewing and debugging in the web browser, and development convenience of writing in CoffeeScript and SASS.
+Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus on the design of your template and writing the logic, while providing you a framework for fast previewing and debugging in the web browser, and modern development convenience of writing in CoffeeScript and SASS.
 
 Setup
 =====
@@ -12,12 +12,11 @@ Technically it's a NodeJS package, consisting pretty much of PhantomJS (headless
 
 Usage
 =====
-From the working directory of Nota, run the following line:
+To get a feel of Nota, run  the following line:
 ```
-node javascript/render-invoice.js aerix
+node javascript/render-invoice.js --template aerix
 ```
-When finished rendering the example Aerix tempalte, Nota will place a file in the Nota root directory, generated from `templates/aerix-example/template.html`
-and `templates/aerix-example/test-model.json`. The filename also demonstrates how you can do programmatic
+When finished Nota has rendered the example Aerix template (open `templates/aerix-example/template.html` in your browser), with some test JSON as input (`templates/aerix-example/test-model.json` to be more specific) to a PDf file in the Nota root directory. Notice that the filename also demonstrates how you can do programmatic
 filenaming by exposing the `filesystemName` function in the template view class, which Nota-server will
 poll to see if it yields a usable filename.
 
