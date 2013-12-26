@@ -8,7 +8,7 @@ Check out `setup.sh`, which assuming that you have `apt-get`, `npm` and `node` (
 
 Architecture
 =====
-Technically it's a NodeJS package, consisting pretty much of PhantomJS (headless WebKit for rendering the HTML and capturing PDF) with node-phantom as a binding for NodeJS, and some frameworking and classes to make this job and building templates easier.
+Technically this NodeJS package is a pipeline consisting primarily out of PhantomJS (headless WebKit for rendering the HTML and capturing PDF) with the [phantomjs-node](https://github.com/sgentle/phantomjs-node) bindings for interfacing using NodeJS, and some frameworking to make the job and building templates and rendering them easier.
 
 Usage
 =====
@@ -16,7 +16,7 @@ To get a feel of Nota, run  the following line:
 ```
 node javascript/render-invoice.js --template aerix
 ```
-When finished Nota has rendered the example Aerix template (open `templates/aerix-example/template.html` in your browser), with some test JSON as input (`templates/aerix-example/test-model.json` to be more specific) to a PDf file in the Nota root directory. Notice that the filename also demonstrates how you can do programmatic
+When finished Nota has rendered the example Aerix template (open `templates/aerix-example/template.html` in your browser), with some test JSON as input (`templates/aerix-example/test-model.json` to be more specific) to a PDF file in the Nota root directory. Notice that the filename also demonstrates how you can do programmatic
 filenaming by exposing the `filesystemName` function in the template view class, which Nota-server will
 poll to see if it yields a usable filename.
 
