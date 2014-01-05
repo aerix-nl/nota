@@ -25,5 +25,6 @@ Add the switch `--template <name>` to select a template by name as defined in th
 Add the switch `--json <path>` with a path from the Nota root directory to the JSON that should be rendered.
 
 ### Building your own templates
-More details and a tutorial will follow. For now; when developing your own template layout and logic I recommend copying the example template and adapting from there.
+More details and a tutorial will follow. For now; when developing your own template layout and logic I recommend copying the example Aerix template and adapting from there. Start by changing the name of the copy in `javascript/define-template.json` and you already got yourself a recognized template.
+
 Just open the template `template.html` in your browser and enjoy the ease of development and debugging in your web-browser of choice. Check out `compile-example-template.sh` to read how templates are compiled.
