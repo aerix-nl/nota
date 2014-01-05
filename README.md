@@ -28,3 +28,6 @@ Add the switch `--json <path>` with a path from the Nota root directory to the J
 More details and a tutorial will follow. For now; when developing your own template layout and logic I recommend copying the example Aerix template and adapting from there. Start by changing the name of the copy in `javascript/define-template.json` and you already got yourself a recognized template.
 
 Just open the template `template.html` in your browser and enjoy the ease of development and debugging in your web-browser of choice. Check out `compile-example-template.sh` to read how templates are compiled.
+
+### Fonts
+Due to a bug in PhantomJS ([see here](http://arunoda.me/blog/phantomjs-webfonts-build.html)), the loading of webfonts (even if they're locally hosted) is broken. For now you'll have to install the fonts on the system manually, and then they'll load as expected.
