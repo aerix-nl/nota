@@ -25,10 +25,10 @@ gem install compass
 npm install
 
 # Get our clientside dependencies (jQuery, Backbone.js, Underscore.js, Bootstrap, FontAwesome etc.)
-./node_moduplus/bower/bin/bower install
+./node_modules/bower/bin/bower install
 
-# First we ensured all neccessary files are compiled down to native form.
-# Add --watch to the options start a process that listens to the filesystem changes and
-# automatically recompiles on change events.
+# First we ensured all neccessary files are compiled down to native form. Add
+# --watch to the options start a process that listens to the filesystem
+# changes and automatically recompiles on change events.
 ./node_modules/coffee-script/bin/coffee --compile javascript/*.coffee
 ./compile-example-template.sh
