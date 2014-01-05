@@ -1,6 +1,6 @@
 Nota
 ====
-Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic, by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
+Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic, by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
 
 Setup
 =====
