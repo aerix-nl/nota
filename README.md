@@ -1,6 +1,6 @@
 Nota
 ====
-Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic, by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
+Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
 
 Setup
 =====
@@ -14,7 +14,7 @@ Usage
 =====
 To get a feel of Nota, run  the following line:
 ```
-node javascript/render-invoice.js --template aerix
+node javascript/render-invoice.js --template example-aerix
 ```
 When finished Nota has rendered the example Aerix template (open `templates/aerix-example/template.html` in your browser), with some test JSON as input (`templates/aerix-example/test-model.json` to be more specific) to a PDF file in the Nota root directory. Notice that the filename also demonstrates how you can do programmatic
 filenaming by exposing the `filesystemName` function in the template view class, which Nota-server will
