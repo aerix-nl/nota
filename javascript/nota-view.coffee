@@ -30,7 +30,7 @@ class Nota.CoreView extends Backbone.View
   # Precondition: value must be a number, and the model must have a currency symbol defined
   _formatCurrency: (value)->
     # Which symbol to use to separate the integer part of the number from the fraction part, e.g. 0,5 or 0.5
-    fractionSeparator = @model.fractionSeparator || ','
+    fractionSeparator = @model.fractionSeparator or ','
     # By default render numbers with 2 decimal places behind the dot, e.g. 2/3 = 6.6667 with 4 places
     decimalPlaces = @model.decimalPlaces || 2
     roundingBase = Math.pow(10,decimalPlaces)

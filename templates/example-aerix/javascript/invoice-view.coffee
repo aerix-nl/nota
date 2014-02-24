@@ -41,8 +41,8 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
     @$('#invoice-id').html @getFullID()
     $("html head title").html @documentName()
 
-    monthNames = [ "januari", "feruari", "maart", "april", "mei", "juni",
-        "juli", "augustus", "september", "october", "november", "december" ]
+    monthNames = [ "januari", "februari", "maart", "april", "mei", "juni",
+      "juli", "augustus", "september", "oktober", "november", "december" ]
     month = monthNames[date.getMonth()]
     year = date.getUTCFullYear()
     day = date.getUTCDate()
@@ -56,6 +56,9 @@ define ['nota-client', 'nota-view'], (Nota)-> class InvoiceView extends Nota.Cor
       expirationDate: "#{validDay} #{validMonth} #{validYear}"
 
     @_pluralize itemCount: @model.get("invoiceItems").length
+
+    @$('span#closing b.total').html @_formatCurrency @model.invoiceTotal()
+    @$('span#closing b.invoice-id').html @getFullID()
     @
 
   _renderInvoiceTable: ->
