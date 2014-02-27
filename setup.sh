@@ -5,12 +5,12 @@
 sudo apt-get install phantomjs
 # On ElementaryOS Luna / Ubuntu 12.04 this means you'll have to do the following instead of that line:
 # cd /usr/local/share/
-# sudo wget https://phantomjs.googlecode.com/files/phantomjs-1.9.2-linux-x86_64.tar.bz2
-# sudo tar xjf phantomjs-1.9.2-linux-x86_64.tar.bz2
-# sudo ln -s /usr/local/share/phantomjs-1.9.2-linux-x86_64/bin/phantomjs /usr/local/share/phantomjs
-# sudo ln -s /usr/local/share/phantomjs-1.9.2-linux-x86_64/bin/phantomjs /usr/local/bin/phantomjs
-# sudo ln -s /usr/local/share/phantomjs-1.9.2-linux-x86_64/bin/phantomjs /usr/bin/phantomjs
-# sudo rm phantomjs-1.9.2-linux-x86_64.tar.bz2
+# sudo wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2
+# sudo tar xjf phantomjs-1.9.7-linux-x86_64.tar.bz2
+# sudo ln -s /usr/local/share/phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/local/share/phantomjs
+# sudo ln -s /usr/local/share/phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/local/bin/phantomjs
+# sudo ln -s /usr/local/share/phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin/phantomjs
+# sudo rm phantomjs-1.9.7-linux-x86_64.tar.bz2
 
 # Also we need NodeJS 0.10 or greater
 # On ElementaryOS Luna / Ubuntu 12.04 this means you'll have to do the following also:
@@ -31,4 +31,4 @@ npm install
 # --watch to the options start a process that listens to the filesystem
 # changes and automatically recompiles on change events.
 ./node_modules/coffee-script/bin/coffee --compile javascript/*.coffee
-./compile-example-template.sh
+bash ./compile-example-template.sh
