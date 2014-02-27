@@ -14,7 +14,7 @@ Usage
 =====
 To get a feel of Nota, run  the following line:
 ```
-node javascript/nota-server.js --template example-aerix
+node javascript/nota-server.js --template=example-aerix
 ```
 When finished Nota has rendered the example Aerix template (open `templates/aerix-example/template.html` in your browser), with some test JSON as input (`templates/aerix-example/test-model.json` to be more specific) to a PDF file in the Nota root directory. Notice that the filename also demonstrates how you can do programmatic
 filenaming by exposing the `filesystemName` function in the template view class, which Nota-server will
