@@ -37,7 +37,7 @@ class Nota
 
     @server.listen(@serverPort)
 
-    @data = fs.readFileSync(dataPath, encoding: 'utf8')
+    @data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
 
     # Render the page
     @page = new Page(@serverAddress, @serverPort, @data)
