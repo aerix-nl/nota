@@ -62,8 +62,6 @@
       })(this));
     }
 
-    Page.prototype.then = function(fn) {};
-
     Page.prototype.injectDependencies = function() {
       var deferred, dependencies, inject, injectNext;
       dependencies = this.dependencies.slice(0);

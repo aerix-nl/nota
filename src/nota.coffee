@@ -37,8 +37,11 @@ class Nota
 
     @server.listen(@serverPort)
 
+    @data = fs.readFileSync(dataPath, encoding: 'utf8')
+
     # Render the page
-    @page = new Page(@serverAddress, @serverPort)
-    @page.on 'render fail', => @server.close()
+    @page = new Page(@serverAddress, @serverPort, @data)
+    @page.on 'render', =>  @server.close()
+    @page.on 'fail',   =>  @server.close()
 
 nota = new Nota(argv)

@@ -6,6 +6,7 @@
       return rivets.bind($('body'), this.data);
     },
     addData: function(data) {
+      console.log(data);
       return _(this.data).extend(data);
     }
   };
