@@ -14,3 +14,5 @@
 /Nota.sublime-project
 /Nota.sublime-workspace
 
+.vagrant/
+output.pdf
