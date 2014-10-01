@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>Hello</title>
+
+<link rel="stylesheet" type="text/css" media="screen,print" href="style.css">
+
+<script type="application/javascript" src="qrcode.js/jquery.min.js"></script>
+<script type="application/javascript" src="qrcode.js/qrcode.min.js"></script>
+<script type="application/javascript">
+$(document).ready( function () {
+	$(".qr").each(function(_,el) {
+		new QRCode(el, {
+		    text: "http://jindo.dev.naver.com/collie",
+		    width: 128,
+		    height: 128,
+		    colorDark : "#000000",
+		    colorLight : "#eeeeee",
+		    correctLevel : QRCode.CorrectLevel.H
+		});
+	});
+});
+</script>
+</head>
+
+<body>
+
+<img src="logo.png" style="float: right; width: 148px; clear: both;" id="logo">
+<h1>{ text.title }</h1>
+
+<div class="qr" style="float:left;"></div>
+<p style="text-align: justify">{ text.p1 }<br><br>{ text.p2 }</p>
+<div class="qr" style="float: right; margin-top: -1cm;"></div>
+<img style="margin-top: 0.5cm; margin-bottom: 0px; margin-left: auto; margin-right: auto; border-color: black; border-style: solid; border-width:0.1cm;" src="awesome.png">
+</body>
+
+</html>
