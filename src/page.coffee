@@ -22,7 +22,7 @@ class Page extends EventEmitter
         @page.set 'paperSize',
           format: 'A4'
           orientation: 'portrait'
-          border: '2cm'
+          border: '0cm'
 
         # Create callbacks
         @page.onConsoleMessage  ( msg ) => console.log   msg

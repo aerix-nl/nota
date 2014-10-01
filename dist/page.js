@@ -31,7 +31,7 @@
             _this.page.set('paperSize', {
               format: 'A4',
               orientation: 'portrait',
-              border: '2cm'
+              border: '0cm'
             });
             _this.page.onConsoleMessage(function(msg) {
               return console.log(msg);
