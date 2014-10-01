@@ -64,7 +64,7 @@ BBe sure to check beforehand whether the same issue does not already exist.
 
 We feel contributions from the community are extremely worthwhile.
 If you use Nota in production and make some modification, please share it back to the community.
-You can simply [fork the repository](/inventid/nota/fork), commit your changes to your code and create a pull request back to this repository.
+You can simply [fork the repository](https://github.com/inventid/nota/fork), commit your changes to your code and create a pull request back to this repository.
 
 ### Collaborators
 
