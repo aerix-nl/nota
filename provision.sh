@@ -25,11 +25,12 @@ npm install -g sass bower grunt grunt-cli > /dev/null 2>&1
 echo "Running 'bower install'"
 sudo -u vagrant bower install > /dev/null 2>&1
 
-echo "" 
+echo " " 
 echo "Good luck with Nota!"
 echo "And remember: always enjoy open source ;)"
 
-echo ""
+echo " "
 echo "Provisioning finished"
 echo "run 'vagrant ssh' to enter the machine, then 'cd /vagrant'"
-echo "and run one of the examples with 'node dist/nota.js --template=/vagrant/examples/hello_world --data=/vagrant/examples/hello_world/example.json'"
+echo "and run one of the examples with 'node dist/nota.js --template=/vagrant/examples/hello_world --data=/vagrant/examples/hello_world/data.json'"
+
