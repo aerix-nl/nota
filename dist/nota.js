@@ -21,9 +21,13 @@
     Nota.prototype.serverPort = 7483;
 
     function Nota(argv) {
-      var dataPath, templatePath;
+      var data, dataPath, outputPath, templatePath;
       dataPath = argv.data;
       templatePath = argv.template;
+      outputPath = "output.pdf";
+      if (argv.output) {
+        outputPath = argv.output;
+      }
       if (!(((argv.template != null) && (argv.data != null)) || (argv.list != null))) {
         throw new Error("Please provide a template and data.");
       }
@@ -40,10 +44,10 @@
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
       this.app.use('/data.json', express["static"](dataPath));
       this.server.listen(this.serverPort);
-      this.data = JSON.parse(fs.readFileSync(dataPath, {
+      data = JSON.parse(fs.readFileSync(dataPath, {
         encoding: 'utf8'
       }));
-      this.page = new Page(this.serverAddress, this.serverPort, this.data);
+      this.page = new Page(this.serverAddress, this.serverPort, data, outputPath);
       this.page.on('render', (function(_this) {
         return function() {
           return _this.server.close();

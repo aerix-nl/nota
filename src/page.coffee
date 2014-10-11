@@ -13,7 +13,7 @@ class Page extends EventEmitter
     'lib/client.js'
   ]
 
-  constructor: ( @serverAddress, @serverPort, @data ) ->
+  constructor: ( @serverAddress, @serverPort, @data, @outputPath ) ->
     @serverUrl = "http://#{@serverAddress}:#{@serverPort}"
 
     phantom.create ( @phantomInstance ) =>
@@ -34,7 +34,7 @@ class Page extends EventEmitter
           if status is 'success'
             @injectDependencies().then ( ) =>
               @injectData()
-              @page.render 'output.pdf', ( ) =>
+              @page.render @outputPath, ( ) =>
                 @phantomInstance.exit()
                 @emit 'render'
 

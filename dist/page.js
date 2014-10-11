@@ -18,10 +18,11 @@
 
     Page.prototype.dependencies = ['vendor/jquery/jquery.js', 'vendor/rivets/dist/rivets.js', 'vendor/underscore/underscore.js', 'lib/client.js'];
 
-    function Page(serverAddress, serverPort, data) {
+    function Page(serverAddress, serverPort, data, outputPath) {
       this.serverAddress = serverAddress;
       this.serverPort = serverPort;
       this.data = data;
+      this.outputPath = outputPath;
       this.serverUrl = "http://" + this.serverAddress + ":" + this.serverPort;
       phantom.create((function(_this) {
         return function(phantomInstance) {
@@ -46,7 +47,7 @@
               if (status === 'success') {
                 return _this.injectDependencies().then(function() {
                   _this.injectData();
-                  return _this.page.render('output.pdf', function() {
+                  return _this.page.render(_this.outputPath, function() {
                     _this.phantomInstance.exit();
                     return _this.emit('render');
                   });
