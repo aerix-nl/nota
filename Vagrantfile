@@ -21,15 +21,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vb.name = "nota-local.inventid.net"
   end
 
-  memory = userConfig["memory"] || 1024
+  memory = userConfig["memory"] || 512
   cpus = userConfig["cpus"] || 1
 
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--memory", memory, "--cpus", cpus]
   end
 
-
   config.vm.hostname = "nota-local.inventid.net"
   config.vm.provision :shell, :path => "provision.sh"
 
 end
+

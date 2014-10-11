@@ -15,6 +15,9 @@ class Nota
     dataPath = argv.data
     templatePath = argv.template
 
+    outputPath = "output.pdf"
+    outputPath = argv.output if argv.output
+
     # Exit unless the --template or --list arguments are passed
     unless (argv.template? and argv.data?) or argv.list?
       throw new Error("Please provide a template and data.")
@@ -37,10 +40,10 @@ class Nota
 
     @server.listen(@serverPort)
 
-    @data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
+    data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
 
     # Render the page
-    @page = new Page(@serverAddress, @serverPort, @data)
+    @page = new Page(@serverAddress, @serverPort, data, outputPath)
     @page.on 'render', =>  @server.close()
     @page.on 'fail',   =>  @server.close()
 

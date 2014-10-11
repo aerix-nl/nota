@@ -48,7 +48,10 @@ You can use any inline CSS or linked stylesheets.
 Any of the images you use should be available in the template directory.
 
 Add the switch `--template=<dir>` to select a template by directory.
-Add the switch `--json=<path>` with a path from the Nota root directory to the JSON that should be rendered.
+Add the switch `--data=<path>` with a path from the Nota root directory to the JSON that should be rendered.
+
+By default Nota will output the PDF in the root rolder of itself, in a file called `output.pdf`.
+When this is not want you want, simply add `--output=x.pdf` (which will save the file in the Nota root folder) or `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
 ## Fonts
 
@@ -73,3 +76,4 @@ We would like to thank the developers which contributed to Nota, both big and sm
 - [FelixAkk](https://github.com/FelixAkk) (Original developer of Nota)
 - [joostverdoorn](https://github.com/joostverdoorn) (Developer @ [inventid](https://www.inventid.nl))
 - [rogierslag](https://github.com/rogierslag) (Developer @ [inventid](https://www.inventid.nl))
+
