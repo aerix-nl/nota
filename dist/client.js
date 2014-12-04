@@ -3,10 +3,14 @@
     phantomRuntime: window._phantom != null,
     data: {},
     init: function() {
+      if (typeof window.notaInit === "function") {
+        window.notaInit();
+      }
       return rivets.bind($('body'), this.data);
     },
     addData: function(data) {
-      return _(this.data).extend(data);
+      _(this.data).extend(data);
+      return typeof window.notaData === "function" ? window.notaData() : void 0;
     }
   };
 

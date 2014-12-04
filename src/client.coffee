@@ -4,10 +4,11 @@ window.Nota =
   data: {}
 
   init: ( ) ->
+    window.notaInit?()
     rivets.bind $('body'), @data
-
 
   addData: ( data ) ->
     _(@data).extend(data)
+    window.notaData?()
 
 Nota.init()
