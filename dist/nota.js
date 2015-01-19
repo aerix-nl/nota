@@ -28,6 +28,9 @@
       if (argv.output) {
         outputPath = argv.output;
       }
+      if (argv.port) {
+        this.serverPort = argv.port;
+      }
       if (!(((argv.template != null) && (argv.data != null)) || (argv.list != null))) {
         throw new Error("Please provide a template and data.");
       }

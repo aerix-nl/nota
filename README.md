@@ -49,6 +49,7 @@ Any of the images you use should be available in the template directory.
 
 Add the switch `--template=<dir>` to select a template by directory.
 Add the switch `--data=<path>` with a path from the Nota root directory to the JSON that should be rendered.
+Add the switch `--port=<port>` with a port (larger than 1024) to select which port to use. This is useful for situations in which you are rendering lots of PDFs simultaneously.
 
 By default Nota will output the PDF in the root rolder of itself, in a file called `output.pdf`.
 When this is not want you want, simply add `--output=x.pdf` (which will save the file in the Nota root folder) or `--output=/tmp/x.pdf` (which saves the file on the absolute path).

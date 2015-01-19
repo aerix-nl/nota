@@ -18,6 +18,8 @@ class Nota
     outputPath = "output.pdf"
     outputPath = argv.output if argv.output
 
+    @serverPort = argv.port if argv.port
+
     # Exit unless the --template or --list arguments are passed
     unless (argv.template? and argv.data?) or argv.list?
       throw new Error("Please provide a template and data.")
