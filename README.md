@@ -6,7 +6,7 @@ Nota can be used for any kind of document typesetting, layout and markup jobs, e
 Nota allows you to focus your time on the design and implementation of your template and writing it's logic by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
 
 ## Setup
-Due to kinks (see known problems) in the depencencies that are still being worked out, Nota is a bit picky on it's environment and dependencies. We recommend running Nota in a virtual environment, and this is easy with [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and isolates conflict. So for your convenience, we have included a Vagrant machine specification, but you can also install is as usual directly on your machine.
+Due to kinks (see [Known problems](https://github.com/FelixAkk/nota/tree/refactor-felix#known-problems)) in the depencencies that are still being worked out, Nota is a bit picky on it's environment and dependencies. We recommend running Nota in a virtual environment, and this is easy with [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and isolates conflict. So for your convenience, we have included a Vagrant machine specification, but you can also install is as usual directly on your machine.
 
 Fancy virtual setup using Vagrant:
 
