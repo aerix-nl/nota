@@ -1,16 +1,14 @@
 # Nota
-
+<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
 Nota eats your JSON + HTML template and excretes pretty PDF documents.
 Perfect for things like automating invoice generation, but not limited to.
 Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data.
 Nota allows you to focus your time on the design and implementation of your template and writing it's logic by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
 
 ## Setup
+Due to kinks (see known problems) in the depencencies that are still being worked out, Nota is a bit picky on it's environment and dependencies. We recommend running Nota in a virtual environment, and this is easy with [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and isolates conflict. So for your convenience, we have included a Vagrant machine specification, but you can also install is as usual directly on your machine.
 
-At [inventid](https://www.inventid.nl) we usually use [Vagrant](http://www.vagrantup.com) for our development to prevent machine pollution and isolate conflict.
-So for your convenience, we have included a Vagrant machine.
-
-Setting this up is easy:
+Fancy virtual setup using Vagrant:
 
 1. Install Vagrant
 1. Move the the place where you cloned the repository
@@ -19,7 +17,7 @@ Setting this up is easy:
 1. You can either SSH into the machine with `vagrant ssh` or simply run your first generation with `vagrant ssh -c "cd /vagrant && node dist/nota.js --template=/vagrant/examples/hello_world --data=/vagrant/examples/hello_world/data.json"`
 1. The `output.pdf` file appears in the root of the repository.
 
-In case you prefer to install it yourself on your machine this is of course also possible:
+Old skool setup on the bare metal:
 
 1. Open the location you cloned the repository in the terminal.
 1. Install the following packages `git npm nodejs phantomjs`
@@ -38,7 +36,7 @@ Technically this NodeJS package is a pipeline consisting primarily out of Phanto
 
 To get a feel of Nota, run  the following line:
 ````
-node dist/nota.js --template=examples/hello_world --data=examples/hello_world/data.json
+node dist/nota.js --template=templates/hello_world --data=templates/hello_world/data.json
 ````
 
 When finished Nota has rendered a very simple PDF page, consisting of nothing much.
@@ -54,24 +52,37 @@ Add the switch `--port=<port>` with a port (larger than 1024) to select which po
 By default Nota will output the PDF in the root rolder of itself, in a file called `output.pdf`.
 When this is not want you want, simply add `--output=x.pdf` (which will save the file in the Nota root folder) or `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
-## Fonts
 
-Due to a bug in PhantomJS ([see here](http://arunoda.me/blog/phantomjs-webfonts-build.html)), the loading of webfonts (even if they're locally hosted) is broken. For now you'll have to install the fonts on the system manually, and then they'll load as expected.
+## Known problems
 
-### How to suggest improvements?
+Nota is young, experimental, and built on a still developing tech stack. There are still quite some shortcomings and bugs (none that aren't likely to be fixed in the near future). That said, we've been able to use Nota in production environments already. If you test setup and can live with some flaws, you should be fine. Consider the current version a showcase of the potential of this tech stack and the future of Nota. Here's some things to take into account:
 
+#### No clickable hyperlinks
+Even though WebKit supports this, due to a [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which PhantomJS builts on the current output PDFs have no clickable links. This has quite some attention, but no confirmed fix yet it seems.
+
+#### Selectable text
+It seems PhantomJS only generates PDFs with selectable text on Linux due to a [bug](https://github.com/ariya/phantomjs/issues/10373). More information/research on specifics is needed.
+
+### Bad kerning
+Under Linux the output PDF's text has bad kerning. See [this reported issue](https://github.com/ariya/phantomjs/issues/12016). More information/research on specifics is needed.
+
+#### Fonts
+Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in PhantomJS, the loading of webfonts (even if they're locally hosted) seems broken. For now you'll have to install the fonts on the system manually, and then they'll load as expected. More research on in development versions of PhantomJS is needed.
+
+
+## Meta
+
+#### How to suggest improvements?
 We are still actively developing Nota for our internal use, but we would already love to hear your feedback.
 In case you have some great ideas, you may just [open an issue](https://github.com/inventid/nota/issues/new).
-BBe sure to check beforehand whether the same issue does not already exist.
+Be sure to check beforehand whether the same issue does not already exist.
 
-### How can I contribute?
-
+#### How can I contribute?
 We feel contributions from the community are extremely worthwhile.
 If you use Nota in production and make some modification, please share it back to the community.
 You can simply [fork the repository](https://github.com/inventid/nota/fork), commit your changes to your code and create a pull request back to this repository.
 
-### Collaborators
-
+#### Collaborators
 We would like to thank the developers which contributed to Nota, both big and small.
 
 - [FelixAkk](https://github.com/FelixAkk) (Original developer of Nota)
