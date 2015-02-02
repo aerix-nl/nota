@@ -20,8 +20,10 @@
 
     Nota.prototype.serverPort = 7483;
 
+    Nota.prototype.templatesPath = 'templates';
+
     function Nota(argv) {
-      var data, dataPath, outputPath, templatePath;
+      var data, dataPath, definition, name, outputPath, templatePath, _ref;
       dataPath = argv.data;
       templatePath = argv.template;
       outputPath = "output.pdf";
@@ -33,6 +35,14 @@
       }
       if (!(((argv.template != null) && (argv.data != null)) || (argv.list != null))) {
         throw new Error("Please provide a template and data.");
+      }
+      if (argv.list != null) {
+        _ref = this.getTemplatesIndex(true);
+        for (name in _ref) {
+          definition = _ref[name];
+          console.log("" + definition.dir + " '" + name + "'");
+        }
+        return;
       }
       if (!(fs.existsSync(templatePath) && fs.statSync(templatePath).isDirectory())) {
         throw Error("Failed to load template " + templatePath + ".");
@@ -62,6 +72,46 @@
         };
       })(this));
     }
+
+    Nota.prototype.getTemplatesIndex = function(forceRebuild) {
+      var defined, definitionPath, dir, index, templateDefinition, templateDirs, _i, _len;
+      if ((this.index != null) && !forceRebuild) {
+        return this.index;
+      }
+      if (!fs.existsSync(this.templatesPath)) {
+        throw Error("Templates path '" + this.templatesPath + "' doesn't exist.");
+      }
+      templateDirs = fs.readdirSync(this.templatesPath);
+      templateDirs = _.filter(templateDirs, (function(_this) {
+        return function(dir) {
+          return fs.statSync(_this.templatesPath + '/' + dir).isDirectory();
+        };
+      })(this));
+      index = {};
+      for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
+        dir = templateDirs[_i];
+        defined = fs.existsSync(this.templatesPath + ("/" + dir + "/javascript/define-template.json"));
+        if (!defined) {
+          console.warn("Template without definition found: '" + dir + "'");
+          templateDefinition = {
+            name: dir,
+            definition: 'not found'
+          };
+        } else {
+          definitionPath = this.templatesPath + ("/" + dir + "/javascript/define-template.json");
+          templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
+          templateDefinition.definition = 'read';
+        }
+        if (!fs.existsSync("templates/" + dir + "/template.html")) {
+          console.warn("Template " + templateDefinition.name + " has no mandatory 'template.html' file (omitting)");
+          continue;
+        }
+        templateDefinition.dir = dir;
+        index[templateDefinition.name] = templateDefinition;
+      }
+      this.index = index;
+      return index;
+    };
 
     return Nota;
 
