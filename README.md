@@ -1,9 +1,11 @@
 # Nota
 <img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
-Nota eats your JSON + HTML template and excretes pretty PDF documents.
-Perfect for things like automating invoice generation, but not limited to.
-Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data.
-Nota allows you to focus your time on the design and implementation of your template and writing it's logic by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.
+Nota eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty (PDF) documents.
+Perfect for things like automating invoice or ticket generation, but of course not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/presentation of data.
+
+Develop and debug while feeling right at home in your favorite browser, with a 1:1 preview of what Nota turns into a .PDF for you. If you like to write your templates in CoffeeScript and SASS, Grunt will automatically compile your assets as you dev. Get all your favorite libraries and frontend goodies like Bootstrap, Backbone.js or AngularJS wired up in seconds with Bower. Nota makes designing and programming your documents a breeze.
+
+Spare yourself the headache and mind numbing routine of creating series of documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of getting your PDF fix. Use the Nota API to process your bulk jobs and banish intellectual slave labour.
 
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota/tree/refactor-felix#known-problems)) in the depencencies that are still being worked out, Nota is a bit picky on it's environment and dependencies. We recommend running Nota in a virtual environment, and this is easy with [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and isolates conflict. So for your convenience, we have included a Vagrant machine specification, but you can also install is as usual directly on your machine.
@@ -71,6 +73,9 @@ Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in PhantomJ
 
 
 ## Meta
+
+#### Developers
+Nota is developed by Aerix, an small internetbureau  and inventid, two Dutch 
 
 #### How to suggest improvements?
 We are still actively developing Nota for our internal use, but we would already love to hear your feedback.
