@@ -55,7 +55,7 @@ When this is not want you want, simply add `--output=x.pdf` (which will save the
 
 ## Known problems
 
-Nota is young, experimental, and built on a still developing tech stack. There are still quite some shortcomings and bugs (none that aren't likely to be fixed in the near future). That said, we've been able to use Nota in production environments already. If you test setup and can live with some flaws, you should be fine. Consider the current version a showcase of the potential of this tech stack and the future of Nota. Here's some things to take into account:
+Nota is young, experimental, and built on a still developing tech stack. There are still quite some shortcomings and bugs (none that aren't likely to be fixed in the near future). That said, we've been able to use Nota in production environments already. If you take care to test your setup, verify the results and can live with some flaws, you should be fine. Consider the current version a showcase of the potential of this tech stack and the future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
 Even though WebKit supports this, due to a [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which PhantomJS builts on the current output PDFs have no clickable links. This has quite some attention, but no confirmed fix yet it seems.
@@ -63,7 +63,7 @@ Even though WebKit supports this, due to a [bug](https://github.com/ariya/phanto
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a [bug](https://github.com/ariya/phantomjs/issues/10373). More information/research on specifics is needed.
 
-### Bad kerning
+#### Bad kerning
 Under Linux the output PDF's text has bad kerning. See [this reported issue](https://github.com/ariya/phantomjs/issues/12016). More information/research on specifics is needed.
 
 #### Fonts
