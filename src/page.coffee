@@ -1,24 +1,26 @@
-fs           = require('fs')
-Q            = require('q')
-phantom      = require('phantom')
-_            = require('underscore')._
-EventEmitter = require('events').EventEmitter
+fs            = require('fs')
+Q             = require('q')
+phantom       = require('phantom')
+_             = require('underscore')._
+EventEmitter2 = require('eventemitter2').EventEmitter2
 
-class Page extends EventEmitter
+# This class is basically a wrapper of a PhantomJS instance
+class Page extends EventEmitter2
 
-  dependencies: [
-    'vendor/jquery/jquery.js'
-    'vendor/rivets/dist/rivets.js'
-    'vendor/underscore/underscore.js'
-    'lib/client.js'
-  ]
+  # This signifies whether the template has signaled Nota client
+  # that it finished rendering and is ready for capture
+  rendered: false
 
-  constructor: ( @serverAddress, @serverPort, @data, @outputPath ) ->
+  constructor: ( options ) ->
+    { @serverAddress, @serverPort, @outputPath, @defaultFilename, @initData } = options
     @serverUrl = "http://#{@serverAddress}:#{@serverPort}"
 
     phantom.create ( @phantomInstance ) =>
 
+      @emit "init"
+
       phantomInstance.createPage ( @page ) =>
+        # TODO: Get this stuff from the template definition JSON
         @page.set 'paperSize',
           format: 'A4'
           orientation: 'portrait'
@@ -27,53 +29,73 @@ class Page extends EventEmitter
         # Create callbacks
         @page.onConsoleMessage  ( msg ) => console.log   msg
         @page.set 'onError',    ( msg ) => console.error msg
-        @page.set 'onCallback', ( msg ) => @emit(msg)
+        # Prefix all messages so server can distinguish between server and client messages
+        @page.set 'onCallback', ( msg ) => @emit("client:#{msg}")
 
         @page.open @serverUrl, ( status ) =>
 
           if status is 'success'
-            @injectDependencies().then ( ) =>
-              @injectData()
-              @page.render @outputPath, ( ) =>
-                @phantomInstance.exit()
-                @emit 'render'
+            @emit 'opened'
+
+            @on 'client:template:loaded', -> 
+              # For single capture jobs we immediately inject the data
+              if @initData? then @injectData()
+
+            @on 'client:template:render:done', ->
+              @rendered = true
+              @emit 'ready'
 
           else
-            console.error "Unable to load page: #{status}"
+            throw new Error "Unable to load page: #{status}"
             @phantomInstance.exit()
             @emit 'fail'
 
-  injectDependencies: ( ) ->
-    dependencies = @dependencies.slice(0)
-    deferred = Q.defer()
+  isDir: (path)->
+    fs.existsSync(path) and fs.statSync(path).isDirectory()
 
-    inject = ( src ) ->
-      body = document.getElementsByTagName('body')[0]
-      script = document.createElement('script')
-      script.type = 'text/javascript'
-      script.src = src
-      script.onload = ( ) -> window.callPhantom "nota:load:#{src}"
-      body.appendChild(script)
+  fileExists: (path)->
+    fs.existsSync(path) and fs.statSync(path).isFile()
 
-    injectNext = ( ) =>
-      if dependencies.length is 0
-        deferred.resolve()
-        return
+  capture: (options = {})->
+    @emit 'capture:init'
+    @page.evaluate (-> Nota.getDocumentMeta()), (meta = {})=>
+      if @isDir(@outputPath) and meta.filesystemName?
+        @outputPath = @outputPath + meta.filesystemName
+        meta.filesystemName = @outputPath # And update the filesystem name
 
-      dependency = dependencies.shift()
-      console.log "injecting #{dependency}"
-      @page.evaluate inject, null, dependency
-      @once "nota:load:#{dependency}", injectNext
+      if @fileExists(@outputPath)
+        # TODO: implement --preserve CLI switch to not overwrite and exit here
+        @emit 'capture:overwrite', @outputPath
 
-    injectNext()
-    return deferred.promise
+      # Unless explicitly defined the clientside (actually template) preference
+      # takes precedence over the default filename in the absence of any more 
+      # meaningful filename.
+      if not @outputPath? then @outputPath = meta.filesystemName || @defaultFilename
+      meta.filesystemName = @outputPath
 
-  injectData: ( ) ->
+      # This is where the real PDF making magic happens. Credits to PhantomJS
+      @page.render @outputPath, ( ) =>
+        @emit 'capture:done', meta
 
-    inject = ( data ) ->
-      Nota.addData(data)
+  injectClient: ->
+    body = document.getElementsByTagName('body')[0]
+    script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.src = '/vendor/requirejs/require.js'
+    script.setAttribute( 'data-main', "/lib/client-main" )
+    script.onload = ( ) -> window.callPhantom "client:onload"
+    body.appendChild(script)
 
-    @page.evaluate inject, null, @data
+  injectData: (data)->
+    if data? then @initData = data
+    @rendered = false
+    inject = (data)->
+      Nota.injectData(data)
+    @page.evaluate inject, null, @initData
+
+  close: ->
+    @page.close()
+    @phantomInstance.exit()
 
 module.exports = Page
 

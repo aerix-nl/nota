@@ -1,6 +1,6 @@
 {
   "name": "Nota",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic, by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.",
   "homepage": "https://github.com/FelixAkk/nota",
   "repository": {
@@ -12,25 +12,29 @@
     "email": "felix.akkermans@gmail.com"
   },
   "authors": [
-    "Felix Akkermans <felix.akkermans@gmail.com>",
+    "Felix Akkermans <felix@aerix.nl>",
     "Joost Verdoorn <jpverdoorn@gmail.com>"
   ],
   "license": "MIT",
   "dependencies": {
     "phantom": "sgentle/phantomjs-node",
     "express": "4.8.5",
-    "require": "0.5.0",
+    "eventemitter2": "0.4.14",
+    "open": "0.0.3",
     "optimist": "0.6.0",
+    "q": "~1.0.1",
     "bower": "1.2.8",
     "underscore": "1.6.0",
-    "backbone": "~1.1.2",
-    "q": "~1.0.1"
+    "underscore.string": "3.0.2",
+    "backbone": "~1.1.2"
   },
-   "devDependencies": {
+  "devDependencies": {
     "grunt": "~0.4.5",
     "grunt-contrib-coffee": "~0.10.1",
     "grunt-contrib-watch": "~0.3.1",
-    "grunt-contrib-sass": "~0.7.3"
+    "grunt-contrib-sass": "~0.7.3",
+    "require": "0.5.0",
+    "bower-requirejs": "1.1.2"
   },
-  "main": "./lib/javascripts/nota-server.js"
+  "main": "./dist/nota.js"
 }
