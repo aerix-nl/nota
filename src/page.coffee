@@ -20,7 +20,7 @@ class Page extends EventEmitter2
       @emit "init"
 
       phantomInstance.createPage ( @page ) =>
-        # TODO: Get this stuff from the template definition JSON
+        # TODO: Get this stuff from the template definition (extend bower.json?)
         @page.set 'paperSize',
           format: 'A4'
           orientation: 'portrait'

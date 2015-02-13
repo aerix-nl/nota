@@ -16,6 +16,7 @@ class NotaServer
   defaultFilename: 'output.pdf'
 
   constructor: ( argv ) ->
+    # TODO: get server config from .json file
     dataPath       = argv.data
     templatePath   = argv.template
     preview        = argv.show
