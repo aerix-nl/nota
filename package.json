@@ -37,5 +37,5 @@
     "require": "0.5.0",
     "bower-requirejs": "1.1.2"
   },
-  "main": "./dist/nota.js"
+  "main": "./dist/server.js"
 }
