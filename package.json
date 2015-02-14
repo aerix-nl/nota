@@ -17,16 +17,17 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "phantom": "sgentle/phantomjs-node",
-    "express": "4.8.5",
+    "backbone": "~1.1.2",
+    "bower": "1.2.8",
     "eventemitter2": "0.4.14",
+    "express": "4.8.5",
+    "nomnom": "^1.8.1",
     "open": "0.0.3",
     "optimist": "0.6.0",
+    "phantom": "sgentle/phantomjs-node",
     "q": "~1.0.1",
-    "bower": "1.2.8",
     "underscore": "1.6.0",
-    "underscore.string": "3.0.2",
-    "backbone": "~1.1.2"
+    "underscore.string": "3.0.2"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

@@ -1,4 +1,4 @@
-# Hook in global namespace so that dependencies can place 
+# Hook in global namespace so that dependencies can place
 # their class definition in the template namespace.
 this.TemplateApp = {}
 
@@ -7,7 +7,7 @@ requirejs.config {
   paths:
     # Vendor goodies
     'bootstrap': 'bootstrap/dist/js/bootstrap'
-    'underscore.string': 'underscore.string/dist/underscore.string'
+    'underscore.string': 'underscore.string/dist/underscore.string.min'
     'rivets': 'rivets/dist/rivets.bundled'
     # Template stuff
     'view': '/javascript/invoice-view'
@@ -19,7 +19,7 @@ requirejs.config {
 # have already been made available by Nota client earlier.
 dependencies = ['bootstrap', 'view', 'model']
 
-define 'template', dependencies, (InvoiceView, InvoiceModel)->
+define 'template', dependencies, (InvoiceView, InvoiceModel) ->
 
   Nota.trigger 'template:init'
 

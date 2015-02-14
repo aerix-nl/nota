@@ -7,7 +7,7 @@
     baseUrl: '../bower_components/',
     paths: {
       'bootstrap': 'bootstrap/dist/js/bootstrap',
-      'underscore.string': 'underscore.string/dist/underscore.string',
+      'underscore.string': 'underscore.string/dist/underscore.string.min',
       'rivets': 'rivets/dist/rivets.bundled',
       'view': '/javascript/invoice-view',
       'model': '/javascript/invoice-model'

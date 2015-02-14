@@ -1,151 +1,144 @@
 (function() {
-  var Nota, NotaServer, Page, argv, express, fs, http, open, phantom, _;
+  var Nota, NotaServer, fs, nomnom, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  nomnom = require('nomnom');
+
+  fs = require('fs');
 
   _ = require('underscore')._;
 
   _.str = require('underscore.string');
 
-  http = require('http');
+  NotaServer = require('./server');
 
-  express = require('express');
+  Nota = (function() {
+    Nota.version = '1337.0.1';
 
-  phantom = require('phantom');
+    Nota.defaults = {
+      serverAddress: 'localhost',
+      serverPort: 7483,
+      templatesPath: 'templates',
+      outputPath: 'output.pdf'
+    };
 
-  fs = require('fs');
-
-  argv = require('optimist').argv;
-
-  open = require("open");
-
-  Page = require('./page');
-
-  NotaServer = (function() {
-    NotaServer.prototype.serverAddress = 'localhost';
-
-    NotaServer.prototype.serverPort = 7483;
-
-    NotaServer.prototype.templatesPath = 'templates';
-
-    NotaServer.prototype.defaultFilename = 'output.pdf';
-
-    function NotaServer(argv) {
-      var data, dataPath, outputPath, pageConfig, preview, templatePath;
-      dataPath = argv.data;
-      templatePath = argv.template;
-      preview = argv.show;
-      outputPath = argv.output;
-      if (argv.port != null) {
-        this.serverPort = argv.port;
+    function Nota() {
+      this.getTemplatesIndex = __bind(this.getTemplatesIndex, this);
+      this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
+      var args, dataPath, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
+      nomnom.options({
+        template: {
+          position: 0,
+          help: 'The template path'
+        },
+        data: {
+          position: 1,
+          help: 'The data path'
+        },
+        output: {
+          position: 2,
+          help: 'The output file'
+        },
+        preview: {
+          abbr: 'p',
+          flag: true,
+          help: 'Preview in the browser'
+        },
+        list: {
+          abbr: 'l',
+          flag: true,
+          help: 'List all templates',
+          callback: this.listTemplatesIndex
+        },
+        version: {
+          abbr: 'v',
+          flag: true,
+          help: 'Print version',
+          callback: this.version
+        }
+      });
+      args = nomnom.nom();
+      templatePath = args.template;
+      dataPath = args.data;
+      outputPath = args.output || Nota.defaults.outputPath;
+      serverAddress = Nota.defaults.serverAddress;
+      serverPort = args.port || Nota.defaults.serverPort;
+      if (templatePath == null) {
+        throw new Error("Please provide a template.");
       }
-      if (argv.list != null) {
-        return this.listTemplatesIndex();
+      if (dataPath == null) {
+        throw new Error("Please provide data'.");
       }
-      if (argv.template == null) {
-        throw new Error("Please provide a template directory with '--template=<dir>'.");
-      }
-      if (argv.data == null) {
-        throw new Error("Please provide a data JSON file with '--data=<file>'.");
-      }
-      if (!_.str.startsWith(templatePath, '/')) {
-        templatePath = this.templatesPath + '/' + templatePath;
-      }
-      if (!(fs.existsSync(templatePath) && fs.statSync(templatePath).isDirectory())) {
-        throw new Error("Failed to find template '" + templatePath + "'.");
-      }
-      if (!_.str.startsWith(dataPath, '/')) {
-        dataPath = templatePath + '/' + dataPath;
-      }
-      if (!this.fileExists(dataPath)) {
-        if (!_.str.endsWith(dataPath, '.json')) {
-          dataPath = dataPath + '.json';
-          if (!this.fileExists(dataPath)) {
-            throw new Error("Failed to find data '" + dataPath + "'.");
-          }
+      if (!NotaServer.isTemplate(templatePath)) {
+        if (NotaServer.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
+          templatePath = _templatePath;
+        } else if (NotaServer.isTemplate(_templatePath = "" + Nota.defaults.templatesPath + "/" + templatePath)) {
+          templatePath = _templatePath;
+        } else {
+          throw new Error("Failed to find template '" + templatePath + "'.");
         }
       }
-      data = JSON.parse(fs.readFileSync(dataPath, {
-        encoding: 'utf8'
-      }));
-      this.app = express();
-      this.server = http.createServer(this.app);
-      this.app.use(express["static"](templatePath));
-      this.app.get('/', function(req, res) {
-        return res.redirect('/template.html');
-      });
-      this.app.use('/lib/', express["static"]("" + __dirname + "/"));
-      this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
-      this.app.use('/data.json', express["static"](dataPath));
-      this.server.listen(this.serverPort);
-      pageConfig = {
-        serverAddress: this.serverAddress,
-        serverPort: this.serverPort,
-        outputPath: outputPath,
-        defaultFilename: this.defaultFilename,
-        initData: data
-      };
-      this.page = new Page(pageConfig);
-      this.page.on('ready', (function(_this) {
-        return function() {
-          return _this.page.capture();
-        };
-      })(this));
-      this.page.on('capture:done', this.captured, this);
-      this.page.on('fail', this.close, this);
-      this.page.onAny(this.logPage, this);
+      if (!NotaServer.isData(dataPath)) {
+        if (NotaServer.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
+          dataPath = _dataPath;
+        } else if (NotaServer.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
+          dataPath = _dataPath;
+        } else {
+          throw new Error("Failed to find data '" + dataPath + "'.");
+        }
+      }
+      server = new NotaServer(templatePath, dataPath, outputPath, serverAddress, serverPort);
     }
 
-    NotaServer.prototype.logPage = function() {
-      if (_.str.startsWith('client:')) {
-        return console.log(this.event);
-      } else {
-        return console.log("page:" + this.event);
-      }
+    Nota.prototype.version = function() {
+      return "Nota version " + Nota.version;
     };
 
-    NotaServer.prototype.fileExists = function(path) {
-      return fs.existsSync(path) && fs.statSync(path).isFile();
-    };
-
-    NotaServer.prototype.listTemplatesIndex = function() {
-      var definition, index, name, _results;
+    Nota.prototype.listTemplatesIndex = function() {
+      var definition, index, name, templates;
+      templates = [];
       index = this.getTemplatesIndex();
       if (_.size(index) === 0) {
         throw new Error("No (valid) templates found in templates directory.");
       } else {
-        _results = [];
-        for (name in index) {
-          definition = index[name];
-          _results.push(console.log("" + definition.dir + " '" + name + "' v" + definition.version));
-        }
-        return _results;
+        templates = (function() {
+          var _results;
+          _results = [];
+          for (name in index) {
+            definition = index[name];
+            _results.push("" + definition.dir + " '" + name + "' v" + definition.version);
+          }
+          return _results;
+        })();
+        return templates.join("\n");
       }
     };
 
-    NotaServer.prototype.getTemplatesIndex = function(forceRebuild) {
+    Nota.prototype.getTemplatesIndex = function(forceRebuild) {
       var definitionPath, dir, index, isDefined, templateDefinition, templateDirs, _i, _len;
       if ((this.index != null) && !forceRebuild) {
         return this.index;
       }
-      if (!fs.existsSync(this.templatesPath)) {
-        throw Error("Templates path '" + this.templatesPath + "' doesn't exist.");
+      if (!fs.existsSync(Nota.defaults.templatesPath)) {
+        throw Error("Templates path '" + Nota.defaults.templatesPath + "' doesn't exist.");
       }
-      templateDirs = fs.readdirSync(this.templatesPath);
+      templateDirs = fs.readdirSync(Nota.defaults.templatesPath);
       templateDirs = _.filter(templateDirs, (function(_this) {
         return function(dir) {
-          return fs.statSync(_this.templatesPath + '/' + dir).isDirectory();
+          return fs.statSync(Nota.defaults.templatesPath + '/' + dir).isDirectory();
         };
       })(this));
       index = {};
       for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
         dir = templateDirs[_i];
-        isDefined = fs.existsSync(this.templatesPath + ("/" + dir + "/bower.json"));
+        isDefined = fs.existsSync(Nota.defaults.templatesPath + ("/" + dir + "/bower.json"));
         if (!isDefined) {
           templateDefinition = {
             name: dir,
             definition: 'not found'
           };
         } else {
-          definitionPath = this.templatesPath + ("/" + dir + "/bower.json");
+          definitionPath = Nota.defaults.templatesPath + ("/" + dir + "/bower.json");
           templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
           templateDefinition.definition = 'read';
         }
@@ -160,23 +153,10 @@
       return index;
     };
 
-    NotaServer.prototype.captured = function(meta) {
-      console.log("Output written: " + meta.filesystemName);
-      process.exit();
-      return this.close();
-    };
-
-    NotaServer.prototype.close = function() {
-      console.log(44);
-      this.page.close();
-      this.server.close();
-      return process.exit();
-    };
-
-    return NotaServer;
+    return Nota;
 
   })();
 
-  Nota = new NotaServer(argv);
+  Nota = new Nota();
 
 }).call(this);
