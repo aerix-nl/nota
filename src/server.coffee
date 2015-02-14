@@ -8,7 +8,7 @@ open    = require("open")
 Page    = require('./page')
 
 class NotaServer
-  constructor: ( templatePath, dataPath, outputPath, serverAddress, serverPort ) ->
+  constructor: ( templatePath, dataPath, outputPath, serverAddress, serverPort, @onClose ) ->
 
     # Start express server to serve dependencies from a unified namespaces
     @app = express()
@@ -33,7 +33,7 @@ class NotaServer
       initData:      data
 
     @page = new Page(pageConfig)
-    @page.on 'ready',        => @page.capture()
+    @page.on 'ready',           @page.capture
     @page.on 'capture:done',    @captured, @
     @page.on 'fail',            @close,    @
     @page.onAny                 @logPage,  @
@@ -42,16 +42,14 @@ class NotaServer
     if _.str.startsWith 'client:' then console.log @event
     else console.log "page:#{@event}"
 
-  captured: (meta) ->
+  captured: (meta) =>
     console.log "Output written: #{meta.filesystemName}"
-    process.exit()
-    # TODO: why u no work @close()?
     @close()
 
-  close: ->
-    console.log 44
+  close: =>
     @page.close()
     @server.close()
+    @onClose?()
     process.exit()
 
   @isFile: ( path ) ->

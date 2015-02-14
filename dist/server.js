@@ -1,5 +1,6 @@
 (function() {
-  var NotaServer, Page, express, fs, http, open, phantom, _;
+  var NotaServer, Page, express, fs, http, open, phantom, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
 
@@ -18,8 +19,11 @@
   Page = require('./page');
 
   NotaServer = (function() {
-    function NotaServer(templatePath, dataPath, outputPath, serverAddress, serverPort) {
+    function NotaServer(templatePath, dataPath, outputPath, serverAddress, serverPort, onClose) {
       var data, pageConfig;
+      this.onClose = onClose;
+      this.close = __bind(this.close, this);
+      this.captured = __bind(this.captured, this);
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](templatePath));
@@ -40,11 +44,7 @@
         initData: data
       };
       this.page = new Page(pageConfig);
-      this.page.on('ready', (function(_this) {
-        return function() {
-          return _this.page.capture();
-        };
-      })(this));
+      this.page.on('ready', this.page.capture);
       this.page.on('capture:done', this.captured, this);
       this.page.on('fail', this.close, this);
       this.page.onAny(this.logPage, this);
@@ -60,14 +60,15 @@
 
     NotaServer.prototype.captured = function(meta) {
       console.log("Output written: " + meta.filesystemName);
-      process.exit();
       return this.close();
     };
 
     NotaServer.prototype.close = function() {
-      console.log(44);
       this.page.close();
       this.server.close();
+      if (typeof this.onClose === "function") {
+        this.onClose();
+      }
       return process.exit();
     };
 
