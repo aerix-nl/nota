@@ -1,5 +1,5 @@
 (function() {
-  var Nota, NotaServer, fs, nomnom, _,
+  var Nota, NotaServer, fs, nomnom, open, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -9,6 +9,8 @@
   _ = require('underscore')._;
 
   _.str = require('underscore.string');
+
+  open = require('open');
 
   NotaServer = require('./server');
 
@@ -25,7 +27,7 @@
     function Nota() {
       this.getTemplatesIndex = __bind(this.getTemplatesIndex, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var args, dataPath, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
+      var args, data, dataPath, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
       nomnom.options({
         template: {
           position: 0,
@@ -87,7 +89,17 @@
           throw new Error("Failed to find data '" + dataPath + "'.");
         }
       }
-      server = new NotaServer(templatePath, dataPath, outputPath, serverAddress, serverPort);
+      data = JSON.parse(fs.readFileSync(dataPath, {
+        encoding: 'utf8'
+      }));
+      server = new NotaServer(serverAddress, serverPort, templatePath, data);
+      if (args.preview) {
+        open(server.url());
+      } else {
+        server.render(outputPath, function() {
+          return server.close();
+        });
+      }
     }
 
     Nota.prototype.version = function() {

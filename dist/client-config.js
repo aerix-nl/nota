@@ -1,15 +1,15 @@
 (function() {
   requirejs.config({
-    baseUrl: '/vendor/',
     paths: {
       'nota-client': '/lib/client',
       'template': '/javascript/main',
-      'backbone': 'backbone/backbone',
-      'jquery': 'jquery/dist/jquery',
-      'underscore': 'underscore/underscore',
-      'json': 'requirejs-plugins/src/json',
-      'text': 'requirejs-text/text',
-      'requirejs': 'requirejs/require'
+      'backbone': '/vendor/backbone/backbone',
+      'jquery': '/vendor/jquery/dist/jquery',
+      'underscore': '/vendor/underscore/underscore',
+      'json': '/vendor/requirejs-plugins/src/json',
+      'text': '/vendor/requirejs-text/text',
+      'requirejs': '/vendor/requirejs/require',
+      'data': 'json!/data.json'
     },
     shim: {
       'template': {

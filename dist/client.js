@@ -3,25 +3,26 @@
     var NotaClient;
     require.config({});
     NotaClient = (function() {
-      function NotaClient() {}
-
       NotaClient.prototype.phantomRuntime = window._phantom != null;
 
       NotaClient.prototype.documentMeta = {
         data: {}
       };
 
-      NotaClient.prototype.init = function() {
+      function NotaClient() {
         _.extend(this, Backbone.Events);
-        this.on("all", this.msgServer, this);
+        this.getData();
+        this.on("all", this.log, this);
         this.trigger('init');
         this.trigger('loaded');
-        return this;
-      };
+        this;
+      }
 
-      NotaClient.prototype.msgServer = function(msg) {
+      NotaClient.prototype.log = function(message) {
         if (this.phantomRuntime) {
-          return window.callPhantom(msg);
+          return window.callPhantom(message);
+        } else {
+          return console.log(message);
         }
       };
 
@@ -52,12 +53,14 @@
 
       NotaClient.prototype.getData = function(callback) {
         if (this.data == null) {
-          return require(['json!/data.json'], function(data) {
-            this.data = data;
-            return callback(this.data);
-          });
+          return require(['json!/data.json'], (function(_this) {
+            return function(data) {
+              _this.data = data;
+              return typeof callback === "function" ? callback(_this.data) : void 0;
+            };
+          })(this));
         } else {
-          return callback(this.data);
+          return typeof callback === "function" ? callback(this.data) : void 0;
         }
       };
 
@@ -69,8 +72,7 @@
       return NotaClient;
 
     })();
-    this.Nota = new NotaClient();
-    return Nota.init();
+    return this.Nota = new NotaClient();
   });
 
 }).call(this);

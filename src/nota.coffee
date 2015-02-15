@@ -2,6 +2,7 @@ nomnom  = require('nomnom')
 fs      = require('fs')
 _       = require('underscore')._
 _.str   = require('underscore.string')
+open    = require('open')
 
 NotaServer = require('./server')
 
@@ -78,7 +79,17 @@ class Nota
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
 
-    server = new NotaServer(templatePath, dataPath, outputPath, serverAddress, serverPort)
+    # Get the data
+    data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
+
+    # Start the server
+    server = new NotaServer(serverAddress, serverPort, templatePath, data)
+
+    # If we want a preview, open the web page
+    if args.preview then open(server.url())
+    # Else, render the page, and close the server
+    else server.render outputPath, -> server.close()
+
 
   version: ( ) ->
     return "Nota version #{Nota.version}"

@@ -25,17 +25,21 @@ define 'nota-client', ['backbone', 'json'], ->
     documentMeta:
       data: {}
 
-    init: ->
+    constructor: ->
       _.extend(@, Backbone.Events)
-      # Forward all nota client related messages to the server
-      @on "all", @msgServer, @
 
+      # Pull data
+      @getData()
+
+      # Forward all nota client related messages to the server
+      @on "all", @log, @
       @trigger 'init'
-      # Future init code goes here
       @trigger 'loaded'
       @
 
-    msgServer: (msg)-> if @phantomRuntime then window.callPhantom(msg)
+    log: (message) ->
+      if @phantomRuntime then window.callPhantom(message)
+      else console.log(message)
 
     setDocumentMeta: (documentMeta, context)->
       if typeof documentMeta is 'function'
@@ -58,8 +62,8 @@ define 'nota-client', ['backbone', 'json'], ->
     # (used when previewing/developing templates in the browser)
     getData: (callback)->
       # If we don't have a chache of the data yet, get it and save it
-      if not @data? then require ['json!/data.json'], (@data)-> callback(@data)
-      else callback(@data)
+      if not @data? then require ['json!/data.json'], (@data) => callback?(@data)
+      else callback?(@data)
 
     # Passive:
     # Wait on this entry point for Nota server to inject the data
@@ -69,6 +73,5 @@ define 'nota-client', ['backbone', 'json'], ->
 
   # Hook ourself into the global namespace so we can be interfaced with
   this.Nota = new NotaClient()
-  Nota.init()
 
 
