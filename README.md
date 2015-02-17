@@ -90,7 +90,7 @@ You can simply [fork the repository](https://github.com/inventid/nota/fork), com
 #### Collaborators
 We would like to thank the developers which contributed to Nota, both big and small.
 
-- [FelixAkk](https://github.com/FelixAkk) (Original developer of Nota)
+- [FelixAkk](https://github.com/FelixAkk) (Original developer of Nota, developer @ [Aerix](https://www.aerix.nl))
 - [joostverdoorn](https://github.com/joostverdoorn) (Developer @ [inventid](https://www.inventid.nl))
 - [rogierslag](https://github.com/rogierslag) (Developer @ [inventid](https://www.inventid.nl))
 
