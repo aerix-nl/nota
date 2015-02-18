@@ -1,4 +1,4 @@
-@import '../../../bower_components/bootstrap.css/css/bootstrap.min.css';
+@import '../bower_components/bootstrap/dist/css/bootstrap.css';
 @import 'compass';
 
 $primaryOrange: #E38A24;
@@ -41,7 +41,7 @@ a, .link {
 
 img#logo {
   margin: 15mm 21mm;
-  width: 285px;
+  width: 75mm;
 }
 div.company-info {
 	display: inline-block;

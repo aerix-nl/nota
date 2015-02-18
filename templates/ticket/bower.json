@@ -1,0 +1,20 @@
+{
+  "name": "inventid-ticket-nota-template",
+  "version": "1.0.0",
+  "authors": [
+    "Joost Verdoorn <jpverdoorn@gmail.com>"
+  ],
+  "dependencies": {
+    "jquery": "2.0.3",
+    "rivets": "0.6.8",
+    "qr-js": "1.1.2"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

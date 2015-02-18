@@ -2,22 +2,17 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<!-- if you're using this template as the basis of your own template, don't forget to change this -->
-	<!-- meta tag, and be sure that it corresponds to the CoffeeScript classnames of your template -->
-	<meta name="nota-template-name" content="Aerix">
-	<title>Aerix invoice template preview</title>
-	<!-- compile SASS stylesheets with: -->
-	<!-- sass --compass --watch stylesheets/invoice.css.scss:stylesheets/invoice.css -->
-  <link rel="stylesheet" href="stylesheets/invoice.css" media="all">
+	<title>Aerix example invoice template</title>
+
+  <link rel="stylesheet" href="stylesheets/styles.css" media="all">
   <link rel="stylesheet" href="stylesheets/print.css" media="print">
-  <!-- data-main attribute tells require.js to load javascript/main.js after require.js loads. -->
-  <script data-main="../../javascript/nota-client-init" src="../../bower_components/requirejs/require.js"></script>
-	<!-- generate .PDF with: -->
-	<!-- node javascript/render-invoice -->
-	<!-- see 'setup.sh' for details and a convenience script that will ensure setup and template compiling -->
+  <!-- Make sure you load the Nota client by including this tag in your template-->
+  <script src="/vendor/requirejs/require.js" data-main="/lib/client-config"></script>
+
+	<!-- Please read the Nota README.md on how to turn this into a PDF or preview it -->
 <head>
 <body>
-	<img id="logo" src="images/aerix_logo_flat.svg" />
+	<img id="logo" src="images/aerix-logo.svg" />
 	<div class="company-info">
 		<p>
 			<strong class="company-fullname">Company Ltd.</strong><br>
@@ -69,7 +64,8 @@
 			Hierbij de factuur voor de volgende geleverde
 			<span data-pluralize="item-count">
 				<span data-pluralize="1">dienst</span>
-				<span data-pluralize="+">diensten</span></span>:
+				<span data-pluralize="+">diensten</span>
+			</span>:
 		</p>
 		<table>
 			<colgroup>
@@ -80,7 +76,7 @@
 			</colgroup>
 
 			<thead>
-				<tr><th colspan="4" class="project-name">Project name</th></tr>
+				<tr><th colspan="4"><span class="project-name">Project name</span>:</th></tr>
 				<tr class="table-meta">
 					<th>Dienst</th>
 					<th>Prijs</th>
@@ -137,7 +133,7 @@
 		</p>
 		<p class="span5 offset1">
 			Deze factuur is opgesteld in overeenkomst met onze algemene voorwaarden. Deze zijn te vinden op:
-			<span class="link">www.aerix.nl/algemene-voorwaarden</span>.
+			<span class="link">aerix.nl/algemene-voorwaarden</span>.
 		</p>
 	</footer>
 </body>

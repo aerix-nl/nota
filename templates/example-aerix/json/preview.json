@@ -25,7 +25,8 @@
     "contactPerson": "Client Contactperson Name",
     "address": "Client Street 11a",
     "postalCode": "6543TR",
-    "place": "Client Town"
+    "place": "Client Town",
+    "country": "Netherlands, The"
   },
   "projectName": "Optional project name which will be placed on top of table",
   "invoiceItems": [

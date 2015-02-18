@@ -1,0 +1,29 @@
+body {
+	position:		absolute;
+	top:			0;
+	left:			0;
+	padding:		2.5cm;
+	font-family:		"Helvetica Neue","Verdana",sans-serif;
+	font-size:		13px;
+	color:			rgb(18,18,18);
+	background-color:	rgb(238,238,238);
+}
+
+p {
+	font-size:		0.7em;
+}
+
+h1 {
+	font-size:		1.3em;
+}
+
+img#logo {
+	margin-left:		10px;
+	margin-right:		10px;
+	margin-top:		20px;
+	margin-bottom:		4px;
+}
+
+img {
+	display:		block;
+}
