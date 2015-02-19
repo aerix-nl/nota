@@ -15,7 +15,7 @@ class Document extends EventEmitter2
       orientation: 'portrait'
       border:      '0cm'
 
-  timeout: 500
+  timeout: 1500
 
   constructor: ( @server ) ->
     phantom.create ( @phantomInstance ) =>
