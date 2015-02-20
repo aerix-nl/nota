@@ -45,7 +45,7 @@
           return res.send(JSON.stringify(_this.data));
         };
       })(this));
-      this.server.listen(serverPort);
+      this.server.listen(this.serverPort);
       this.document = new Document(this);
       this.document.onAny(function() {
         return console.log(this.event, arguments);
@@ -61,7 +61,7 @@
     };
 
     NotaServer.prototype.render = function(outputPath, callback, data) {
-      if (data == null) {
+      if (data != null) {
         this.serve(data);
       }
       return this.document.render(outputPath, callback);

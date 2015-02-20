@@ -33,7 +33,7 @@ class NotaServer
     @app.get '/data.json', ( req, res ) =>
       res.send JSON.stringify(@data)
 
-    @server.listen(serverPort)
+    @server.listen(@serverPort)
 
     @document = new Document(@)
     @document.onAny -> console.log @event, arguments
@@ -45,7 +45,7 @@ class NotaServer
     @data = data
 
   render: ( outputPath, callback, data ) ->
-    @serve(data) unless data?
+    @serve(data) if data?
     @document.render(outputPath, callback)
 
   close: ->
