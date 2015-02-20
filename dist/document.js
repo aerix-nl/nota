@@ -25,7 +25,7 @@
       }
     };
 
-    Document.prototype.timeout = 500;
+    Document.prototype.timeout = 1500;
 
     function Document(server) {
       this.server = server;
