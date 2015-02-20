@@ -30,7 +30,7 @@ class NotaServer
     @app.use '/vendor/', express.static("#{__dirname}/../bower_components/")
     @app.use '/nota.js', express.static("#{__dirname}/client-config.js")
 
-    @app.get '/data.json', ( req, res ) =>
+    @app.get '/data', ( req, res ) =>
       res.send JSON.stringify(@data)
 
     @server.listen(@serverPort)

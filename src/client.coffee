@@ -62,7 +62,7 @@ define 'nota-client', ['backbone', 'json'], ->
     # (used when previewing/developing templates in the browser)
     getData: (callback)->
       # If we don't have a chache of the data yet, get it and save it
-      if not @data? then require ['json!/data.json'], (@data) => callback?(@data)
+      if not @data? then require ['json!/data'], (@data) => callback?(@data)
       else callback?(@data)
 
     # Passive:

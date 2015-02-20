@@ -40,7 +40,7 @@
       this.app.use('/lib/', express["static"]("" + __dirname + "/"));
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client-config.js"));
-      this.app.get('/data.json', (function(_this) {
+      this.app.get('/data', (function(_this) {
         return function(req, res) {
           return res.send(JSON.stringify(_this.data));
         };

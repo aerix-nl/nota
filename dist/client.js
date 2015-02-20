@@ -53,7 +53,7 @@
 
       NotaClient.prototype.getData = function(callback) {
         if (this.data == null) {
-          return require(['json!/data.json'], (function(_this) {
+          return require(['json!/data'], (function(_this) {
             return function(data) {
               _this.data = data;
               return typeof callback === "function" ? callback(_this.data) : void 0;
