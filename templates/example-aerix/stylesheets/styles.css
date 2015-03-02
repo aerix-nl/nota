@@ -4,24 +4,24 @@ html {
 
 body {
   background-color: white;
-  color: #1a2c33 !important;
+  color: #1A2C33 !important;
   margin: 35px auto;
   width: 210mm;
   min-height: 297mm;
   padding-bottom: 3cm;
-  -webkit-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
-  -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
   font-family: "Kreon", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
 
 a, .link {
-  color: #259ccf !important; }
+  color: #259CCF !important; }
   a:hover, .link:hover {
-    color: #15678a !important; }
+    color: #15678A !important; }
 
 .muted, div.company-info p#accounts, div#invoice-meta span {
   color: #8c9599 !important; }
@@ -79,7 +79,7 @@ div#invoice-body {
       text-align: right; }
     div#invoice-body table th.project-name {
       height: 2em;
-      border-bottom: 2px solid #1a2c33 !important; }
+      border-bottom: 2px solid #1A2C33 !important; }
     div#invoice-body table tr.table-meta {
       height: 2em;
       border-bottom: 1px solid rgba(26, 44, 51, 0.5); }
@@ -104,7 +104,7 @@ div#invoice-body {
         vertical-align: bottom; }
 
 footer {
-  border-top: 1px solid #1a2c33;
+  border-top: 1px solid #1A2C33;
   bottom: 0;
   font-size: 0.8em;
   line-height: 1.2em;
@@ -113,3 +113,5 @@ footer {
   position: absolute;
   width: auto !important;
   letter-spacing: 0.013em; }
+
+/*# sourceMappingURL=styles.css.map */

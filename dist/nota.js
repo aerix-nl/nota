@@ -1,6 +1,5 @@
 (function() {
-  var Nota, NotaServer, fs, nomnom, open, _,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Nota, NotaHelper, NotaServer, fs, nomnom, open, _;
 
   nomnom = require('nomnom');
 
@@ -14,20 +13,15 @@
 
   NotaServer = require('./server');
 
-  Nota = (function() {
-    Nota.version = '1337.0.1';
+  NotaHelper = require('./helper');
 
-    Nota.defaults = {
-      serverAddress: 'localhost',
-      serverPort: 7483,
-      templatesPath: 'templates',
-      outputPath: 'output.pdf'
-    };
+  Nota = (function() {
+    Nota.prototype.defaults = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+    Nota.prototype["package"] = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
     function Nota() {
-      this.getTemplatesIndex = __bind(this.getTemplatesIndex, this);
-      this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var args, data, dataPath, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
+      var args, data, dataPath, match, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
       nomnom.options({
         template: {
           position: 0,
@@ -56,34 +50,41 @@
           abbr: 'v',
           flag: true,
           help: 'Print version',
-          callback: this.version
+          callback: function() {
+            return this["package"].version;
+          }
         }
       });
       args = nomnom.nom();
       templatePath = args.template;
       dataPath = args.data;
-      outputPath = args.output || Nota.defaults.outputPath;
-      serverAddress = Nota.defaults.serverAddress;
-      serverPort = args.port || Nota.defaults.serverPort;
+      outputPath = args.output || this.defaults.outputPath;
+      serverAddress = this.defaults.serverAddress;
+      serverPort = args.port || this.defaults.serverPort;
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
       if (dataPath == null) {
         throw new Error("Please provide data'.");
       }
-      if (!NotaServer.isTemplate(templatePath)) {
-        if (NotaServer.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
+      console.log(NotaHelper);
+      if (!NotaHelper.isTemplate(templatePath)) {
+        if (NotaHelper.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
-        } else if (NotaServer.isTemplate(_templatePath = "" + Nota.defaults.templatesPath + "/" + templatePath)) {
+        } else if (NotaHelper.isTemplate(_templatePath = "" + this.defaults.templatesPath + "/" + templatePath)) {
           templatePath = _templatePath;
+        } else if ((match = _(NotaHelper.getTemplatesIndex(this.defaults.templatesPath)).findWhere({
+          name: templatePath
+        })) != null) {
+          throw new Error("No template at '" + templatePath + "'. We did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
           throw new Error("Failed to find template '" + templatePath + "'.");
         }
       }
-      if (!NotaServer.isData(dataPath)) {
-        if (NotaServer.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
+      if (!NotaHelper.isData(dataPath)) {
+        if (NotaHelper.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
           dataPath = _dataPath;
-        } else if (NotaServer.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
+        } else if (NotaHelper.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
           dataPath = _dataPath;
         } else {
           throw new Error("Failed to find data '" + dataPath + "'.");
@@ -102,14 +103,10 @@
       }
     }
 
-    Nota.prototype.version = function() {
-      return "Nota version " + Nota.version;
-    };
-
     Nota.prototype.listTemplatesIndex = function() {
       var definition, index, name, templates;
       templates = [];
-      index = this.getTemplatesIndex();
+      index = NotaHelper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
         throw new Error("No (valid) templates found in templates directory.");
       } else {
@@ -124,45 +121,6 @@
         })();
         return templates.join("\n");
       }
-    };
-
-    Nota.prototype.getTemplatesIndex = function(forceRebuild) {
-      var definitionPath, dir, index, isDefined, templateDefinition, templateDirs, _i, _len;
-      if ((this.index != null) && !forceRebuild) {
-        return this.index;
-      }
-      if (!fs.existsSync(Nota.defaults.templatesPath)) {
-        throw Error("Templates path '" + Nota.defaults.templatesPath + "' doesn't exist.");
-      }
-      templateDirs = fs.readdirSync(Nota.defaults.templatesPath);
-      templateDirs = _.filter(templateDirs, (function(_this) {
-        return function(dir) {
-          return fs.statSync(Nota.defaults.templatesPath + '/' + dir).isDirectory();
-        };
-      })(this));
-      index = {};
-      for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
-        dir = templateDirs[_i];
-        isDefined = fs.existsSync(Nota.defaults.templatesPath + ("/" + dir + "/bower.json"));
-        if (!isDefined) {
-          templateDefinition = {
-            name: dir,
-            definition: 'not found'
-          };
-        } else {
-          definitionPath = Nota.defaults.templatesPath + ("/" + dir + "/bower.json");
-          templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
-          templateDefinition.definition = 'read';
-        }
-        if (!fs.existsSync("templates/" + dir + "/template.html")) {
-          console.warn("Template " + templateDefinition.name + " has no mandatory 'template.html' file (omitting)");
-          continue;
-        }
-        templateDefinition.dir = dir;
-        index[templateDefinition.name] = templateDefinition;
-      }
-      this.index = index;
-      return index;
     };
 
     return Nota;

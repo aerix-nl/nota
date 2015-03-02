@@ -5,17 +5,16 @@ _.str   = require('underscore.string')
 open    = require('open')
 
 NotaServer = require('./server')
+NotaHelper = require('./helper')
 
 class Nota
 
-  @version: '1337.0.1'
+  # Load the (default) configuration
+  defaults: JSON.parse(fs.readFileSync('config.json', 'utf8'))
 
-  # Some defaults
-  @defaults:
-    serverAddress: 'localhost'
-    serverPort:    7483
-    templatesPath: 'templates'
-    outputPath:    'output.pdf'
+  # Load the package definition so we have some meta data available such as
+  # version number.
+  package: JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
   constructor: ( ) ->
 
@@ -45,16 +44,15 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: @version
+        callback: -> @package.version
 
     args = nomnom.nom()
 
-    # TODO: get server config from .json file
     templatePath  = args.template
     dataPath      = args.data
-    outputPath    = args.output or Nota.defaults.outputPath
-    serverAddress = Nota.defaults.serverAddress
-    serverPort    = args.port   or Nota.defaults.serverPort
+    outputPath    = args.output or @defaults.outputPath
+    serverAddress = @defaults.serverAddress
+    serverPort    = args.port   or @defaults.serverPort
 
     # Exit unless the --template and --data are passed
     unless templatePath?
@@ -63,19 +61,31 @@ class Nota
     unless dataPath?
       throw new Error("Please provide data'.")
 
+    console.log NotaHelper
+
     # Find the correct template path
-    unless NotaServer.isTemplate(templatePath)
-      if NotaServer.isTemplate(_templatePath = "#{process.cwd()}/#{templatePath}")
+    unless NotaHelper.isTemplate(templatePath)
+
+      if NotaHelper.isTemplate(_templatePath =
+        "#{process.cwd()}/#{templatePath}")
         templatePath = _templatePath
-      else if NotaServer.isTemplate(_templatePath = "#{Nota.defaults.templatesPath}/#{templatePath}")
+
+      else if NotaHelper.isTemplate(_templatePath =
+        "#{@defaults.templatesPath}/#{templatePath}")
         templatePath = _templatePath
+
+      else if (match = _(NotaHelper.getTemplatesIndex(@defaults.templatesPath)).findWhere {name: templatePath})?
+        throw new Error("No template at
+        '#{templatePath}'. We did find a template which declares it's name as
+        such. It's path is '#{match.dir}'")
+
       else throw new Error("Failed to find template '#{templatePath}'.")
 
     # Find the correct data path
-    unless NotaServer.isData(dataPath)
-      if NotaServer.isData(_dataPath = "#{process.cwd()}/#{dataPath}")
+    unless NotaHelper.isData(dataPath)
+      if NotaHelper.isData(_dataPath = "#{process.cwd()}/#{dataPath}")
         dataPath = _dataPath
-      else if NotaServer.isData(_dataPath = "#{templatePath}/#{dataPath}")
+      else if NotaHelper.isData(_dataPath = "#{templatePath}/#{dataPath}")
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
 
@@ -90,67 +100,18 @@ class Nota
     # Else, render the page, and close the server
     else server.render outputPath, -> server.close()
 
-
-  version: ( ) ->
-    return "Nota version #{Nota.version}"
-
-  listTemplatesIndex: ( ) =>
+  listTemplatesIndex: ( ) ->
     templates = []
-    index = @getTemplatesIndex()
+    index = NotaHelper.getTemplatesIndex(@defaults.templatesPath)
 
     if _.size(index) is 0
       throw new Error("No (valid) templates found in templates directory.")
     else
-      # List them all in a style of: templates/hello_world 'Hello World' v1.0
+      # List them all in a format of: templates/hello_world 'Hello World' v1.0
       templates = for name, definition of index
         "#{definition.dir} '#{name}' v#{definition.version}"
 
       return templates.join("\n")
 
-    # return templates
-
-  getTemplatesIndex: (forceRebuild) =>
-    # Exit if cache has already been built or force rebuild flag is set
-    return @index if @index? and not forceRebuild
-
-    if not fs.existsSync(Nota.defaults.templatesPath)
-      throw Error("Templates path '#{Nota.defaults.templatesPath}' doesn't exist.")
-
-    # Get an array of filenames (excluding '.' and '..')
-    templateDirs = fs.readdirSync(Nota.defaults.templatesPath)
-    # Filter out all the directories
-    templateDirs = _.filter templateDirs, (dir)=>
-      fs.statSync(Nota.defaults.templatesPath+'/'+dir).isDirectory()
-
-    index = {}
-
-    for dir in templateDirs
-      # Get the template definition
-      isDefined = fs.existsSync(Nota.defaults.templatesPath+"/#{dir}/bower.json")
-
-      if not isDefined
-        templateDefinition =
-          name: dir
-          definition: 'not found'
-      else
-        definitionPath = Nota.defaults.templatesPath+"/#{dir}/bower.json"
-        templateDefinition = JSON.parse fs.readFileSync definitionPath
-        templateDefinition.definition = 'read'
-        # TODO: check template definition against scheme for reuiqre properties
-        # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
-
-      # Check requirements for tempalte
-      if not fs.existsSync("templates/"+dir+"/template.html")
-        console.warn "Template #{templateDefinition.name} has no mandatory 'template.html' file (omitting)"
-        continue
-
-      # Supplement the definition with some meta data that is now available
-      templateDefinition.dir = dir
-      # Save the definition in the index with it's name as the key
-      index[templateDefinition.name] = templateDefinition
-
-    # Save the index
-    @index = index
-    return index
 
 Nota = new Nota()

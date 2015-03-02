@@ -1,4 +1,3 @@
-// Nota (backend/server) config
 {
   "serverAddress":  "localhost",
   "serverPort":     7483,

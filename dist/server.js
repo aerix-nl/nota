@@ -73,22 +73,6 @@
       return process.exit();
     };
 
-    NotaServer.isFile = function(path) {
-      return fs.existsSync(path) && fs.statSync(path).isFile();
-    };
-
-    NotaServer.isDirectory = function(path) {
-      return fs.existsSync(path) && fs.statSync(path).isDirectory();
-    };
-
-    NotaServer.isData = function(path) {
-      return NotaServer.isFile(path);
-    };
-
-    NotaServer.isTemplate = function(path) {
-      return NotaServer.isDirectory(path);
-    };
-
     return NotaServer;
 
   })();

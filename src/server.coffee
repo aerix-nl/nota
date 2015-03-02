@@ -53,17 +53,5 @@ class NotaServer
     @server.close()
     process.exit()
 
-  @isFile: ( path ) ->
-    fs.existsSync(path) and fs.statSync(path).isFile()
-
-  @isDirectory: ( path ) ->
-    fs.existsSync(path) and fs.statSync(path).isDirectory()
-
-  @isData: ( path ) ->
-    NotaServer.isFile(path)
-
-  @isTemplate: ( path ) ->
-    NotaServer.isDirectory(path)
-
 module.exports = NotaServer
 
