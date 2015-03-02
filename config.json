@@ -1,0 +1,7 @@
+// Nota (backend/server) config
+{
+  "serverAddress":  "localhost",
+  "serverPort":     7483,
+  "templatesPath":  "templates",
+  "outputPath":     "output.pdf"
+}
