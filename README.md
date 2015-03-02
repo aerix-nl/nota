@@ -60,10 +60,10 @@ When this is not want you want, simply add `--output=x.pdf` (which will save the
 Nota is young, experimental, and built on a still developing tech stack. There are still quite some shortcomings and bugs (none that aren't likely to be fixed in the near future). That said, we've been able to use Nota in production environments already. If you take care to test your setup, verify the results and can live with some flaws, you should be fine. Consider the current version a showcase of the potential of this tech stack and the future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
-Even though WebKit supports this, due to a [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which PhantomJS builts on the current output PDFs have no clickable links. This has quite some attention, but no confirmed fix yet it seems.
+Even though WebKit supports this, due to a [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which PhantomJS builts on the current output PDFs have no clickable links. This has quite some pressing attention and already a proposed fix, so it's likely to be fixed soon, but no fix committed to Qt yet. For now we recommend making links that have URL as the text so users can copy-paste that, or avoid them.
 
 #### Selectable text
-It seems PhantomJS only generates PDFs with selectable text on Linux due to a [bug](https://github.com/ariya/phantomjs/issues/10373). More information/research on specifics is needed.
+It seems PhantomJS only generates PDFs with selectable text on Linux due to a [bug](https://github.com/ariya/phantomjs/issues/10373). More information/research on specifics and other operating systems is needed. For now we recommend using the Vagrant spec to run Nota virtualized on Linux.
 
 #### Bad kerning
 Under Linux the output PDF's text has bad kerning. See [this reported issue](https://github.com/ariya/phantomjs/issues/12016). More information/research on specifics is needed.
@@ -75,7 +75,11 @@ Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in PhantomJ
 ## Meta
 
 #### Developers
-Nota is developed by Aerix, an small internetbureau  and inventid, two Dutch 
+Nota was originally comissioned by [Aerix](https://www.aerix.nl) to automate the task of invoice generations after alternatives like LaTex or MS Office proved insufficient in the flexibility and easy of producing neatly designed documents through a programmable interfaces.
+
+Shortly after [inventid](https://www.inventid.nl) joined in on development after it adopted Nota for automating the production of event tickets.
+
+Both Aerix and inventid are two young, small and Dutch internetbureaus who are passionate about making shiny apps and contributing to open source innovation.
 
 #### How to suggest improvements?
 We are still actively developing Nota for our internal use, but we would already love to hear your feedback.
