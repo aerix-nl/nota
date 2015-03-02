@@ -61,7 +61,8 @@ class Nota
     serverAddress = @defaults.serverAddress
     serverPort    = args.port   or @defaults.serverPort
 
-    NotaHelper.on 'warning', @logWarning
+    # NotaHelper.
+    # NotaHelper.on 'warning', @logWarning
 
     # Exit unless the --template and --data are passed
     unless templatePath?
@@ -100,7 +101,7 @@ class Nota
     data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
 
     # Start the server
-    server = new NotaServer(serverAddress, serverPort, templatePath, data)
+    server = new NotaServer(@defaults, templatePath, data)
     server.document.onAny @logEvent
 
     # If we want a preview, open the web page
@@ -128,7 +129,7 @@ class Nota
     terminal.colorize("nota %1%kERROR%n #{warningMsg}\n").colorize("%n")
 
   logEvent: ( )->
-    terminal.colorize("nota %5%kEVENT%n #{@event}\n").colorize("%n")
+    terminal.colorize("nota %4%kEVENT%n #{@event}\n").colorize("%n")
 
 
 Nota = new Nota()

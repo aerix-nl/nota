@@ -1,5 +1,5 @@
 (function() {
-  var EventEmitter2, NotaHelper, fs, _,
+  var EventEmitter2, NotaHelper, fs, helper, _,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -12,27 +12,25 @@
   NotaHelper = (function(_super) {
     __extends(NotaHelper, _super);
 
-    function NotaHelper() {
-      return NotaHelper.__super__.constructor.apply(this, arguments);
-    }
+    function NotaHelper() {}
 
-    NotaHelper.isFile = function(path) {
+    NotaHelper.prototype.isFile = function(path) {
       return fs.existsSync(path) && fs.statSync(path).isFile();
     };
 
-    NotaHelper.isDirectory = function(path) {
+    NotaHelper.prototype.isDirectory = function(path) {
       return fs.existsSync(path) && fs.statSync(path).isDirectory();
     };
 
-    NotaHelper.isData = function(path) {
+    NotaHelper.prototype.isData = function(path) {
       return this.isFile(path);
     };
 
-    NotaHelper.isTemplate = function(path) {
+    NotaHelper.prototype.isTemplate = function(path) {
       return this.isDirectory(path);
     };
 
-    NotaHelper.getTemplatesIndex = function(templatesPath) {
+    NotaHelper.prototype.getTemplatesIndex = function(templatesPath) {
       var definitionPath, dir, index, isDefined, templateDefinition, templateDirs, warningMsg, _i, _len;
       if (!fs.existsSync(templatesPath)) {
         throw Error("Templates path '" + templatesPath + "' doesn't exist.");
@@ -70,6 +68,8 @@
 
   })(EventEmitter2);
 
-  module.exports = NotaHelper;
+  helper = new NotaHelper();
+
+  module.exports = helper;
 
 }).call(this);

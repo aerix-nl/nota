@@ -79,7 +79,8 @@ div#invoice-body {
       text-align: right; }
     div#invoice-body table th.project-name {
       height: 2em;
-      border-bottom: 2px solid #1A2C33 !important; }
+      border-bottom: 2px solid #1A2C33 !important;
+      text-align: center; }
     div#invoice-body table tr.table-meta {
       height: 2em;
       border-bottom: 1px solid rgba(26, 44, 51, 0.5); }

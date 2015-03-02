@@ -27,8 +27,9 @@
 
     Document.prototype.timeout = 1500;
 
-    function Document(server) {
+    function Document(server, defaults) {
       this.server = server;
+      this.defaults = defaults;
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       phantom.create((function(_this) {

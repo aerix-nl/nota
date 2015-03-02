@@ -57,7 +57,7 @@
         if (force == null) {
           force = true;
         }
-        if (!(force && (this.data != null))) {
+        if (!force && (this.data != null)) {
           return typeof callback === "function" ? callback(this.data) : void 0;
         }
         this.log('data:loading');

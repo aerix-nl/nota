@@ -19,12 +19,11 @@
   Document = require('./document');
 
   NotaServer = (function() {
-    function NotaServer(serverAddress, serverPort, templatePath, data) {
-      this.serverAddress = serverAddress;
-      this.serverPort = serverPort;
+    function NotaServer(defaults, templatePath, data) {
       this.templatePath = templatePath;
       this.data = data;
       this.url = __bind(this.url, this);
+      this.serverAddress = defaults.serverAddress, this.serverPort = defaults.serverPort;
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](templatePath));
@@ -46,7 +45,7 @@
         };
       })(this));
       this.server.listen(this.serverPort);
-      this.document = new Document(this);
+      this.document = new Document(this, defaults.document);
     }
 
     NotaServer.prototype.url = function() {

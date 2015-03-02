@@ -1,6 +1,16 @@
 {
-  "serverAddress":  "localhost",
-  "serverPort":     7483,
-  "templatesPath":  "templates",
-  "outputPath":     "output.pdf"
+  "serverAddress":      "localhost",
+  "serverPort":         7483,
+  "templatesPath":      "templates",
+
+  "outputPath":         "output.pdf",
+  "notify":             false,
+
+  "document": {
+    "paperSize": {
+      "format":           "A4",
+      "orientation":      "portrait",
+      "border":           "0cm"
+    }
+  }
 }

@@ -9,8 +9,9 @@ open     = require("open")
 Document = require('./document')
 
 class NotaServer
-  constructor: ( @serverAddress, @serverPort, @templatePath, @data ) ->
-
+  constructor: ( defaults, @templatePath, @data ) ->
+    { @serverAddress, @serverPort } = defaults
+    
     # Start express server to serve dependencies from a unified namespaces
     @app = express()
     @server = http.createServer(@app)
@@ -35,7 +36,7 @@ class NotaServer
 
     @server.listen(@serverPort)
 
-    @document = new Document(@)
+    @document = new Document(@, defaults.document)
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"

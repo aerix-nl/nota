@@ -71,7 +71,7 @@ define 'nota-client', ['backbone', 'json'], ->
     getData: (callback, force = true)->
       # If we have a cache of the data and aren't force to get a new one
       # return the cache
-      unless force and @data? then return callback?(@data)
+      if not force and @data? then return callback?(@data)
 
       @log 'data:loading'
       # Else we continue and get the data from the server

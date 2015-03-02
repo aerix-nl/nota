@@ -73,7 +73,6 @@
       outputPath = args.output || this.defaults.outputPath;
       serverAddress = this.defaults.serverAddress;
       serverPort = args.port || this.defaults.serverPort;
-      NotaHelper.on('warning', this.logWarning);
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
@@ -105,7 +104,7 @@
       data = JSON.parse(fs.readFileSync(dataPath, {
         encoding: 'utf8'
       }));
-      server = new NotaServer(serverAddress, serverPort, templatePath, data);
+      server = new NotaServer(this.defaults, templatePath, data);
       server.document.onAny(this.logEvent);
       if (args.preview) {
         open(server.url());
@@ -145,7 +144,7 @@
     };
 
     Nota.prototype.logEvent = function() {
-      return terminal.colorize("nota %5%kEVENT%n " + this.event + "\n").colorize("%n");
+      return terminal.colorize("nota %4%kEVENT%n " + this.event + "\n").colorize("%n");
     };
 
     return Nota;

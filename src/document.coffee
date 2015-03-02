@@ -17,7 +17,7 @@ class Document extends EventEmitter2
 
   timeout: 1500
 
-  constructor: ( @server ) ->
+  constructor: ( @server, @defaults ) ->
     phantom.create ( @phantomInstance ) =>
       phantomInstance.createPage ( @page ) =>
         # Keep track of resources

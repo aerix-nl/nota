@@ -4,19 +4,22 @@ EventEmitter2 = require('eventemitter2').EventEmitter2
 
 # Utility class to help it with common filesystem and template/data related questiosn
 class NotaHelper extends EventEmitter2
-  @isFile: ( path ) ->
+
+  constructor: ( )->
+
+  isFile: ( path ) ->
     fs.existsSync(path) and fs.statSync(path).isFile()
 
-  @isDirectory: ( path ) ->
+  isDirectory: ( path ) ->
     fs.existsSync(path) and fs.statSync(path).isDirectory()
 
-  @isData: ( path ) ->
+  isData: ( path ) ->
     @isFile(path)
 
-  @isTemplate: ( path ) ->
+  isTemplate: ( path ) ->
     @isDirectory(path)
 
-  @getTemplatesIndex: ( templatesPath ) ->
+  getTemplatesIndex: ( templatesPath ) ->
     if not fs.existsSync(templatesPath)
       throw Error("Templates path '#{templatesPath}' doesn't exist.")
 
@@ -59,4 +62,5 @@ class NotaHelper extends EventEmitter2
     # We're done here
     return index
 
-module.exports = NotaHelper
+helper = new NotaHelper()
+module.exports = helper
