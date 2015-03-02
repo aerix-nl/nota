@@ -1,8 +1,9 @@
-nomnom  = require('nomnom')
-fs      = require('fs')
-_       = require('underscore')._
-_.str   = require('underscore.string')
-open    = require('open')
+nomnom   = require('nomnom')
+fs       = require('fs')
+_        = require('underscore')._
+_.str    = require('underscore.string')
+open     = require('open')
+terminal = require('node-terminal')
 
 NotaServer = require('./server')
 NotaHelper = require('./helper')
@@ -46,6 +47,12 @@ class Nota
         help: 'Print version'
         callback: -> @package.version
 
+      notify:
+        abbr: 'n'
+        flag: true
+        help: 'Print version'
+        callback: -> @package.version
+
     args = nomnom.nom()
 
     templatePath  = args.template
@@ -54,14 +61,14 @@ class Nota
     serverAddress = @defaults.serverAddress
     serverPort    = args.port   or @defaults.serverPort
 
+    NotaHelper.on 'warning', @logWarning
+
     # Exit unless the --template and --data are passed
     unless templatePath?
       throw new Error("Please provide a template.")
 
     unless dataPath?
       throw new Error("Please provide data'.")
-
-    console.log NotaHelper
 
     # Find the correct template path
     unless NotaHelper.isTemplate(templatePath)
@@ -94,13 +101,14 @@ class Nota
 
     # Start the server
     server = new NotaServer(serverAddress, serverPort, templatePath, data)
+    server.document.onAny @logEvent
 
     # If we want a preview, open the web page
     if args.preview then open(server.url())
     # Else, render the page, and close the server
     else server.render outputPath, -> server.close()
 
-  listTemplatesIndex: ( ) ->
+  listTemplatesIndex: ( ) =>
     templates = []
     index = NotaHelper.getTemplatesIndex(@defaults.templatesPath)
 
@@ -112,6 +120,15 @@ class Nota
         "#{definition.dir} '#{name}' v#{definition.version}"
 
       return templates.join("\n")
+
+  logWarning: (warningMsg)->
+    terminal.colorize("nota %3%kWARNING%n #{warningMsg}\n").colorize("%n")
+
+  logError: (warningMsg)->
+    terminal.colorize("nota %1%kERROR%n #{warningMsg}\n").colorize("%n")
+
+  logEvent: ( )->
+    terminal.colorize("nota %5%kEVENT%n #{@event}\n").colorize("%n")
 
 
 Nota = new Nota()

@@ -27,8 +27,8 @@ class Document extends EventEmitter2
         # TODO: Get this stuff from the template definition (extend bower.json?)
         @page.set 'paperSize', @defaults.paperSize
 
-        @page.onConsoleMessage  ( msg ) => console.log   msg
-        @page.set 'onError',    ( msg ) => console.error msg
+        @page.onConsoleMessage  ( msg ) -> console.log   msg
+        @page.set 'onError',    ( msg ) -> console.error msg
         @page.set 'onCallback', ( msg ) => @emit("client:#{msg}")
         @page.set 'onResourceRequested', @onResourceRequested
         @page.set 'onResourceReceived',  @onResourceReceived
@@ -61,7 +61,7 @@ class Document extends EventEmitter2
     return if resource.stage isnt "end" and not resource.redirectURL?
     return if (i = @counter.indexOf resource.id) is -1
 
-    @counter.splice(i, 1);
+    @counter.splice(i, 1)
 
     if @counter.length is 0
       @timer = setTimeout =>

@@ -1,7 +1,9 @@
-fs = require('fs')
-_  = require('underscore')._
+fs            = require('fs')
+_             = require('underscore')._
+EventEmitter2 = require('eventemitter2').EventEmitter2
+
 # Utility class to help it with common filesystem and template/data related questiosn
-class NotaHelper
+class NotaHelper extends EventEmitter2
   @isFile: ( path ) ->
     fs.existsSync(path) and fs.statSync(path).isFile()
 
@@ -45,15 +47,15 @@ class NotaHelper
 
       # Check requirements for tempalte
       if not fs.existsSync("templates/"+dir+"/template.html")
-        console.warn "Template #{templateDefinition.name} has no mandatory
-        'template.html' file (omitting)"
+        warningMsg = "Template %m#{templateDefinition.name}%N has no mandatory
+        template.html file %K(omitting template)"
+        @emit "warning", warningMsg
         continue
 
       # Supplement the definition with some meta data that is now available
       templateDefinition.dir = dir
       # Save the definition in the index with it's name as the key
       index[templateDefinition.name] = templateDefinition
-
     # We're done here
     return index
 

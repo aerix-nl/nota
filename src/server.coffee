@@ -36,7 +36,6 @@ class NotaServer
     @server.listen(@serverPort)
 
     @document = new Document(@)
-    @document.onAny -> console.log @event, arguments
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"

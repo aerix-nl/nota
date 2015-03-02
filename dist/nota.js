@@ -1,5 +1,6 @@
 (function() {
-  var Nota, NotaHelper, NotaServer, fs, nomnom, open, _;
+  var Nota, NotaHelper, NotaServer, fs, nomnom, open, terminal, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
 
@@ -11,6 +12,8 @@
 
   open = require('open');
 
+  terminal = require('node-terminal');
+
   NotaServer = require('./server');
 
   NotaHelper = require('./helper');
@@ -21,6 +24,7 @@
     Nota.prototype["package"] = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
     function Nota() {
+      this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
       var args, data, dataPath, match, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
       nomnom.options({
         template: {
@@ -53,6 +57,14 @@
           callback: function() {
             return this["package"].version;
           }
+        },
+        notify: {
+          abbr: 'n',
+          flag: true,
+          help: 'Print version',
+          callback: function() {
+            return this["package"].version;
+          }
         }
       });
       args = nomnom.nom();
@@ -61,13 +73,13 @@
       outputPath = args.output || this.defaults.outputPath;
       serverAddress = this.defaults.serverAddress;
       serverPort = args.port || this.defaults.serverPort;
+      NotaHelper.on('warning', this.logWarning);
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
       if (dataPath == null) {
         throw new Error("Please provide data'.");
       }
-      console.log(NotaHelper);
       if (!NotaHelper.isTemplate(templatePath)) {
         if (NotaHelper.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
@@ -94,6 +106,7 @@
         encoding: 'utf8'
       }));
       server = new NotaServer(serverAddress, serverPort, templatePath, data);
+      server.document.onAny(this.logEvent);
       if (args.preview) {
         open(server.url());
       } else {
@@ -121,6 +134,18 @@
         })();
         return templates.join("\n");
       }
+    };
+
+    Nota.prototype.logWarning = function(warningMsg) {
+      return terminal.colorize("nota %3%kWARNING%n " + warningMsg + "\n").colorize("%n");
+    };
+
+    Nota.prototype.logError = function(warningMsg) {
+      return terminal.colorize("nota %1%kERROR%n " + warningMsg + "\n").colorize("%n");
+    };
+
+    Nota.prototype.logEvent = function() {
+      return terminal.colorize("nota %5%kEVENT%n " + this.event + "\n").colorize("%n");
     };
 
     return Nota;

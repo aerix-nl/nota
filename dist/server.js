@@ -47,9 +47,6 @@
       })(this));
       this.server.listen(this.serverPort);
       this.document = new Document(this);
-      this.document.onAny(function() {
-        return console.log(this.event, arguments);
-      });
     }
 
     NotaServer.prototype.url = function() {
