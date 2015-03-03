@@ -1,10 +1,12 @@
 (function() {
-  var Nota, NotaHelper, NotaServer, fs, nomnom, open, terminal, _,
+  var Nota, NotaHelper, NotaServer, fs, nomnom, notifier, open, path, terminal, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
 
   fs = require('fs');
+
+  path = require('path');
 
   _ = require('underscore')._;
 
@@ -13,6 +15,8 @@
   open = require('open');
 
   terminal = require('node-terminal');
+
+  notifier = require('node-notifier');
 
   NotaServer = require('./server');
 
@@ -61,10 +65,11 @@
         notify: {
           abbr: 'n',
           flag: true,
-          help: 'Print version',
-          callback: function() {
-            return this["package"].version;
-          }
+          help: 'Notify when render job is finished'
+        },
+        resources: {
+          flag: true,
+          help: 'Show the events of page resource loading in output'
         }
       });
       args = nomnom.nom();
@@ -73,12 +78,20 @@
       outputPath = args.output || this.defaults.outputPath;
       serverAddress = this.defaults.serverAddress;
       serverPort = args.port || this.defaults.serverPort;
+      this.options = _.extend({}, this.defaults);
+      if (args.notify != null) {
+        this.options.notify = args.notify;
+      }
+      if (args.resources != null) {
+        this.options.logging.pageResources = args.resources;
+      }
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
       if (dataPath == null) {
         throw new Error("Please provide data'.");
       }
+      NotaHelper.on("warning", this.logWarning, this);
       if (!NotaHelper.isTemplate(templatePath)) {
         if (NotaHelper.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
@@ -105,7 +118,15 @@
         encoding: 'utf8'
       }));
       server = new NotaServer(this.defaults, templatePath, data);
-      server.document.onAny(this.logEvent);
+      server.document.on("all", this.logEvent, this);
+      server.document.on("page:ready", (function(_this) {
+        return function() {
+          return _this.notify({
+            title: "Nota: render job finished",
+            message: "One "
+          });
+        };
+      })(this));
       if (args.preview) {
         open(server.url());
       } else {
@@ -117,6 +138,7 @@
 
     Nota.prototype.listTemplatesIndex = function() {
       var definition, index, name, templates;
+      NotaHelper.on("warning", this.logWarning, this);
       templates = [];
       index = NotaHelper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
@@ -143,8 +165,22 @@
       return terminal.colorize("nota %1%kERROR%n " + warningMsg + "\n").colorize("%n");
     };
 
-    Nota.prototype.logEvent = function() {
-      return terminal.colorize("nota %4%kEVENT%n " + this.event + "\n").colorize("%n");
+    Nota.prototype.logEvent = function(event) {
+      if (_.str.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
+        return;
+      }
+      return terminal.colorize("nota %4%kEVENT%n " + event + "\n").colorize("%n");
+    };
+
+    Nota.prototype.notify = function(message) {
+      var base;
+      console.log(__dirname);
+      console.log(NotaHelper.isFile(path.join(__dirname, '../assets/images/icon.svg')));
+      base = {
+        title: 'Nota event',
+        icon: path.join(__dirname, '../assets/images/icon.png')
+      };
+      return notifier.notify(_.extend(base, message));
     };
 
     return Nota;

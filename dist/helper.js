@@ -1,18 +1,16 @@
 (function() {
-  var EventEmitter2, NotaHelper, fs, helper, _,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var Backbone, NotaHelper, fs, _;
 
   fs = require('fs');
 
   _ = require('underscore')._;
 
-  EventEmitter2 = require('eventemitter2').EventEmitter2;
+  Backbone = require('backbone');
 
-  NotaHelper = (function(_super) {
-    __extends(NotaHelper, _super);
-
-    function NotaHelper() {}
+  NotaHelper = (function() {
+    function NotaHelper() {
+      _.extend(this, Backbone.Events);
+    }
 
     NotaHelper.prototype.isFile = function(path) {
       return fs.existsSync(path) && fs.statSync(path).isFile();
@@ -55,7 +53,7 @@
         }
         if (!fs.existsSync("templates/" + dir + "/template.html")) {
           warningMsg = "Template %m" + templateDefinition.name + "%N has no mandatory template.html file %K(omitting template)";
-          this.emit("warning", warningMsg);
+          this.trigger("warning", warningMsg);
           continue;
         }
         templateDefinition.dir = dir;
@@ -66,10 +64,8 @@
 
     return NotaHelper;
 
-  })(EventEmitter2);
+  })();
 
-  helper = new NotaHelper();
-
-  module.exports = helper;
+  module.exports = new NotaHelper();
 
 }).call(this);

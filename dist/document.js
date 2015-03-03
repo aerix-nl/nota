@@ -1,8 +1,6 @@
 (function() {
-  var Document, EventEmitter2, Q, fs, phantom, _,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var Backbone, Document, Q, fs, phantom, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   fs = require('fs');
 
@@ -12,26 +10,17 @@
 
   _ = require('underscore')._;
 
-  EventEmitter2 = require('eventemitter2').EventEmitter2;
+  Backbone = require('backbone');
 
-  Document = (function(_super) {
-    __extends(Document, _super);
-
-    Document.prototype.defaults = {
-      paperSize: {
-        format: 'A4',
-        orientation: 'portrait',
-        border: '0cm'
-      }
-    };
-
+  Document = (function() {
     Document.prototype.timeout = 1500;
 
-    function Document(server, defaults) {
+    function Document(server, options) {
       this.server = server;
-      this.defaults = defaults;
+      this.options = options;
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
+      _.extend(this, Backbone.Events);
       phantom.create((function(_this) {
         return function(phantomInstance) {
           _this.phantomInstance = phantomInstance;
@@ -39,7 +28,7 @@
             _this.page = page;
             _this.counter = [];
             _this.timer = null;
-            _this.page.set('paperSize', _this.defaults.paperSize);
+            _this.page.set('paperSize', _this.options.paperSize);
             _this.page.onConsoleMessage(function(msg) {
               return console.log(msg);
             });
@@ -47,11 +36,11 @@
               return console.error(msg);
             });
             _this.page.set('onCallback', function(msg) {
-              return _this.emit("client:" + msg);
+              return _this.trigger("client:" + msg);
             });
             _this.page.set('onResourceRequested', _this.onResourceRequested);
             _this.page.set('onResourceReceived', _this.onResourceReceived);
-            return _this.emit("document:ready");
+            return _this.trigger('document:ready');
           });
         };
       })(this));
@@ -64,9 +53,9 @@
       }
       doRender = (function(_this) {
         return function() {
-          _this.emit("render:init");
+          _this.trigger("render:init");
           return _this.page.open(_this.server.url(), function(status) {
-            _this.emit("page:init");
+            _this.trigger("page:init");
             if (status === 'success') {
               return _this.once("page:ready", function() {
                 return _this.page.render(outputPath, callback);
@@ -85,7 +74,7 @@
     };
 
     Document.prototype.onResourceRequested = function(request) {
-      this.emit("page:resource:requested");
+      this.trigger("page:resource:requested");
       if (this.counter.indexOf(request.id) === -1) {
         this.counter.push(request.id);
         return clearTimeout(this.timer);
@@ -94,7 +83,7 @@
 
     Document.prototype.onResourceReceived = function(resource) {
       var i;
-      this.emit("page:resource:received");
+      this.trigger("page:resource:received");
       if (resource.stage !== "end" && (resource.redirectURL == null)) {
         return;
       }
@@ -105,7 +94,7 @@
       if (this.counter.length === 0) {
         return this.timer = setTimeout((function(_this) {
           return function() {
-            return _this.emit("page:ready");
+            return _this.trigger("page:ready");
           };
         })(this), this.timeout);
       }
@@ -118,7 +107,7 @@
 
     return Document;
 
-  })(EventEmitter2);
+  })();
 
   module.exports = Document;
 

@@ -2,22 +2,16 @@ fs            = require('fs')
 Q             = require('q')
 phantom       = require('phantom')
 _             = require('underscore')._
-EventEmitter2 = require('eventemitter2').EventEmitter2
+Backbone      = require('backbone')
 
 # This class is basically a wrapper of a PhantomJS instance
-class Document extends EventEmitter2
-
-  # This signifies whether the template has signaled Nota client
-  # that it finished rendering and is ready for capture
-  defaults:
-    paperSize:
-      format:      'A4'
-      orientation: 'portrait'
-      border:      '0cm'
+class Document
 
   timeout: 1500
 
-  constructor: ( @server, @defaults ) ->
+  constructor: ( @server, @options ) ->
+    _.extend(@, Backbone.Events)
+
     phantom.create ( @phantomInstance ) =>
       phantomInstance.createPage ( @page ) =>
         # Keep track of resources
@@ -25,22 +19,28 @@ class Document extends EventEmitter2
         @timer = null
 
         # TODO: Get this stuff from the template definition (extend bower.json?)
-        @page.set 'paperSize', @defaults.paperSize
+        @page.set 'paperSize', @options.paperSize
 
         @page.onConsoleMessage  ( msg ) -> console.log   msg
         @page.set 'onError',    ( msg ) -> console.error msg
-        @page.set 'onCallback', ( msg ) => @emit("client:#{msg}")
+        @page.set 'onCallback', ( msg ) => @trigger("client:#{msg}")
         @page.set 'onResourceRequested', @onResourceRequested
         @page.set 'onResourceReceived',  @onResourceReceived
 
-        @emit "document:ready"
+        @trigger 'document:ready'
+        # @page.open @server.url(), ( status ) =>
+        #   @trigger "page:init"
+
+        #   if status is 'success' then @once "page:ready", =>
+        #     @page.render outputPath, callback
+        #   else throw new Error "Unable to load page: #{status}"
 
   render: ( outputPath, callback, options = {} ) ->
     doRender = =>
-      @emit "render:init"
+      @trigger "render:init"
 
       @page.open @server.url(), ( status ) =>
-        @emit "page:init"
+        @trigger "page:init"
 
         if status is 'success' then @once "page:ready", =>
           @page.render outputPath, callback
@@ -51,13 +51,13 @@ class Document extends EventEmitter2
     else doRender()
 
   onResourceRequested: ( request ) =>
-    @emit "page:resource:requested"
+    @trigger "page:resource:requested"
     if @counter.indexOf(request.id) == -1
       @counter.push(request.id)
       clearTimeout(@timer)
 
   onResourceReceived: ( resource ) =>
-    @emit "page:resource:received"
+    @trigger "page:resource:received"
     return if resource.stage isnt "end" and not resource.redirectURL?
     return if (i = @counter.indexOf resource.id) is -1
 
@@ -65,7 +65,7 @@ class Document extends EventEmitter2
 
     if @counter.length is 0
       @timer = setTimeout =>
-        @emit "page:ready"
+        @trigger "page:ready"
       , @timeout
 
   close: ->

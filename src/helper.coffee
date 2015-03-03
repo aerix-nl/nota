@@ -1,11 +1,12 @@
 fs            = require('fs')
 _             = require('underscore')._
-EventEmitter2 = require('eventemitter2').EventEmitter2
+Backbone      = require('backbone')
 
 # Utility class to help it with common filesystem and template/data related questiosn
-class NotaHelper extends EventEmitter2
+class NotaHelper
 
   constructor: ( )->
+    _.extend(@, Backbone.Events)
 
   isFile: ( path ) ->
     fs.existsSync(path) and fs.statSync(path).isFile()
@@ -52,7 +53,7 @@ class NotaHelper extends EventEmitter2
       if not fs.existsSync("templates/"+dir+"/template.html")
         warningMsg = "Template %m#{templateDefinition.name}%N has no mandatory
         template.html file %K(omitting template)"
-        @emit "warning", warningMsg
+        @trigger "warning", warningMsg
         continue
 
       # Supplement the definition with some meta data that is now available
@@ -62,5 +63,4 @@ class NotaHelper extends EventEmitter2
     # We're done here
     return index
 
-helper = new NotaHelper()
-module.exports = helper
+module.exports = new NotaHelper()

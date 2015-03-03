@@ -4,7 +4,11 @@
   "templatesPath":      "templates",
 
   "outputPath":         "output.pdf",
-  "notify":             false,
+
+  "logging": {
+    "notify":           false,
+    "pageResources":    false
+  },
 
   "document": {
     "paperSize": {

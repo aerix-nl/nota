@@ -1,9 +1,11 @@
 nomnom   = require('nomnom')
 fs       = require('fs')
+path     = require('path')
 _        = require('underscore')._
 _.str    = require('underscore.string')
 open     = require('open')
 terminal = require('node-terminal')
+notifier = require('node-notifier')
 
 NotaServer = require('./server')
 NotaHelper = require('./helper')
@@ -50,19 +52,28 @@ class Nota
       notify:
         abbr: 'n'
         flag: true
-        help: 'Print version'
-        callback: -> @package.version
+        help: 'Notify when render job is finished'
 
+      resources:
+        flag: true
+        help: 'Show the events of page resource loading in output'
+
+    # Parsing CLI arguments and setting options
     args = nomnom.nom()
 
     templatePath  = args.template
     dataPath      = args.data
     outputPath    = args.output or @defaults.outputPath
+
     serverAddress = @defaults.serverAddress
     serverPort    = args.port   or @defaults.serverPort
 
-    # NotaHelper.
-    # NotaHelper.on 'warning', @logWarning
+    @options = _.extend {}, @defaults
+
+    if args.notify?
+      @options.notify = args.notify
+    if args.resources?
+      @options.logging.pageResources = args.resources
 
     # Exit unless the --template and --data are passed
     unless templatePath?
@@ -71,6 +82,7 @@ class Nota
     unless dataPath?
       throw new Error("Please provide data'.")
 
+    NotaHelper.on "warning", @logWarning, @
     # Find the correct template path
     unless NotaHelper.isTemplate(templatePath)
 
@@ -102,7 +114,10 @@ class Nota
 
     # Start the server
     server = new NotaServer(@defaults, templatePath, data)
-    server.document.onAny @logEvent
+    server.document.on "all", @logEvent, @
+    server.document.on "page:ready", => @notify
+      title: "Nota: render job finished"
+      message: "One "
 
     # If we want a preview, open the web page
     if args.preview then open(server.url())
@@ -110,6 +125,8 @@ class Nota
     else server.render outputPath, -> server.close()
 
   listTemplatesIndex: ( ) =>
+    NotaHelper.on "warning", @logWarning, @
+
     templates = []
     index = NotaHelper.getTemplatesIndex(@defaults.templatesPath)
 
@@ -128,8 +145,19 @@ class Nota
   logError: (warningMsg)->
     terminal.colorize("nota %1%kERROR%n #{warningMsg}\n").colorize("%n")
 
-  logEvent: ( )->
-    terminal.colorize("nota %4%kEVENT%n #{@event}\n").colorize("%n")
+  logEvent: ( event )->
+    # To prevent the output being spammed full of resource log events we allow supressing it
+    if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
 
+    terminal.colorize("nota %4%kEVENT%n #{event}\n").colorize("%n")
+
+  notify: ( message )->
+    console.log __dirname
+    console.log NotaHelper.isFile path.join(__dirname, '../assets/images/icon.svg')
+
+    base =
+      title:    'Nota event'
+      icon:     path.join(__dirname, '../assets/images/icon.png')
+    notifier.notify _.extend base, message
 
 Nota = new Nota()
