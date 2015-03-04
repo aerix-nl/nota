@@ -123,7 +123,7 @@
         return function() {
           return _this.notify({
             title: "Nota: render job finished",
-            message: "One "
+            message: "One document captured to .PDF"
           });
         };
       })(this));
@@ -174,8 +174,6 @@
 
     Nota.prototype.notify = function(message) {
       var base;
-      console.log(__dirname);
-      console.log(NotaHelper.isFile(path.join(__dirname, '../assets/images/icon.svg')));
       base = {
         title: 'Nota event',
         icon: path.join(__dirname, '../assets/images/icon.png')

@@ -95,9 +95,8 @@ class Nota
         templatePath = _templatePath
 
       else if (match = _(NotaHelper.getTemplatesIndex(@defaults.templatesPath)).findWhere {name: templatePath})?
-        throw new Error("No template at
-        '#{templatePath}'. We did find a template which declares it's name as
-        such. It's path is '#{match.dir}'")
+        throw new Error("No template at '#{templatePath}'. We did find a
+        template which declares it's name as such. It's path is '#{match.dir}'")
 
       else throw new Error("Failed to find template '#{templatePath}'.")
 
@@ -117,7 +116,7 @@ class Nota
     server.document.on "all", @logEvent, @
     server.document.on "page:ready", => @notify
       title: "Nota: render job finished"
-      message: "One "
+      message: "One document captured to .PDF"
 
     # If we want a preview, open the web page
     if args.preview then open(server.url())
@@ -152,9 +151,6 @@ class Nota
     terminal.colorize("nota %4%kEVENT%n #{event}\n").colorize("%n")
 
   notify: ( message )->
-    console.log __dirname
-    console.log NotaHelper.isFile path.join(__dirname, '../assets/images/icon.svg')
-
     base =
       title:    'Nota event'
       icon:     path.join(__dirname, '../assets/images/icon.png')
