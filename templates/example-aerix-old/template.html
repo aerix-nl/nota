@@ -1,0 +1,140 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Aerix example invoice template</title>
+
+  <link rel="stylesheet" href="stylesheets/styles.css" media="all">
+  <link rel="stylesheet" href="stylesheets/print.css" media="print">
+  <!-- Make sure you load the Nota client by including this tag in your template-->
+  <script src="/vendor/requirejs/require.js" data-main="/lib/client-config"></script>
+
+	<!-- Please read the Nota README.md on how to turn this into a PDF or preview it -->
+<head>
+<body>
+	<img id="logo" src="images/aerix-logo.svg" />
+	<div class="company-info">
+		<p>
+			<strong class="company-fullname">Company Ltd.</strong><br>
+			<span class="street-address">Street Name 12b</span><br>
+			<span class="post-address">1234 AB</span>, <span class="place">Town</span><br>
+			<span class="country">Country</span></span><br>
+			<span class="email link">address@mail.com</span><br>
+			<span class="website link">www.website.com</span>
+		</p>
+		<p id="accounts">
+			Rekeningnummer:	<span id="bank-account">1234.12.123</span><br>
+			IBAN: <span class="iban">NL12 ABCD 1234 1234 12</span><br>
+			KVK registratie: <span id="kvk">123456789 0000</span><br>
+			BTW-nummer:	<span id="vat-number">AB123405923489</span><br>
+		</p>
+	</div>
+	<div id="envelope-window">
+		<span id="retour-line">
+			<strong class="company-fullname">Company Ltd.</strong>, 
+			<span class="street-address">Street Name 12b</span>,
+			<span class="post-address">123 4AB</span>
+			<span class="place">Town</span>,
+			<span class="country">Country</span>
+		</span>
+
+		<p id="client-block">
+			<strong id="organization">Organisatie</strong><br>
+			<span id="contact-person">Klant Klantnaam</span><br>
+			<span id="address">Straatnaam 12b</span><br>
+			<span id="postal-code">1234AB</span><br>
+			<span id="place">Stad</span>
+		</p>
+	</div>
+	<div id="invoice-meta">
+		<span class="muted">factuurnummer</span>
+		<h3 id="invoice-id">2013.0099</h3>
+		<table>
+			<tr>
+				<td class="muted">factuurdatum</td><td class="muted">vervaldatum</td>
+			</tr>
+			<tr>
+				<td id="invoice-date">18 Oktober 2013</td><td id="expiration-date">1 Novermber 2013</td>
+			</tr>
+		</table>
+	</div>
+	<div id="invoice-body">
+		<p class="opening">
+			Beste <span class="client-string">Klant Klantnaam</span>,<br><br>
+			Hierbij de factuur voor de volgende geleverde
+			<span data-pluralize="item-count">
+				<span data-pluralize="1">dienst</span>
+				<span data-pluralize="+">diensten</span>
+			</span>:
+		</p>
+		<table>
+			<colgroup>
+			   <col span="1" class="servicename">
+			   <col span="1" class="price">
+			   <col span="1" class="quantity">
+			   <col span="1" class="subtotal">
+			</colgroup>
+
+			<thead>
+				<tr><th colspan="4" class="project-name">Project name:</th></tr>
+				<tr class="table-meta">
+					<th>Dienst</th>
+					<th>Prijs</th>
+					<th>Aantal</th>
+					<th>Bedrag</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr class="item">
+					<td class="description">Item description</td>
+					<td class="price" data-currency>€ 1234,56</td>
+					<td class="quantity">1</td>
+					<td class="subtotal" data-currency>€ 1234,56</td>
+				</tr>
+				<tr class="item">
+					<td class="description">Item description</td>
+					<td class="price" data-currency>€ 1234,56</td>
+					<td class="quantity">1</td>
+					<td class="subtotal" data-currency>€ 1234,56</td>
+				</tr>
+				<tr class="item">
+					<td class="description">Item description</td>
+					<td class="price" data-currency>€ 1234,56</td>
+					<td class="quantity">1</td>
+					<td class="subtotal" data-currency>€ 1234,56</td>
+				</tr>
+			</tbody>
+
+			<tfoot>
+				<tr><td colspan="3">Subtotaal</td><td class="subtotal" data-currency>€ 1234,56</td></tr>
+				<tr>
+					<td colspan="3">BTW (<span class="vat-percentage"></span>%)</td>
+					<td class="vat" data-currency>€ 2345,67</td>
+				</tr>
+				<tr><td colspan="3">Totaal</td><td class="total" data-currency>€ 2345,67</td></tr>
+			</tfoot>
+		</table>
+		<span id="closing">
+			<p>
+				Wij verzoeken u hierbij vriendelijk tijdig het totaalbedrag van <b class="total"></b> over te maken
+				naar rekeningnummer <b class="iban"></b>, onder vermelding van het factuurnummer <b class="invoice-id"></b>.
+			</p><p>
+				Voor vragen over deze factuur kunt u contact opnemen met <span class="email link">address@mail.com</span>.
+			</p>
+		</span>
+	</div>
+	<footer class="row-fluid">
+		<p class="span6">
+			Deze factuur vervalt <span class="validity-period">14</span> dagen na factuurdatum. 
+			Gelieve voor <span id="expiration-date"></span> het totaalbedrag over te maken
+			naar <span class="iban"></span> t.n.v. <span class="company-name">Companyname</span>
+			o.v.v. het factuurnummer.
+		</p>
+		<p class="span5 offset1">
+			Deze factuur is opgesteld in overeenkomst met onze algemene voorwaarden. Deze zijn te vinden op:
+			<span class="link">aerix.nl/algemene-voorwaarden</span>.
+		</p>
+	</footer>
+</body>
+</html>

@@ -1,0 +1,118 @@
+@import url(../bower_components/bootstrap/dist/css/bootstrap.css);
+html {
+  background-color: lightgrey; }
+
+body {
+  background-color: white;
+  color: #1A2C33 !important;
+  margin: 35px auto;
+  width: 210mm;
+  min-height: 297mm;
+  padding-bottom: 3cm;
+  -moz-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+  font-family: "Kreon", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
+
+a, .link {
+  color: #259CCF !important; }
+  a:hover, .link:hover {
+    color: #15678A !important; }
+
+.muted, div.company-info p#accounts, div#invoice-meta span {
+  color: #8c9599 !important; }
+
+img#logo {
+  margin: 15mm 21mm;
+  width: 75mm; }
+
+div.company-info {
+  display: inline-block;
+  float: right;
+  margin: 15mm 15mm 15mm 0;
+  text-align: right; }
+  div.company-info p#accounts {
+    margin-top: 1cm; }
+
+div#envelope-window {
+  left: 21mm;
+  position: absolute;
+  top: 46mm;
+  font-family: "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
+  div#envelope-window span#retour-line {
+    border-bottom: 1px solid black;
+    display: block;
+    font-size: 2.8mm;
+    height: 1.8em;
+    margin-bottom: 6mm; }
+
+div#invoice-meta {
+  float: right;
+  text-align: right;
+  clear: both;
+  margin: 8mm 15mm 8mm 21mm; }
+  div#invoice-meta h3 {
+    line-height: 1em;
+    margin-top: 0;
+    margin-bottom: 1cm; }
+  div#invoice-meta table tr td:nth-child(2n) {
+    padding-left: 1cm; }
+
+div#invoice-body {
+  clear: both;
+  margin: 0 15mm 0 21mm; }
+  div#invoice-body table {
+    width: 100%;
+    margin-bottom: 1cm; }
+    div#invoice-body table colgroup col.servicename {
+      width: 60%; }
+    div#invoice-body table colgroup col.price {
+      width: 15%; }
+    div#invoice-body table colgroup col.quantity {
+      width: 10%; }
+    div#invoice-body table colgroup col.subtotal {
+      width: 15%;
+      text-align: right; }
+    div#invoice-body table th.project-name {
+      height: 2em;
+      border-bottom: 2px solid #1A2C33 !important;
+      text-align: center; }
+    div#invoice-body table tr.table-meta {
+      height: 2em;
+      border-bottom: 1px solid rgba(26, 44, 51, 0.5); }
+      div#invoice-body table tr.table-meta th {
+        text-align: left; }
+      div#invoice-body table tr.table-meta th:last-child {
+        text-align: right; }
+    div#invoice-body table tr td:last-child {
+      text-align: right; }
+    div#invoice-body table tbody tr:first-child {
+      height: 2em;
+      vertical-align: bottom; }
+    div#invoice-body table tbody tr:last-child {
+      height: 2em;
+      vertical-align: top; }
+    div#invoice-body table tbody tr:first-child:last-child {
+      vertical-align: middle; }
+    div#invoice-body table tfoot {
+      border-top: 1px solid rgba(26, 44, 51, 0.5); }
+      div#invoice-body table tfoot tr:first-child {
+        height: 2em;
+        vertical-align: bottom; }
+
+footer {
+  border-top: 1px solid #1A2C33;
+  bottom: 0;
+  font-size: 0.8em;
+  line-height: 1.2em;
+  margin: 0 2cm 4mm;
+  padding-top: 1mm;
+  position: absolute;
+  width: auto !important;
+  letter-spacing: 0.013em; }
+
+/*# sourceMappingURL=styles.css.map */
