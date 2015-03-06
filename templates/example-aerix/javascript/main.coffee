@@ -8,7 +8,7 @@ requirejs.config {
     # Vendor goodies
     'bootstrap': 'bootstrap/dist/js/bootstrap'
     'underscore.string': 'underscore.string/dist/underscore.string.min'
-    'rivets': 'rivets/dist/rivets.bundled'
+    'jed': 'jed/jed'
     # Template stuff
     'view': '/javascript/invoice-view'
     'model': '/javascript/invoice-model'
@@ -17,7 +17,7 @@ requirejs.config {
 # In the above config not all dependencies are declared because
 # some of them which this template depends on (e.g. Backbone, _)
 # have already been made available by Nota client earlier.
-dependencies = ['bootstrap', 'view', 'model']
+dependencies = ['view', 'model']
 
 define 'template', dependencies, (InvoiceView, InvoiceModel) ->
 

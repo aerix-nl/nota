@@ -37,6 +37,9 @@ class NotaHelper
       isDefined = fs.existsSync(templatesPath+"/#{dir}/bower.json")
 
       if not isDefined
+        warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
+        %K(optional, but recommended)"
+        @trigger "warning", warningMsg
         templateDefinition =
           # Default it's name to it's directory name in absence of an 'official
           # statement' so we at least have some unique identifier.
@@ -59,7 +62,7 @@ class NotaHelper
       # Supplement the definition with some meta data that is now available
       templateDefinition.dir = dir
       # Save the definition in the index with it's name as the key
-      index[templateDefinition.name] = templateDefinition
+      index[templateDefinition.dir] = templateDefinition
     # We're done here
     return index
 

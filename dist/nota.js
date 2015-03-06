@@ -23,13 +23,14 @@
   NotaHelper = require('./helper');
 
   Nota = (function() {
-    Nota.prototype.defaults = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+    Nota.prototype.defaults = JSON.parse(fs.readFileSync('config-default.json', 'utf8'));
 
     Nota.prototype["package"] = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
     function Nota() {
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var args, data, dataPath, match, outputPath, server, serverAddress, serverPort, templatePath, _dataPath, _templatePath;
+      var server;
+      NotaHelper.on("warning", this.logWarning, this);
       nomnom.options({
         template: {
           position: 0,
@@ -65,33 +66,78 @@
         notify: {
           abbr: 'n',
           flag: true,
-          help: 'Notify when render job is finished'
+          help: 'Notify when a render job is finished'
         },
         resources: {
           flag: true,
           help: 'Show the events of page resource loading in output'
+        },
+        preserve: {
+          flag: true,
+          help: 'Prevents overwriting when output path is already occupied'
         }
       });
-      args = nomnom.nom();
-      templatePath = args.template;
-      dataPath = args.data;
-      outputPath = args.output || this.defaults.outputPath;
-      serverAddress = this.defaults.serverAddress;
-      serverPort = args.port || this.defaults.serverPort;
-      this.options = _.extend({}, this.defaults);
+      this.options = this.settleOptions(nomnom.nom(), this.defaults);
+      this.options.data = JSON.parse(fs.readFileSync(this.options.dataPath, {
+        encoding: 'utf8'
+      }));
+      server = new NotaServer(this.options);
+      server.document.on("all", this.logEvent, this);
+      server.document.on("page:ready", (function(_this) {
+        return function() {
+          if (_this.options.notify) {
+            return _this.notify({
+              title: "Nota: render job finished",
+              message: "One document captured to .PDF"
+            });
+          }
+        };
+      })(this));
+      if (this.options.preview) {
+        open(server.url());
+      } else {
+        server.render({
+          outputPath: this.options.outputPath,
+          callback: function() {
+            return server.close();
+          }
+        });
+      }
+    }
+
+    Nota.prototype.settleOptions = function(args, defaults) {
+      var options;
+      options = _.extend({}, defaults);
+      options = _.extend(options, {
+        templatePath: args.template,
+        dataPath: args.data,
+        outputPath: args.output
+      });
+      if (args.preview != null) {
+        options.preview = args.preview;
+      }
+      if (args.port != null) {
+        options.port = args.port;
+      }
       if (args.notify != null) {
-        this.options.notify = args.notify;
+        options.notify = args.notify;
       }
       if (args.resources != null) {
-        this.options.logging.pageResources = args.resources;
+        options.logging.pageResources = args.resources;
       }
+      if (args.preserve != null) {
+        options.preserve = args.preserve;
+      }
+      options.templatePath = this.findTemplatePath(options.templatePath);
+      options.dataPath = this.findDataPath(options.dataPath, options.templatePath);
+      return options;
+    };
+
+    Nota.prototype.findTemplatePath = function(templatePath) {
+      var match, _templatePath;
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
-      if (dataPath == null) {
-        throw new Error("Please provide data'.");
-      }
-      NotaHelper.on("warning", this.logWarning, this);
       if (!NotaHelper.isTemplate(templatePath)) {
         if (NotaHelper.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
@@ -100,10 +146,18 @@
         } else if ((match = _(NotaHelper.getTemplatesIndex(this.defaults.templatesPath)).findWhere({
           name: templatePath
         })) != null) {
-          throw new Error("No template at '" + templatePath + "'. We did find a template which declares it's name as such. It's path is '" + match.dir + "'");
+          throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
           throw new Error("Failed to find template '" + templatePath + "'.");
         }
+      }
+      return templatePath;
+    };
+
+    Nota.prototype.findDataPath = function(dataPath, templatePath) {
+      var _dataPath;
+      if (dataPath == null) {
+        throw new Error("Please provide data'.");
       }
       if (!NotaHelper.isData(dataPath)) {
         if (NotaHelper.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
@@ -114,55 +168,52 @@
           throw new Error("Failed to find data '" + dataPath + "'.");
         }
       }
-      data = JSON.parse(fs.readFileSync(dataPath, {
-        encoding: 'utf8'
-      }));
-      server = new NotaServer(this.defaults, templatePath, data);
-      server.document.on("all", this.logEvent, this);
-      server.document.on("page:ready", (function(_this) {
-        return function() {
-          return _this.notify({
-            title: "Nota: render job finished",
-            message: "One document captured to .PDF"
-          });
-        };
-      })(this));
-      if (args.preview) {
-        open(server.url());
-      } else {
-        server.render(outputPath, function() {
-          return server.close();
-        });
-      }
-    }
+      return dataPath;
+    };
 
     Nota.prototype.listTemplatesIndex = function() {
-      var definition, index, name, templates;
+      var definition, dir, fold, headerDir, headerName, headerVersion, index, lengths, name, templates, version;
       NotaHelper.on("warning", this.logWarning, this);
       templates = [];
       index = NotaHelper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
         throw new Error("No (valid) templates found in templates directory.");
       } else {
+        headerDir = 'Template directory:';
+        headerName = 'Template name:';
+        headerVersion = 'Template version:';
+        fold = function(memo, str) {
+          return Math.max(memo, str.length);
+        };
+        lengths = {
+          dirName: _.reduce(_.keys(index), fold, headerDir.length),
+          name: _.reduce(_(_(index).values()).pluck('name'), fold, headerName.length)
+        };
+        headerDir = _.str.pad('Template directory:', lengths.dirName, ' ', 'right');
+        headerName = _.str.pad('Template name:', lengths.name + 8, ' ', 'left');
+        terminal.colorize("nota %K" + headerDir + headerName + " " + headerVersion + "%n\n").colorize("%n");
         templates = (function() {
           var _results;
           _results = [];
-          for (name in index) {
-            definition = index[name];
-            _results.push("" + definition.dir + " '" + name + "' v" + definition.version);
+          for (dir in index) {
+            definition = index[dir];
+            dir = _.str.pad(definition.dir, lengths.dirName, ' ', 'right');
+            name = _.str.pad(definition.name, lengths.name + 8, ' ', 'left');
+            version = definition.version != null ? 'v' + definition.version : '';
+            _results.push(terminal.colorize("nota %m" + dir + "%g" + name + " %K" + version + "%n\n").colorize("%n"));
           }
           return _results;
         })();
-        return templates.join("\n");
       }
+      return "";
     };
 
     Nota.prototype.logWarning = function(warningMsg) {
       return terminal.colorize("nota %3%kWARNING%n " + warningMsg + "\n").colorize("%n");
     };
 
-    Nota.prototype.logError = function(warningMsg) {
-      return terminal.colorize("nota %1%kERROR%n " + warningMsg + "\n").colorize("%n");
+    Nota.prototype.logError = function(errorMsg) {
+      return terminal.colorize("nota %1%kERROR%n " + errorMsg + "\n").colorize("%n");
     };
 
     Nota.prototype.logEvent = function(event) {

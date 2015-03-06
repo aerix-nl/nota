@@ -19,14 +19,14 @@
   Document = require('./document');
 
   NotaServer = (function() {
-    function NotaServer(defaults, templatePath, data) {
-      this.templatePath = templatePath;
-      this.data = data;
+    function NotaServer(options) {
+      var _ref;
+      this.options = options;
       this.url = __bind(this.url, this);
-      this.serverAddress = defaults.serverAddress, this.serverPort = defaults.serverPort;
+      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.data = _ref.data;
       this.app = express();
       this.server = http.createServer(this.app);
-      this.app.use(express["static"](templatePath));
+      this.app.use(express["static"](this.templatePath));
       this.app.get('/', (function(_this) {
         return function(req, res) {
           return fs.readFile("" + _this.templatePath + "/template.html", "utf8", function(err, html) {
@@ -45,7 +45,7 @@
         };
       })(this));
       this.server.listen(this.serverPort);
-      this.document = new Document(this, defaults.document);
+      this.document = new Document(this, this.options.document);
     }
 
     NotaServer.prototype.url = function() {
@@ -56,11 +56,8 @@
       return this.data = data;
     };
 
-    NotaServer.prototype.render = function(outputPath, callback, data) {
-      if (data != null) {
-        this.serve(data);
-      }
-      return this.document.render(outputPath, callback);
+    NotaServer.prototype.render = function(options) {
+      return this.document.render(options);
     };
 
     NotaServer.prototype.close = function() {

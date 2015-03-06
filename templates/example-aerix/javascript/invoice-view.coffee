@@ -1,9 +1,12 @@
-define ['nota-client', 'underscore.string'], (Nota, s)->
+define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
+
   class TemplateApp.InvoiceView extends Backbone.View
     initialize: ->
       _.extend(@, Backbone.Events)
       @setElement $("body") # Set root element
       @model.on 'change', @render, @
+      @i18n = new Jed
+        "missing_key_callback": (key)-> console.error "Missing key in i18n: #{key}"
 
     # Used for the html head title element
     documentName: -> 'Invoice '+@getFullID()

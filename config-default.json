@@ -3,7 +3,6 @@
   "serverPort":         7483,
   "templatesPath":      "templates",
 
-  "outputPath":         "output.pdf",
 
   "logging": {
     "notify":           false,
@@ -11,6 +10,7 @@
   },
 
   "document": {
+    "defaultFilename":    "output.pdf",
     "paperSize": {
       "format":           "A4",
       "orientation":      "portrait",

@@ -9,15 +9,15 @@ open     = require("open")
 Document = require('./document')
 
 class NotaServer
-  constructor: ( defaults, @templatePath, @data ) ->
-    { @serverAddress, @serverPort } = defaults
+  constructor: ( @options ) ->
+    { @serverAddress, @serverPort, @templatePath, @data } = @options
 
     # Start express server to serve dependencies from a unified namespaces
     @app = express()
     @server = http.createServer(@app)
 
     # Open the server with servering the template path as root
-    @app.use express.static(templatePath)
+    @app.use express.static(@templatePath)
     # Serve 'template.html' by default (instead of index.html default behaviour)
     @app.get '/', ( req, res ) =>
       # Load template.html as index
@@ -27,7 +27,7 @@ class NotaServer
         res.send html.replace(/(<head[s\S]*>)([\s\S]*<\/head>)/, "$1\n#{scriptTag}</script>$2")
 
     # Expose some extras at the first specified subpaths
-    @app.use '/lib/', express.static("#{__dirname}/")
+    @app.use '/lib/',    express.static("#{__dirname}/")
     @app.use '/vendor/', express.static("#{__dirname}/../bower_components/")
     @app.use '/nota.js', express.static("#{__dirname}/client-config.js")
 
@@ -36,7 +36,7 @@ class NotaServer
 
     @server.listen(@serverPort)
 
-    @document = new Document(@, defaults.document)
+    @document = new Document(@, @options.document)
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
@@ -44,9 +44,8 @@ class NotaServer
   serve: ( data ) ->
     @data = data
 
-  render: ( outputPath, callback, data ) ->
-    @serve(data) if data?
-    @document.render(outputPath, callback)
+  render: ( options ) ->
+    @document.render options
 
   close: ->
     @document.close()

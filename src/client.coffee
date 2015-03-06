@@ -49,6 +49,8 @@ define 'nota-client', ['backbone', 'json'], ->
     # function that yields an equivalent hash. Optionally you can provide a
     # context for this function to be evaluated in.
     setDocumentMeta: (documentMeta, context)->
+      unless documentMeta? then throw new Error("Document meta not defined")
+      
       if typeof documentMeta is 'function'
         @documentMeta.fn = documentMeta
 

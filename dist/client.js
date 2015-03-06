@@ -29,6 +29,9 @@
       };
 
       NotaClient.prototype.setDocumentMeta = function(documentMeta, context) {
+        if (documentMeta == null) {
+          throw new Error("Document meta not defined");
+        }
         if (typeof documentMeta === 'function') {
           this.documentMeta.fn = documentMeta;
           if (context != null) {

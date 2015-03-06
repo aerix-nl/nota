@@ -8,13 +8,13 @@
     paths: {
       'bootstrap': 'bootstrap/dist/js/bootstrap',
       'underscore.string': 'underscore.string/dist/underscore.string.min',
-      'rivets': 'rivets/dist/rivets.bundled',
+      'jed': 'jed/jed',
       'view': '/javascript/invoice-view',
       'model': '/javascript/invoice-model'
     }
   });
 
-  dependencies = ['bootstrap', 'view', 'model'];
+  dependencies = ['view', 'model'];
 
   define('template', dependencies, function(InvoiceView, InvoiceModel) {
     Nota.trigger('template:init');

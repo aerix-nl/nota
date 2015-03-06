@@ -2,7 +2,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['nota-client', 'underscore.string'], function(Nota, s) {
+  define(['nota-client', 'underscore.string', 'jed'], function(Nota, s, Jed) {
     return TemplateApp.InvoiceView = (function(_super) {
       __extends(InvoiceView, _super);
 
@@ -13,7 +13,12 @@
       InvoiceView.prototype.initialize = function() {
         _.extend(this, Backbone.Events);
         this.setElement($("body"));
-        return this.model.on('change', this.render, this);
+        this.model.on('change', this.render, this);
+        return this.i18n = new Jed({
+          "missing_key_callback": function(key) {
+            return console.error("Missing key in i18n: " + key);
+          }
+        });
       };
 
       InvoiceView.prototype.documentName = function() {

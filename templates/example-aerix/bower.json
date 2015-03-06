@@ -1,6 +1,6 @@
 {
   "name": "aerix-invoice-nota-template",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "authors": ["Felix Akkermans <felix@aerix.nl"],
   "description": "The invoice template used by Aerix (original Nota developer) in production.",
   "licence": "MIT",
@@ -9,6 +9,6 @@
     "bootstrap": "3.3.2",
     "backbone": "1.1.2",
     "underscore.string": "2.3.3",
-    "rivets": "0.8.0"
+    "jed": "1.1.0"
   }
 }

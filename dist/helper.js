@@ -42,6 +42,8 @@
         dir = templateDirs[_i];
         isDefined = fs.existsSync(templatesPath + ("/" + dir + "/bower.json"));
         if (!isDefined) {
+          warningMsg = "Template %m" + dir + "%N has no 'bower.json' definition %K(optional, but recommended)";
+          this.trigger("warning", warningMsg);
           templateDefinition = {
             name: dir,
             definition: 'not found'
@@ -57,7 +59,7 @@
           continue;
         }
         templateDefinition.dir = dir;
-        index[templateDefinition.name] = templateDefinition;
+        index[templateDefinition.dir] = templateDefinition;
       }
       return index;
     };

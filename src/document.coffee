@@ -1,8 +1,11 @@
 fs            = require('fs')
 Q             = require('q')
+path          = require('path')
 phantom       = require('phantom')
 _             = require('underscore')._
 Backbone      = require('backbone')
+
+NotaHelper = require('./helper')
 
 # This class is basically a wrapper of a PhantomJS instance
 class Document
@@ -27,28 +30,74 @@ class Document
         @page.set 'onResourceRequested', @onResourceRequested
         @page.set 'onResourceReceived',  @onResourceReceived
 
-        @trigger 'document:ready'
-        # @page.open @server.url(), ( status ) =>
-        #   @trigger "page:init"
+        @trigger 'page:init'
 
-        #   if status is 'success' then @once "page:ready", =>
-        #     @page.render outputPath, callback
-        #   else throw new Error "Unable to load page: #{status}"
+        @page.open @serverUrl, ( status ) =>
+        
+          if status is 'success'
+            @emit 'page:opened'
 
-  render: ( outputPath, callback, options = {} ) ->
-    doRender = =>
-      @trigger "render:init"
+            @on 'client:template:loaded',      @injectData,     @
+            @on 'client:template:render:done', @onDataRendered, @
+        
+          else
+            throw new Error "Unable to load page: #{status}"
+            @close()
+            @emit 'page:fail'
 
-      @page.open @server.url(), ( status ) =>
-        @trigger "page:init"
+  # The callback will receive the meta data as it's argument when done
+  getMeta: (callback)->
+    getFn = -> Nota.getDocumentMeta()
+    @page.evaluate getFn, (meta = {})->
+      if meta is {} then @emit 'page:no-meta' else @emit 'page:meta-fetched', meta
+      callback(meta)
 
-        if status is 'success' then @once "page:ready", =>
-          @page.render outputPath, callback
-        else throw new Error "Unable to load page: #{status}"
+  capture: (options = {})->
+    @emit 'render:init'
+    { outputPath } = options
 
-    unless @page?
-      @once "document:ready", doRender
-    else doRender()
+    @geMeta (meta)=>
+      # If the explicitly defined output path is merely an output directory,
+      # then it still leaves open the question of the final render filename,
+      # which in this case we'll check with the meta data provided from the
+      # template, if there is any.
+      if NotaHelper.isDir(outputPath)
+        if meta.filesystemName?
+          outputPath = path.join(outputPath, meta.filesystemName)
+        else
+          # Else we have no suggestion from the template, and we resort to the
+          # default filename as provided in the config, which isn't a very
+          # meaningful or unique one :(
+          outputPath = path.join(outputPath, @options.defaultFilename)
+
+      # Now we'll have an output path and filename, do a check if it's already
+      # occupied.
+      if NotaHelper.fileExists(outputPath) and not options.preserve
+        @emit 'render:overwrite', outputPath
+
+      # Update the meta data with the final output path and options passed to
+      # this render call
+      options.outputPath = outputPath
+      _.extend meta, options
+
+      # This is where the real PDF making magic happens. Credits to PhantomJS
+      @page.render outputPath, ( ) =>
+        @emit 'render:done', meta
+
+  # render: ( outputPath, callback, options = {} ) ->
+  #   doRender = =>
+  #     @trigger "render:init"
+
+  #     @page.open @server.url(), ( status ) =>
+  #       @trigger "page:init"
+
+  #       if status is 'success' then @once "page:ready", =>
+  #         @page.render outputPath, callback
+  #       else throw new Error "Unable to load page: #{status}"
+
+  #   unless @page?
+  #     @once "document:ready", doRender
+  #   else doRender()
 
   onResourceRequested: ( request ) =>
     @trigger "page:resource:requested"
@@ -65,8 +114,18 @@ class Document
 
     if @counter.length is 0
       @timer = setTimeout =>
-        @trigger "page:ready"
+        @trigger "page:loaded"
       , @timeout
+
+  injectData: (data)->
+    @rendered = false
+    inject = (data)->
+      Nota.injectData(data)
+    @page.evaluate inject, null, data
+
+  onDataRendered: ->
+    @rendered = true
+    @emit 'page:ready'
 
   close: ->
     @page.close()
