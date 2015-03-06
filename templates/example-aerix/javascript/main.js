@@ -23,12 +23,13 @@
       model: TemplateApp.model
     });
     Nota.setDocumentMeta(TemplateApp.view.documentMeta, TemplateApp.view);
-    Nota.on('data:injected', function(data) {
-      return TemplateApp.model.set(data, {
-        validate: true
+    if (Nota.phantomRuntime) {
+      Nota.on('data:injected', function(data) {
+        return TemplateApp.model.set(data, {
+          validate: true
+        });
       });
-    });
-    if (!Nota.phantomRuntime) {
+    } else {
       Nota.getData(function(data) {
         return TemplateApp.model.set(data, {
           validate: true

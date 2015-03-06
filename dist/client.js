@@ -13,14 +13,13 @@
 
       function NotaClient() {
         _.extend(this, Backbone.Events);
-        this.on("all", this.log, this);
+        this.on("all", this.logEvent, this);
         this.trigger('init');
-        this.getData();
         this.trigger('loaded');
         this;
       }
 
-      NotaClient.prototype.log = function(message) {
+      NotaClient.prototype.logEvent = function(message) {
         if (this.phantomRuntime) {
           return window.callPhantom(message);
         } else {
@@ -63,14 +62,12 @@
         if (!force && (this.data != null)) {
           return typeof callback === "function" ? callback(this.data) : void 0;
         }
-        this.log('data:loading');
+        this.trigger('data:fetching');
         return require(['json!/data'], (function(_this) {
           return function(data) {
             _this.data = data;
-            if (typeof callback === "function") {
-              callback(_this.data);
-            }
-            return _this.log('data:loaded');
+            _this.trigger('data:loaded');
+            return typeof callback === "function" ? callback(_this.data) : void 0;
           };
         })(this));
       };

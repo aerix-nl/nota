@@ -8,7 +8,8 @@ open     = require("open")
 
 Document = require('./document')
 
-class NotaServer
+class NotaServer 
+
   constructor: ( @options ) ->
     { @serverAddress, @serverPort, @templatePath, @data } = @options
 
@@ -22,9 +23,14 @@ class NotaServer
     @app.get '/', ( req, res ) =>
       # Load template.html as index
       fs.readFile "#{@templatePath}/template.html", "utf8", ( err, html ) ->
-        # Insert the nota loader in the head tag
-        scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'>"
-        res.send html.replace(/(<head[s\S]*>)([\s\S]*<\/head>)/, "$1\n#{scriptTag}</script>$2")
+        # Do a little check for malfolmed HTML
+        insertionRegex = /(<head[s\S]*>)([\s\S]*<\/head>)/
+        unless html.match(insertionRegex)?.length = 3
+          throw new Error "No encapsulating <head></head> tags found in template"
+
+        # Insert the Nota client loader in the head tag
+        scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'></script>"
+        res.send html.replace(insertionRegex, "$1\n\t#{scriptTag}$2")
 
     # Expose some extras at the first specified subpaths
     @app.use '/lib/',    express.static("#{__dirname}/")
@@ -44,8 +50,14 @@ class NotaServer
   serve: ( data ) ->
     @data = data
 
-  render: ( options ) ->
-    @document.render options
+  render: ( jobs, options ) ->
+    for job in jobs
+      do (job, options) =>
+        @document.injectData(job.data)
+        @document.once "page:ready", =>
+          options.outputPath = job.outputPath
+          @document.capture options
+    @
 
   close: ->
     @document.close()

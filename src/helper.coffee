@@ -1,6 +1,7 @@
 fs            = require('fs')
 _             = require('underscore')._
 Backbone      = require('backbone')
+path          = require('path')
 
 # Utility class to help it with common filesystem and template/data related questiosn
 class NotaHelper
@@ -20,50 +21,55 @@ class NotaHelper
   isTemplate: ( path ) ->
     @isDirectory(path)
 
-  getTemplatesIndex: ( templatesPath ) ->
-    if not fs.existsSync(templatesPath)
-      throw Error("Templates path '#{templatesPath}' doesn't exist.")
+  getTemplatesIndex: ( basePath ) ->
+    if not fs.existsSync(basePath)
+      throw new Error("Templates basepath '#{basePath}' doesn't exist")
 
     # Get an array of filenames (excluding '.' and '..')
-    templateDirs = fs.readdirSync(templatesPath)
+    templateDirs = fs.readdirSync(basePath)
     # Filter out all the directories
     templateDirs = _.filter templateDirs, (dir)->
-      fs.statSync(templatesPath+'/'+dir).isDirectory()
+      fs.statSync(basePath+'/'+dir).isDirectory()
 
     index = {}
 
     for dir in templateDirs
-      # Get the template definition
-      isDefined = fs.existsSync(templatesPath+"/#{dir}/bower.json")
-
-      if not isDefined
-        warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
-        %K(optional, but recommended)"
-        @trigger "warning", warningMsg
-        templateDefinition =
-          # Default it's name to it's directory name in absence of an 'official
-          # statement' so we at least have some unique identifier.
-          name: dir
-          definition: 'not found'
-      else
-        definitionPath = templatesPath+"/#{dir}/bower.json"
-        templateDefinition = JSON.parse fs.readFileSync definitionPath
-        templateDefinition.definition = 'read'
-        # TODO: check template definition against scheme for reuiqre properties
-        # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
-
-      # Check requirements for tempalte
-      if not fs.existsSync("templates/"+dir+"/template.html")
-        warningMsg = "Template %m#{templateDefinition.name}%N has no mandatory
+      definition = @getTemplateDefinition path.join(basePath, dir) 
+      if definition.meta is 'not template'
+        warningMsg = "Template %m#{dir}%N has no mandatory
         template.html file %K(omitting template)"
         @trigger "warning", warningMsg
         continue
-
-      # Supplement the definition with some meta data that is now available
-      templateDefinition.dir = dir
       # Save the definition in the index with it's name as the key
-      index[templateDefinition.dir] = templateDefinition
+      index[templateDefinition.dir] = definition
     # We're done here
     return index
+
+  getTemplateDefinition: ( dir ) ->
+    # Get the template definition
+    isDefined = fs.existsSync( dir+"/bower.json")
+
+    if not isDefined
+      warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
+      %K(optional, but recommended)"
+      @trigger "warning", warningMsg
+      templateDefinition =
+        # Default it's name to it's directory name in absence of an 'official
+        # statement' so we at least have some unique identifier.
+        name: path.basename(dir)
+        meta: 'not found'
+    else
+      definitionPath = dir+"/bower.json"
+      templateDefinition = JSON.parse fs.readFileSync definitionPath
+      templateDefinition.meta = 'read'
+      # TODO: check template definition against scheme for reuiqre properties
+      # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
+
+    # Check requirements for tempalte
+    if not fs.existsSync(dir+"/template.html")
+      templateDefinition.meta = 'not template'
+
+    # Supplement the definition with some meta data that is now available
+    templateDefinition.dir = path.basename(dir)
 
 module.exports = new NotaHelper()

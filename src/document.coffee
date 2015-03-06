@@ -32,72 +32,64 @@ class Document
 
         @trigger 'page:init'
 
-        @page.open @serverUrl, ( status ) =>
+        @page.open @server.url(), ( status ) =>
         
           if status is 'success'
-            @emit 'page:opened'
+            @trigger 'page:opened'
 
-            @on 'client:template:loaded',      @injectData,     @
+            # @on 'client:template:loaded',      @injectData,     @
+            # TODO: this is critical and rather ugly imo
             @on 'client:template:render:done', @onDataRendered, @
         
           else
             throw new Error "Unable to load page: #{status}"
+            @trigger 'page:fail'
             @close()
-            @emit 'page:fail'
 
   # The callback will receive the meta data as it's argument when done
   getMeta: (callback)->
     getFn = -> Nota.getDocumentMeta()
-    @page.evaluate getFn, (meta = {})->
-      if meta is {} then @emit 'page:no-meta' else @emit 'page:meta-fetched', meta
+    @page.evaluate getFn, (meta = {})=>
+      if meta is {} then @trigger 'page:no-meta' else @trigger 'page:meta-fetched', meta
       callback(meta)
 
-  capture: (options = {})->
-    @emit 'render:init'
-    { outputPath } = options
+  capture: (captureOptions = {})->
+    @trigger 'render:init'
+    { outputPath } = captureOptions # For shorter code we unpack this var
 
-    @geMeta (meta)=>
+    @getMeta (meta)=>
       # If the explicitly defined output path is merely an output directory,
-      # then it still leaves open the question of the final render filename,
-      # which in this case we'll check with the meta data provided from the
-      # template, if there is any.
-      if NotaHelper.isDir(outputPath)
-        if meta.filesystemName?
-          outputPath = path.join(outputPath, meta.filesystemName)
-        else
-          # Else we have no suggestion from the template, and we resort to the
-          # default filename as provided in the config, which isn't a very
-          # meaningful or unique one :(
-          outputPath = path.join(outputPath, @options.defaultFilename)
+      # then it still leaves open the question of the actual filename, which
+      # in this case we'll check with the meta data provided by the template,
+      # if there is any suggestion from it's side. If so, then we use that
+      # one. If the output path is not defined at atl, we just give it the
+      # default filename.
+      if outputPath?
+        if NotaHelper.isDirectory(outputPath)
+          if meta.filesystemName?
+            outputPath = path.join(outputPath, meta.filesystemName)
+          else
+            # Else we have no suggestion from the template, and we resort to the
+            # default filename as provided in the config, which isn't a very
+            # meaningful or unique one :(
+            outputPath = path.join(outputPath, @options.defaultFilename)
 
-      # Now we'll have an output path and filename, do a check if it's already
-      # occupied.
-      if NotaHelper.fileExists(outputPath) and not options.preserve
-        @emit 'render:overwrite', outputPath
+        # Now that we have an output path and filename, do a check if it's
+        # already occupied.
+        if NotaHelper.isFile(outputPath) and not captureOptions.preserve
+          @trigger 'render:overwrite', outputPath
+
+      else outputPath = @options.defaultFilename
 
       # Update the meta data with the final output path and options passed to
       # this render call
-      options.outputPath = outputPath
-      _.extend meta, options
+      captureOptions.outputPath = outputPath
+      _.extend meta, captureOptions
 
       # This is where the real PDF making magic happens. Credits to PhantomJS
       @page.render outputPath, ( ) =>
-        @emit 'render:done', meta
-
-  # render: ( outputPath, callback, options = {} ) ->
-  #   doRender = =>
-  #     @trigger "render:init"
-
-  #     @page.open @server.url(), ( status ) =>
-  #       @trigger "page:init"
-
-  #       if status is 'success' then @once "page:ready", =>
-  #         @page.render outputPath, callback
-  #       else throw new Error "Unable to load page: #{status}"
-
-  #   unless @page?
-  #     @once "document:ready", doRender
-  #   else doRender()
+        @trigger 'render:done', meta
+        captureOptions.callback()
 
   onResourceRequested: ( request ) =>
     @trigger "page:resource:requested"
@@ -125,7 +117,7 @@ class Document
 
   onDataRendered: ->
     @rendered = true
-    @emit 'page:ready'
+    @trigger 'page:ready'
 
   close: ->
     @page.close()

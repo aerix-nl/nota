@@ -48,8 +48,9 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
       #
       #   <a href="http://www.aerix.nl">Aerix(http://www.aerix.nl)</a>
       #
-      # By removing the text node we can sort of counter this. A better method (like a
-      # directive for the engine to prevent it from doing this in the first place) is needed. 
+      # By removing the text node we can sort of counter this. A better method
+      # (like a directive for the engine to prevent it from doing this in the
+      # first place) is needed.
       if Nota.phantomRuntime then $('a').html ''
       
       @trigger 'render:done'
@@ -57,7 +58,7 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
 
     # Pretty much everything apart from the table
     _renderInvoiceDetails: ->
-      directives = 
+      directives =
         vatPercentage: =>
           @model.get("vatPercentage")*100
         companyFullname: =>

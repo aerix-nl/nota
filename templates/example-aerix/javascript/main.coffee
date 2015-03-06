@@ -20,7 +20,6 @@ requirejs.config {
 dependencies = ['view', 'model']
 
 define 'template', dependencies, (InvoiceView, InvoiceModel) ->
-
   Nota.trigger 'template:init'
 
   TemplateApp.model = new TemplateApp.InvoiceModel()
@@ -29,17 +28,17 @@ define 'template', dependencies, (InvoiceView, InvoiceModel) ->
   # Provide Nota client with a function to aquire meta data
   Nota.setDocumentMeta TemplateApp.view.documentMeta, TemplateApp.view
 
-  # Listen and wait for the server to inject data
-  Nota.on 'data:injected', (data)->
-    TemplateApp.model.set(data, {validate: true}) # This will trigger a render
-
+  if Nota.phantomRuntime
+    # Listen and wait for the server to inject data
+    Nota.on 'data:injected', (data)->
+      TemplateApp.model.set(data, {validate: true}) # This will trigger a render
   # Unless we're not running in PhantomJS and we'll never receive an
   # injection and we'll have to fetch it ourselves
-  unless Nota.phantomRuntime then Nota.getData (data)->
+  else Nota.getData (data)-> 
     TemplateApp.model.set(data, {validate: true})
 
   # Forward all view events to Nota client under a seperate namespace
-  TemplateApp.view.on 'all', (e)-> Nota.trigger "template:#{e}"
+  TemplateApp.view.on 'all', (e)-> Nota.trigger "template:"+e
 
   # We're done with setup
   Nota.trigger 'template:loaded'

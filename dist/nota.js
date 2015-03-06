@@ -25,11 +25,11 @@
   Nota = (function() {
     Nota.prototype.defaults = JSON.parse(fs.readFileSync('config-default.json', 'utf8'));
 
-    Nota.prototype["package"] = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    Nota.prototype.meta = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
     function Nota() {
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var server;
+      var definition, e;
       NotaHelper.on("warning", this.logWarning, this);
       nomnom.options({
         template: {
@@ -60,7 +60,7 @@
           flag: true,
           help: 'Print version',
           callback: function() {
-            return this["package"].version;
+            return this.meta.version;
           }
         },
         notify: {
@@ -77,33 +77,55 @@
           help: 'Prevents overwriting when output path is already occupied'
         }
       });
-      this.options = this.settleOptions(nomnom.nom(), this.defaults);
-      this.options.data = JSON.parse(fs.readFileSync(this.options.dataPath, {
-        encoding: 'utf8'
-      }));
-      server = new NotaServer(this.options);
-      server.document.on("all", this.logEvent, this);
-      server.document.on("page:ready", (function(_this) {
-        return function() {
-          if (_this.options.notify) {
-            return _this.notify({
-              title: "Nota: render job finished",
-              message: "One document captured to .PDF"
-            });
-          }
-        };
-      })(this));
+      try {
+        this.options = this.settleOptions(nomnom.nom(), this.defaults);
+      } catch (_error) {
+        e = _error;
+        this.logError(e);
+        return;
+      }
+      definition = NotaHelper.getTemplateDefinition(this.options.templatePath);
+      if (definition.meta === "not template") {
+        this.logError("Template %m" + definition.name + "%N has no mandatory template.html file");
+        return;
+      }
+      this.options.data = this.getInitData(this.options);
+      this.server = new NotaServer(this.options);
+      this.server.document.on('all', this.logEvent, this);
       if (this.options.preview) {
-        open(server.url());
+        open(this.server.url());
       } else {
-        server.render({
-          outputPath: this.options.outputPath,
-          callback: function() {
-            return server.close();
-          }
-        });
+        this.server.document.on('client:template:loaded', (function(_this) {
+          return function() {
+            return _this.render(_this.options);
+          };
+        })(this));
       }
     }
+
+    Nota.prototype.render = function(options) {
+      var jobs;
+      jobs = [
+        {
+          data: options.data,
+          outputPath: options.outputPath
+        }
+      ];
+      return this.server.render(jobs, {
+        preserve: options.preserve,
+        callback: (function(_this) {
+          return function() {
+            if (options.notify) {
+              _this.notify({
+                title: "Nota: render job finished",
+                message: "" + jobs.length + " document captured to .PDF"
+              });
+            }
+            return _this.server.close();
+          };
+        })(this)
+      });
+    };
 
     Nota.prototype.settleOptions = function(args, defaults) {
       var options;
@@ -128,13 +150,29 @@
       if (args.preserve != null) {
         options.preserve = args.preserve;
       }
-      options.templatePath = this.findTemplatePath(options.templatePath);
-      options.dataPath = this.findDataPath(options.dataPath, options.templatePath);
+      options.templatePath = this.findTemplatePath(options);
+      options.dataPath = this.findDataPath(options);
       return options;
     };
 
-    Nota.prototype.findTemplatePath = function(templatePath) {
-      var match, _templatePath;
+    Nota.prototype.getInitData = function(options) {
+      var data;
+      if (options.dataPath != null) {
+        return data = JSON.parse(fs.readFileSync(options.dataPath, {
+          encoding: 'utf8'
+        }));
+      } else if ((definition['example-data'] != null) && NotaHelper.isData(definition['example-data'])) {
+        return data = JSON.parse(fs.readFileSync(definition['example-data'], {
+          encoding: 'utf8'
+        }));
+      } else {
+        return data = {};
+      }
+    };
+
+    Nota.prototype.findTemplatePath = function(options) {
+      var match, templatePath, _templatePath;
+      templatePath = options.templatePath;
       if (templatePath == null) {
         throw new Error("Please provide a template.");
       }
@@ -143,7 +181,7 @@
           templatePath = _templatePath;
         } else if (NotaHelper.isTemplate(_templatePath = "" + this.defaults.templatesPath + "/" + templatePath)) {
           templatePath = _templatePath;
-        } else if ((match = _(NotaHelper.getTemplatesIndex(this.defaults.templatesPath)).findWhere({
+        } else if ((match = _(NotaHelper.getTemplatesIndex(this.options.templatesPath)).findWhere({
           name: templatePath
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
@@ -154,10 +192,15 @@
       return templatePath;
     };
 
-    Nota.prototype.findDataPath = function(dataPath, templatePath) {
-      var _dataPath;
+    Nota.prototype.findDataPath = function(options) {
+      var dataPath, preview, templatePath, _dataPath;
+      dataPath = options.dataPath, templatePath = options.templatePath, preview = options.preview;
       if (dataPath == null) {
-        throw new Error("Please provide data'.");
+        if (preview) {
+          return null;
+        } else {
+          throw new Error("Please provide data'.");
+        }
       }
       if (!NotaHelper.isData(dataPath)) {
         if (NotaHelper.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
@@ -205,7 +248,7 @@
           return _results;
         })();
       }
-      return "";
+      return '';
     };
 
     Nota.prototype.logWarning = function(warningMsg) {

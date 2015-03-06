@@ -32,16 +32,13 @@ define 'nota-client', ['backbone', 'json'], ->
       _.extend(@, Backbone.Events)
 
       # Forward all nota client related messages to the server
-      @on "all", @log, @
+      @on "all", @logEvent, @
       @trigger 'init'
-
-      # Pull data
-      @getData()
 
       @trigger 'loaded'
       @
 
-    log: (message) ->
+    logEvent: (message) ->
       if @phantomRuntime then window.callPhantom(message)
       else console.log(message)
 
@@ -75,11 +72,11 @@ define 'nota-client', ['backbone', 'json'], ->
       # return the cache
       if not force and @data? then return callback?(@data)
 
-      @log 'data:loading'
+      @trigger 'data:fetching'
       # Else we continue and get the data from the server
       require ['json!/data'], (@data) =>
+        @trigger 'data:loaded'
         callback?(@data)
-        @log 'data:loaded'
 
     # Passive:
     # Wait on this entry point for Nota server to inject the data

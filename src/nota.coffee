@@ -17,7 +17,7 @@ class Nota
 
   # Load the package definition so we have some meta data available such as
   # version number.
-  package: JSON.parse(fs.readFileSync('package.json', 'utf8'))
+  meta: JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
   constructor: ( ) ->
     NotaHelper.on "warning", @logWarning, @
@@ -46,7 +46,7 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: -> @package.version
+        callback: -> @meta.version
 
       notify:
         abbr: 'n'
@@ -59,25 +59,40 @@ class Nota
         flag: true
         help: 'Prevents overwriting when output path is already occupied'
 
-    @options = @settleOptions nomnom.nom(), @defaults
+    try
+      @options = @settleOptions nomnom.nom(), @defaults
+    catch e
+      @logError e
+      return
 
-    # Get the data
-    @options.data = JSON.parse(fs.readFileSync(@options.dataPath, encoding: 'utf8'))
+    definition = NotaHelper.getTemplateDefinition @options.templatePath
+    if definition.meta is "not template"
+      @logError "Template %m#{definition.name}%N has no mandatory template.html file"
+      return
+
+    @options.data = @getInitData(@options)
 
     # Start the server
-    server = new NotaServer(@options)
-    server.document.on "all", @logEvent, @
-    server.document.on "page:ready", => if @options.notify then @notify
-      title: "Nota: render job finished"
-      message: "One document captured to .PDF"
+    @server = new NotaServer(@options)
+    @server.document.on 'all', @logEvent, @
 
     # If we want a preview, open the web page
-    if @options.preview then open(server.url())
+    if @options.preview then open(@server.url())
     # Else, perform the render job and close the server
-    else server.render
-      # jobs:
-      outputPath: @options.outputPath
-      callback: -> server.close()
+    else @server.document.on 'client:template:loaded', => @render(@options)
+
+  render: ( options)->
+    jobs = [{
+      data: options.data
+      outputPath: options.outputPath
+    }]
+    @server.render jobs, 
+      preserve: options.preserve
+      callback: =>
+        if options.notify then @notify
+          title: "Nota: render job finished"
+          message: "#{jobs.length} document captured to .PDF"
+        @server.close()
 
   # Settling options from parsed CLI arguments and defaults
   settleOptions: ( args, defaults ) ->
@@ -94,11 +109,21 @@ class Nota
     options.logging.pageResources = args.resources if args.resources?
     options.preserve = args.preserve               if args.preserve?
     
-    options.templatePath = @findTemplatePath(options.templatePath)
-    options.dataPath = @findDataPath(options.dataPath, options.templatePath)
+    options.templatePath =  @findTemplatePath(options)
+    options.dataPath =      @findDataPath(options)
     return options
 
-  findTemplatePath: ( templatePath ) ->
+  getInitData: ( options ) ->
+    # Get the data
+    if options.dataPath?
+      data = JSON.parse(fs.readFileSync(options.dataPath, encoding: 'utf8'))
+    else if definition['example-data']? and NotaHelper.isData definition['example-data']
+      data = JSON.parse(fs.readFileSync(definition['example-data'], encoding: 'utf8'))
+    else
+      data = {}
+
+  findTemplatePath: ( options ) ->
+    { templatePath } = options
     # Exit unless the --template and --data are passed
     unless templatePath?
       throw new Error("Please provide a template.")
@@ -114,24 +139,30 @@ class Nota
         "#{@defaults.templatesPath}/#{templatePath}")
         templatePath = _templatePath
 
-      else if (match = _(NotaHelper.getTemplatesIndex(@defaults.templatesPath)).findWhere {name: templatePath})?
+      else if (match = _(NotaHelper.getTemplatesIndex(@options.templatesPath)).findWhere {name: templatePath})?
         throw new Error("No template at '#{templatePath}'. But we did find a
         template which declares it's name as such. It's path is '#{match.dir}'")
 
       else throw new Error("Failed to find template '#{templatePath}'.")
     templatePath
 
-  findDataPath: ( dataPath, templatePath ) ->
+  findDataPath: ( options ) ->
+    { dataPath, templatePath, preview } = options
     unless dataPath?
-      throw new Error("Please provide data'.")
+      # When previewing we allow for no data to be specified, otherwise it's mandatory
+      if preview then return null else throw new Error("Please provide data'.")
 
     # Find the correct data path
     unless NotaHelper.isData(dataPath)
+
       if NotaHelper.isData(_dataPath = "#{process.cwd()}/#{dataPath}")
         dataPath = _dataPath
+
       else if NotaHelper.isData(_dataPath = "#{templatePath}/#{dataPath}")
         dataPath = _dataPath
+
       else throw new Error("Failed to find data '#{dataPath}'.")
+
     dataPath
 
   listTemplatesIndex: ( ) =>
@@ -163,7 +194,7 @@ class Nota
         name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
         terminal.colorize("nota %m#{dir}%g#{name} %K#{version}%n\n").colorize("%n")
-    return "" # Somehow needed to make terminal output stop here
+    return '' # Somehow needed to make terminal output stop here
 
   logWarning: ( warningMsg )->
     terminal.colorize("nota %3%kWARNING%n #{warningMsg}\n").colorize("%n")

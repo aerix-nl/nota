@@ -42,57 +42,57 @@
       InvoiceModel.prototype.validate = function(attrs, options) {
         var allItemsValid, date, id, postalCode;
         if (!(_.keys(attrs).length > 0)) {
-          throw "Provided model has no attributes. " + "Check the arguments of this model's initialization call.";
+          throw new Error("Provided model has no attributes. " + "Check the arguments of this model's initialization call.");
         }
         if (attrs.meta == null) {
-          throw "No invoice meta-data provided";
+          throw new Error("No invoice meta-data provided");
         }
         id = attrs.meta.id;
         if (id == null) {
-          throw "No invoice ID provided";
+          throw new Error("No invoice ID provided");
         }
         if (isNaN(parseInt(id, 10))) {
-          throw "Invoice ID could not be parsed";
+          throw new Error("Invoice ID could not be parsed");
         }
         if (parseInt(id, 10) <= 0 || (parseInt(id, 10) !== parseFloat(id, 10))) {
-          throw "Invoice ID must be a positive integer";
+          throw new Error("Invoice ID must be a positive integer");
         }
         date = new Date(attrs.meta.date);
         if (!((Object.prototype.toString.call(date) === "[object Date]") && !isNaN(date.getTime()))) {
-          throw "Invoice date is not a valid/parsable value";
+          throw new Error("Invoice date is not a valid/parsable value");
         }
         if (attrs.client == null) {
-          throw "No data provided about the client/target of the invoice";
+          throw new Error("No data provided about the client/target of the invoice");
         }
         if (!(attrs.client.organization || attrs.client.contactPerson)) {
-          throw "At least the organization name or contact person name must be provided";
+          throw new Error("At least the organization name or contact person name must be provided");
         }
         postalCode = attrs.client.postalCode;
         if (postalCode.length != null) {
           if (postalCode.length < 6) {
-            throw "Postal code must be at least 6 characters long";
+            throw new Error("Postal code must be at least 6 characters long");
           }
         }
         if (!((attrs.invoiceItems != null) && (_.keys(attrs.invoiceItems).length != null) > 0)) {
-          throw "No things/items to show in invoice provided. Must be an dictionary object with at least one entry";
+          throw new Error("No things/items to show in invoice provided. Must be an dictionary object with at least one entry");
         }
         return allItemsValid = _.every(attrs.invoiceItems, function(item, idx) {
           var price, _ref;
           if (!((((_ref = item.description) != null ? _ref.length : void 0) != null) > 0)) {
-            throw "Description not provided or of no length";
+            throw new Error("Description not provided or of no length");
           }
           price = parseFloat(item.price, 10);
           if (isNaN(price)) {
-            throw "Price is not a valid floating point number";
+            throw new Error("Price is not a valid floating point number");
           }
           if (!(price > 0)) {
-            throw "Price must be greater than zero";
+            throw new Error("Price must be greater than zero");
           }
           if ((item.discount != null) && (item.discount < 0 || item.discount > 1)) {
-            throw "Discount specified out of range (must be between 0 and 1)";
+            throw new Error("Discount specified out of range (must be between 0 and 1)");
           }
           if ((item.quantity != null) && item.quantity < 1) {
-            throw "When specified, quantity must be greater than one";
+            throw new Error("When specified, quantity must be greater than one");
           }
         });
       };

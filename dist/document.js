@@ -45,15 +45,14 @@
             _this.page.set('onResourceRequested', _this.onResourceRequested);
             _this.page.set('onResourceReceived', _this.onResourceReceived);
             _this.trigger('page:init');
-            return _this.page.open(_this.serverUrl, function(status) {
+            return _this.page.open(_this.server.url(), function(status) {
               if (status === 'success') {
-                _this.emit('page:opened');
-                _this.on('client:template:loaded', _this.injectData, _this);
+                _this.trigger('page:opened');
                 return _this.on('client:template:render:done', _this.onDataRendered, _this);
               } else {
                 throw new Error("Unable to load page: " + status);
-                _this.close();
-                return _this.emit('page:fail');
+                _this.trigger('page:fail');
+                return _this.close();
               }
             });
           });
@@ -66,42 +65,49 @@
       getFn = function() {
         return Nota.getDocumentMeta();
       };
-      return this.page.evaluate(getFn, function(meta) {
-        if (meta == null) {
-          meta = {};
-        }
-        if (meta === {}) {
-          this.emit('page:no-meta');
-        } else {
-          this.emit('page:meta-fetched', meta);
-        }
-        return callback(meta);
-      });
+      return this.page.evaluate(getFn, (function(_this) {
+        return function(meta) {
+          if (meta == null) {
+            meta = {};
+          }
+          if (meta === {}) {
+            _this.trigger('page:no-meta');
+          } else {
+            _this.trigger('page:meta-fetched', meta);
+          }
+          return callback(meta);
+        };
+      })(this));
     };
 
-    Document.prototype.capture = function(options) {
+    Document.prototype.capture = function(captureOptions) {
       var outputPath;
-      if (options == null) {
-        options = {};
+      if (captureOptions == null) {
+        captureOptions = {};
       }
-      this.emit('render:init');
-      outputPath = options.outputPath;
-      return this.geMeta((function(_this) {
+      this.trigger('render:init');
+      outputPath = captureOptions.outputPath;
+      return this.getMeta((function(_this) {
         return function(meta) {
-          if (NotaHelper.isDir(outputPath)) {
-            if (meta.filesystemName != null) {
-              outputPath = path.join(outputPath, meta.filesystemName);
-            } else {
-              outputPath = path.join(outputPath, _this.options.defaultFilename);
+          if (outputPath != null) {
+            if (NotaHelper.isDirectory(outputPath)) {
+              if (meta.filesystemName != null) {
+                outputPath = path.join(outputPath, meta.filesystemName);
+              } else {
+                outputPath = path.join(outputPath, _this.options.defaultFilename);
+              }
             }
+            if (NotaHelper.isFile(outputPath) && !captureOptions.preserve) {
+              _this.trigger('render:overwrite', outputPath);
+            }
+          } else {
+            outputPath = _this.options.defaultFilename;
           }
-          if (NotaHelper.fileExists(outputPath) && !options.preserve) {
-            _this.emit('render:overwrite', outputPath);
-          }
-          options.outputPath = outputPath;
-          _.extend(meta, options);
+          captureOptions.outputPath = outputPath;
+          _.extend(meta, captureOptions);
           return _this.page.render(outputPath, function() {
-            return _this.emit('render:done', meta);
+            _this.trigger('render:done', meta);
+            return captureOptions.callback();
           });
         };
       })(this));
@@ -145,7 +151,7 @@
 
     Document.prototype.onDataRendered = function() {
       this.rendered = true;
-      return this.emit('page:ready');
+      return this.trigger('page:ready');
     };
 
     Document.prototype.close = function() {

@@ -30,9 +30,13 @@
       this.app.get('/', (function(_this) {
         return function(req, res) {
           return fs.readFile("" + _this.templatePath + "/template.html", "utf8", function(err, html) {
-            var scriptTag;
-            scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'>";
-            return res.send(html.replace(/(<head[s\S]*>)([\s\S]*<\/head>)/, "$1\n" + scriptTag + "</script>$2"));
+            var insertionRegex, scriptTag, _ref1;
+            insertionRegex = /(<head[s\S]*>)([\s\S]*<\/head>)/;
+            if (!((_ref1 = html.match(insertionRegex)) != null ? _ref1.length = 3 : void 0)) {
+              throw new Error("No encapsulating <head></head> tags found in template");
+            }
+            scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'></script>";
+            return res.send(html.replace(insertionRegex, "$1\n\t" + scriptTag + "$2"));
           });
         };
       })(this));
@@ -56,8 +60,22 @@
       return this.data = data;
     };
 
-    NotaServer.prototype.render = function(options) {
-      return this.document.render(options);
+    NotaServer.prototype.render = function(jobs, options) {
+      var job, _fn, _i, _len;
+      _fn = (function(_this) {
+        return function(job, options) {
+          _this.document.injectData(job.data);
+          return _this.document.once("page:ready", function() {
+            options.outputPath = job.outputPath;
+            return _this.document.capture(options);
+          });
+        };
+      })(this);
+      for (_i = 0, _len = jobs.length; _i < _len; _i++) {
+        job = jobs[_i];
+        _fn(job, options);
+      }
+      return this;
     };
 
     NotaServer.prototype.close = function() {
