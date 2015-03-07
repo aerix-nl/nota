@@ -8,7 +8,7 @@ open     = require("open")
 
 Document = require('./document')
 
-class NotaServer 
+class NotaServer
 
   constructor: ( @options ) ->
     { @serverAddress, @serverPort, @templatePath, @data } = @options
@@ -51,13 +51,19 @@ class NotaServer
     @data = data
 
   render: ( jobs, options ) ->
+    # TODO: use q here, because code kinda marches faster to the right than down
+    rendered = 0
     for job in jobs
       do (job, options) =>
         @document.injectData(job.data)
         @document.once "page:ready", =>
           options.outputPath = job.outputPath
           @document.capture options
-    @
+
+    @document.on 'render:done', ->
+      rendered = rendered + 1
+      if rendered is jobs.length
+        options.callback()
 
   close: ->
     @document.close()

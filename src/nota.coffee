@@ -81,20 +81,20 @@ class Nota
     # Else, perform the render job and close the server
     else @server.document.on 'client:template:loaded', => @render(@options)
 
-  render: ( options)->
+  render: ( options )->
     jobs = [{
       data: options.data
       outputPath: options.outputPath
     }]
-    @server.render jobs, 
+    @server.render jobs,
       preserve: options.preserve
-      callback: =>
-        if options.notify then @notify
+      callback: ( succesful) =>
+        if options.logging.notify then @notify
           title: "Nota: render job finished"
           message: "#{jobs.length} document captured to .PDF"
         @server.close()
 
-  # Settling options from parsed CLI arguments and defaults
+  # Settling options from parsed CLI arguments over defaults
   settleOptions: ( args, defaults ) ->
     options = _.extend {}, defaults
     # Extend with mandatory arguments
@@ -105,7 +105,7 @@ class Nota
     # Extend with optional arguments
     options.preview = args.preview                 if args.preview?
     options.port = args.port                       if args.port?
-    options.notify = args.notify                   if args.notify?
+    options.logging.notify = args.notify           if args.notify?
     options.logging.pageResources = args.resources if args.resources?
     options.preserve = args.preserve               if args.preserve?
     

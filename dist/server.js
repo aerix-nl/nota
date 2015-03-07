@@ -61,7 +61,8 @@
     };
 
     NotaServer.prototype.render = function(jobs, options) {
-      var job, _fn, _i, _len;
+      var job, rendered, _fn, _i, _len;
+      rendered = 0;
       _fn = (function(_this) {
         return function(job, options) {
           _this.document.injectData(job.data);
@@ -75,7 +76,12 @@
         job = jobs[_i];
         _fn(job, options);
       }
-      return this;
+      return this.document.on('render:done', function() {
+        rendered = rendered + 1;
+        if (rendered === jobs.length) {
+          return options.callback();
+        }
+      });
     };
 
     NotaServer.prototype.close = function() {

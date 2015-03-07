@@ -101,13 +101,16 @@
               _this.trigger('render:overwrite', outputPath);
             }
           } else {
-            outputPath = _this.options.defaultFilename;
+            if (meta.filesystemName != null) {
+              outputPath = meta.filesystemName;
+            } else {
+              outputPath = _this.options.defaultFilename;
+            }
           }
           captureOptions.outputPath = outputPath;
           _.extend(meta, captureOptions);
           return _this.page.render(outputPath, function() {
-            _this.trigger('render:done', meta);
-            return captureOptions.callback();
+            return _this.trigger('render:done', meta);
           });
         };
       })(this));

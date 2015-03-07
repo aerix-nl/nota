@@ -79,7 +79,11 @@ class Document
         if NotaHelper.isFile(outputPath) and not captureOptions.preserve
           @trigger 'render:overwrite', outputPath
 
-      else outputPath = @options.defaultFilename
+      else
+        if meta.filesystemName?
+          outputPath = meta.filesystemName
+        else
+          outputPath = @options.defaultFilename
 
       # Update the meta data with the final output path and options passed to
       # this render call
@@ -89,7 +93,6 @@ class Document
       # This is where the real PDF making magic happens. Credits to PhantomJS
       @page.render outputPath, ( ) =>
         @trigger 'render:done', meta
-        captureOptions.callback()
 
   onResourceRequested: ( request ) =>
     @trigger "page:resource:requested"

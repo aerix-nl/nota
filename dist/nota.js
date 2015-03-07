@@ -114,8 +114,8 @@
       return this.server.render(jobs, {
         preserve: options.preserve,
         callback: (function(_this) {
-          return function() {
-            if (options.notify) {
+          return function(succesful) {
+            if (options.logging.notify) {
               _this.notify({
                 title: "Nota: render job finished",
                 message: "" + jobs.length + " document captured to .PDF"
@@ -142,7 +142,7 @@
         options.port = args.port;
       }
       if (args.notify != null) {
-        options.notify = args.notify;
+        options.logging.notify = args.notify;
       }
       if (args.resources != null) {
         options.logging.pageResources = args.resources;
