@@ -65,6 +65,7 @@
       rendered = 0;
       _fn = (function(_this) {
         return function(job, options) {
+          _this.data = job.data;
           _this.document.injectData(job.data);
           return _this.document.once("page:ready", function() {
             options.outputPath = job.outputPath;

@@ -38,7 +38,7 @@ class Document
             @trigger 'page:opened'
 
             # @on 'client:template:loaded',      @injectData,     @
-            # TODO: this is critical and rather ugly imo
+            # TODO: this render:done event is critical and kinda clumsy imo
             @on 'client:template:render:done', @onDataRendered, @
         
           else

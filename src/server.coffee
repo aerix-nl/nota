@@ -55,6 +55,14 @@ class NotaServer
     rendered = 0
     for job in jobs
       do (job, options) =>
+        # TODO: kinda indecisive about whether to inject data or set the data
+        # here and "notify" the template to get the new data. The latter is
+        # more HTTP-ish, but way more convoluted/complex than injecting it. So
+        # for now we'll just use that, and set the data as well, in case you
+        # want to monitor the job rendering progress with your browser. By
+        # refreshing the page you can get the data of the current job being
+        # rendered in your browser.
+        @data = job.data
         @document.injectData(job.data)
         @document.once "page:ready", =>
           options.outputPath = job.outputPath
