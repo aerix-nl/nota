@@ -34,7 +34,7 @@ class NotaHelper
     index = {}
 
     for dir in templateDirs
-      definition = @getTemplateDefinition path.join(basePath, dir) 
+      definition = @getTemplateDefinition path.join(basePath, dir)
       if definition.meta is 'not template'
         warningMsg = "Template %m#{dir}%N has no mandatory
         template.html file %K(omitting template)"
@@ -46,8 +46,9 @@ class NotaHelper
     return index
 
   getTemplateDefinition: ( dir ) ->
+    unless @isDirectory dir then throw new Error "Template '#{dir}' not found"
     # Get the template definition
-    isDefined = fs.existsSync( dir+"/bower.json")
+    isDefined = @isFile( dir+"/bower.json")
 
     if not isDefined
       warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
@@ -71,5 +72,6 @@ class NotaHelper
 
     # Supplement the definition with some meta data that is now available
     templateDefinition.dir = path.basename(dir)
+    return templateDefinition
 
 module.exports = new NotaHelper()

@@ -34,7 +34,7 @@ define 'template', dependencies, (InvoiceView, InvoiceModel) ->
       TemplateApp.model.set(data, {validate: true}) # This will trigger a render
   # Unless we're not running in PhantomJS and we'll never receive an
   # injection and we'll have to fetch it ourselves
-  else Nota.getData (data)-> 
+  else Nota.getData (data)->
     TemplateApp.model.set(data, {validate: true})
 
   # Forward all view events to Nota client under a seperate namespace

@@ -55,7 +55,10 @@
 
     NotaHelper.prototype.getTemplateDefinition = function(dir) {
       var definitionPath, isDefined, templateDefinition, warningMsg;
-      isDefined = fs.existsSync(dir + "/bower.json");
+      if (!this.isDirectory(dir)) {
+        throw new Error("Template '" + dir + "' not found");
+      }
+      isDefined = this.isFile(dir + "/bower.json");
       if (!isDefined) {
         warningMsg = "Template %m" + dir + "%N has no 'bower.json' definition %K(optional, but recommended)";
         this.trigger("warning", warningMsg);
@@ -71,7 +74,8 @@
       if (!fs.existsSync(dir + "/template.html")) {
         templateDefinition.meta = 'not template';
       }
-      return templateDefinition.dir = path.basename(dir);
+      templateDefinition.dir = path.basename(dir);
+      return templateDefinition;
     };
 
     return NotaHelper;

@@ -31,6 +31,7 @@
     "underscore.string": "3.0.2"
   },
   "devDependencies": {
+    "node-inspector": "0.9.1",
     "grunt": "~0.4.5",
     "grunt-contrib-coffee": "~0.10.1",
     "grunt-contrib-watch": "~0.3.1",

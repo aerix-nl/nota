@@ -156,15 +156,30 @@
     };
 
     Nota.prototype.getInitData = function(options) {
-      var data;
+      var data, exampleData, _data;
+      exampleData = function() {
+        var dataPath, definition, e;
+        try {
+          definition = NotaHelper.getTemplateDefinition(options.templatePath);
+          if (definition['example-data'] != null) {
+            dataPath = path.join(options.templatePath, definition['example-data']);
+            if (NotaHelper.isData(dataPath)) {
+              return JSON.parse(fs.readFileSync(dataPath, {
+                encoding: 'utf8'
+              }));
+            }
+          }
+        } catch (_error) {
+          e = _error;
+          return null;
+        }
+      };
       if (options.dataPath != null) {
         return data = JSON.parse(fs.readFileSync(options.dataPath, {
           encoding: 'utf8'
         }));
-      } else if ((definition['example-data'] != null) && NotaHelper.isData(definition['example-data'])) {
-        return data = JSON.parse(fs.readFileSync(definition['example-data'], {
-          encoding: 'utf8'
-        }));
+      } else if ((_data = exampleData()) != null) {
+        return data = _data;
       } else {
         return data = {};
       }

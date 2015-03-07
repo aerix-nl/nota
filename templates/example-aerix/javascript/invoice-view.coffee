@@ -33,7 +33,7 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
 
     render: (options)->
       @trigger 'render:start'
-      @el.style.opacity = 0.5
+      #@el.style.opacity = 0.5
 
       partial = options?.partial
       # Render part of the view
@@ -54,7 +54,7 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
       # first place) is needed.
       if Nota.phantomRuntime then $('a').html ''
       
-      @el.style.opacity = 1
+      #@el.style.opacity = 1
       @trigger 'render:done'
       @
 

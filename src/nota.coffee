@@ -114,11 +114,24 @@ class Nota
     return options
 
   getInitData: ( options ) ->
+
+    # Little bundle of logic that we can call later if no data has been provided
+    # to see if the template specified any example data.
+    exampleData = ->
+      try
+        definition = NotaHelper.getTemplateDefinition options.templatePath
+        if definition['example-data']?
+          dataPath = path.join options.templatePath, definition['example-data']
+          if NotaHelper.isData dataPath
+            return JSON.parse fs.readFileSync dataPath, encoding: 'utf8'
+      catch e
+        return null
+
     # Get the data
     if options.dataPath?
       data = JSON.parse(fs.readFileSync(options.dataPath, encoding: 'utf8'))
-    else if definition['example-data']? and NotaHelper.isData definition['example-data']
-      data = JSON.parse(fs.readFileSync(definition['example-data'], encoding: 'utf8'))
+    else if (_data = exampleData())?
+      data = _data
     else
       data = {}
 
