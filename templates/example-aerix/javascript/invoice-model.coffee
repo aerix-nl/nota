@@ -1,4 +1,4 @@
-define ['backbone'], (Backbone)-> class TemplateApp.InvoiceModel extends Backbone.Model
+define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.InvoiceModel extends Backbone.Model
   init: ->
     @on 'change', @validate, @
 
@@ -34,9 +34,18 @@ define ['backbone'], (Backbone)-> class TemplateApp.InvoiceModel extends Backbon
     if parseInt(id, 10) <= 0 or (parseInt(id, 10) isnt parseFloat(id, 10))
       throw new Error "Invoice ID must be a positive integer"
 
+    period = attrs.meta.period
+    if period?
+      if isNaN parseInt(period, 10)
+        throw new Error "Invoice period could not be parsed"
+      if parseInt(period, 10) <= 0
+        throw new Error "Invoice ID must be a positive"
+      if (parseInt(period, 10) isnt parseFloat(period, 10))
+        throw new Error "Invoice ID must be an integer"
+
     date = new Date attrs.meta.date
     unless (Object.prototype.toString.call(date) is "[object Date]") and not isNaN(date.getTime())
-     throw new Error "Invoice date is not a valid/parsable value"
+      throw new Error "Invoice date is not a valid/parsable value"
 
     unless attrs.client?
       throw new Error "No data provided about the client/target of the invoice"
@@ -45,11 +54,25 @@ define ['backbone'], (Backbone)-> class TemplateApp.InvoiceModel extends Backbon
       throw new Error "At least the organization name or contact person name must be provided"
       
     postalCode = attrs.client.postalCode
-    if postalCode.length? # Postal code is optional, for clients where it is still unknown
-      if postalCode.length < 6 then throw new Error "Postal code must be at least 6 characters long"
+    country = attrs.client.country
+    if country?
+      dutch = s.contains(country.toLowerCase(), "netherlands") or
+              s.contains(country.toLowerCase(), "nederland")
+
+    # Postal code is optional, for clients where it is still unknown, but when
+    # defined, Dutch postal codes are only valid when 6 characters long.
+    if postalCode.length? and country? and dutch
+      postalCode = s.clean(postalCode)
+      if postalCode.length < 6
+        throw new Error "Postal code must be at least 6 characters long"
+      else if postalCode.length > 7
+        throw new Error "Postal code may not be longer than 7 characters"
+      else if not postalCode.match(/\d{4}\s?[A-z]{2}/)
+        throw new Error 'Postal code must be of format /\\d{4}\\s?[A-z]{2}/, e.g. 1234AB or 1234 ab'
 
     unless attrs.invoiceItems? and _.keys(attrs.invoiceItems).length? > 0
-      throw new Error "No things/items to show in invoice provided. Must be an dictionary object with at least one entry"
+      throw new Error "No things/items to show in invoice provided. Must be an
+      dictionary object with at least one entry"
 
     allItemsValid = _.every attrs.invoiceItems, (item, idx)->
       unless item.description?.length? > 0

@@ -2,7 +2,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['backbone'], function(Backbone) {
+  define(['backbone', 'underscore.string'], function(Backbone, s) {
     return TemplateApp.InvoiceModel = (function(_super) {
       __extends(InvoiceModel, _super);
 
@@ -40,7 +40,7 @@
       };
 
       InvoiceModel.prototype.validate = function(attrs, options) {
-        var allItemsValid, date, id, postalCode;
+        var allItemsValid, country, date, dutch, id, period, postalCode;
         if (!(_.keys(attrs).length > 0)) {
           throw new Error("Provided model has no attributes. " + "Check the arguments of this model's initialization call.");
         }
@@ -57,6 +57,18 @@
         if (parseInt(id, 10) <= 0 || (parseInt(id, 10) !== parseFloat(id, 10))) {
           throw new Error("Invoice ID must be a positive integer");
         }
+        period = attrs.meta.period;
+        if (period != null) {
+          if (isNaN(parseInt(period, 10))) {
+            throw new Error("Invoice period could not be parsed");
+          }
+          if (parseInt(period, 10) <= 0) {
+            throw new Error("Invoice ID must be a positive");
+          }
+          if (parseInt(period, 10) !== parseFloat(period, 10)) {
+            throw new Error("Invoice ID must be an integer");
+          }
+        }
         date = new Date(attrs.meta.date);
         if (!((Object.prototype.toString.call(date) === "[object Date]") && !isNaN(date.getTime()))) {
           throw new Error("Invoice date is not a valid/parsable value");
@@ -68,9 +80,18 @@
           throw new Error("At least the organization name or contact person name must be provided");
         }
         postalCode = attrs.client.postalCode;
-        if (postalCode.length != null) {
+        country = attrs.client.country;
+        if (country != null) {
+          dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
+        }
+        if ((postalCode.length != null) && (country != null) && dutch) {
+          postalCode = s.clean(postalCode);
           if (postalCode.length < 6) {
             throw new Error("Postal code must be at least 6 characters long");
+          } else if (postalCode.length > 7) {
+            throw new Error("Postal code may not be longer than 7 characters");
+          } else if (!postalCode.match(/\d{4}\s?[A-z]{2}/)) {
+            throw new Error('Postal code must be of format /\\d{4}\\s?[A-z]{2}/, e.g. 1234AB or 1234 ab');
           }
         }
         if (!((attrs.invoiceItems != null) && (_.keys(attrs.invoiceItems).length != null) > 0)) {
