@@ -54,25 +54,29 @@ Old skool setup on the bare metal:
 
 ## Architecture
 
-Technically this NodeJS package is a pipeline consisting primarily out of
-PhantomJS (headless WebKit for rendering the HTML and capturing PDF) with the
-[phantomjs-node](https://github.com/sgentle/phantomjs-node) bindings for
-interfacing using NodeJS, and some frameworking to make the job and building
-templates and rendering them easier.
+Technically this primarily consists out of a pipeline of
+[PhantomJS](http://phantomjs.org/) (headless WebKit browser for rendering HTML
+and capturing PDF) with the [phantomjs- node](https://github.com/sgentle
+/phantomjs-node) bindings for interfacing using
+[Node.js](https://nodejs.org/). So all the credits really go out to them. This
+package is mostly some frameworking and task automation around the
+beforementioned, to make the job of crafting and rendering templates easier.
 
 ## Usage
 
 To get a feel of Nota, run  the following line:
 ````
-node dist/nota.js --template=templates/hello_world
---data=templates/hello_world/data.json
+node dist/nota.js --template=example-aerix
+--data=json/example.json
 ````
 
-When finished Nota has rendered a very simple PDF page, consisting of nothing
-much. Try it yourselves with any of the examples provided.
+When finished Nota has rendered a simple PDF page, consisting of some custom
+rendering of data. Change the company logo image and try modifing the example
+data to see how easy it is to customise your own invoice.
 
-You can use any inline CSS or linked stylesheets. Any of the images you use
-should be available in the template directory.
+Try some of the simpler static "Hello World" templates and customize them with
+any inline CSS, linked stylesheets or JavaScript. Any of the assets like
+images you use should be available in the template directory. You can also write in SASS and CoffeeScript and have it automagically compiled by running `grunt` in de Nota root.
 
 Add the switch `--template=<dir>` to select a template by directory. Add the
 switch `--data=<path>` with a path from the Nota root directory to the JSON

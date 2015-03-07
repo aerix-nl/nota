@@ -56,6 +56,7 @@
       InvoiceView.prototype.render = function(options) {
         var fns, index, partial, renderFnName;
         this.trigger('render:start');
+        this.el.style.opacity = 0.5;
         partial = options != null ? options.partial : void 0;
         if (partial != null) {
           this['_render' + s.capitalize(partial)].call(this);
@@ -71,6 +72,7 @@
         if (Nota.phantomRuntime) {
           $('a').html('');
         }
+        this.el.style.opacity = 1;
         this.trigger('render:done');
         return this;
       };

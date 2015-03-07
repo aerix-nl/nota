@@ -61,7 +61,7 @@ class NotaServer
           @document.capture options
 
     @document.on 'render:done', ->
-      rendered = rendered + 1
+      rendered += 1
       if rendered is jobs.length
         options.callback()
 

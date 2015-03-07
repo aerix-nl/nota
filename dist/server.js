@@ -77,7 +77,7 @@
         _fn(job, options);
       }
       return this.document.on('render:done', function() {
-        rendered = rendered + 1;
+        rendered += 1;
         if (rendered === jobs.length) {
           return options.callback();
         }
