@@ -19,8 +19,7 @@ getting your PDF fix. Use the Nota API to process your bulk jobs and banish
 intellectual slave labour.
 
 ## Setup
-Due to kinks (see [Known problems](https://github.com/FelixAkk/nota/tree
-/refactor-felix#known-problems)) in the depencencies that are still being
+Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems)) in the depencencies that are still being
 worked out, Nota is a bit picky on it's environment and dependencies. We
 recommend running Nota in a virtual environment, and this is easy with
 [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and
