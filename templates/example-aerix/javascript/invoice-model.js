@@ -40,34 +40,34 @@
       };
 
       InvoiceModel.prototype.validate = function(attrs, options) {
-        var allItemsValid, country, date, dutch, id, period, postalCode;
+        var allItemsValid, country, date, dutch, id, isNaturalInt, period, postalCode;
         if (!(_.keys(attrs).length > 0)) {
           throw new Error("Provided model has no attributes. " + "Check the arguments of this model's initialization call.");
         }
         if (attrs.meta == null) {
           throw new Error("No invoice meta-data provided");
         }
+        isNaturalInt = function(int, attr) {
+          if (isNaN(parseInt(int, 10))) {
+            throw new Error("" + attr + " could not be parsed");
+          }
+          if (parseInt(int, 10) <= 0) {
+            throw new Error("" + attr + " must be a positive integer");
+          }
+          if (parseInt(int, 10) !== parseFloat(int, 10)) {
+            throw new Error("" + attr + " must be an integer");
+          }
+        };
         id = attrs.meta.id;
         if (id == null) {
           throw new Error("No invoice ID provided");
         }
-        if (isNaN(parseInt(id, 10))) {
-          throw new Error("Invoice ID could not be parsed");
-        }
-        if (parseInt(id, 10) <= 0 || (parseInt(id, 10) !== parseFloat(id, 10))) {
-          throw new Error("Invoice ID must be a positive integer");
+        if (typeof period !== "undefined" && period !== null) {
+          isNaturalInt(period, "Invoice ID");
         }
         period = attrs.meta.period;
         if (period != null) {
-          if (isNaN(parseInt(period, 10))) {
-            throw new Error("Invoice period could not be parsed");
-          }
-          if (parseInt(period, 10) <= 0) {
-            throw new Error("Invoice ID must be a positive");
-          }
-          if (parseInt(period, 10) !== parseFloat(period, 10)) {
-            throw new Error("Invoice ID must be an integer");
-          }
+          isNaturalInt(period, "Invoice period");
         }
         date = new Date(attrs.meta.date);
         if (!((Object.prototype.toString.call(date) === "[object Date]") && !isNaN(date.getTime()))) {
