@@ -41,7 +41,7 @@ class NotaHelper
         @trigger "warning", warningMsg
         continue
       # Save the definition in the index with it's name as the key
-      index[templateDefinition.dir] = definition
+      index[definition.dir] = definition
     # We're done here
     return index
 

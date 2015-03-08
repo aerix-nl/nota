@@ -48,7 +48,7 @@
           this.trigger("warning", warningMsg);
           continue;
         }
-        index[templateDefinition.dir] = definition;
+        index[definition.dir] = definition;
       }
       return index;
     };
