@@ -66,8 +66,7 @@ beforementioned, to make the job of crafting and rendering templates easier.
 
 To get a feel of Nota, run  the following line:
 ````
-node dist/nota.js --template=example-aerix
---data=json/example.json
+node dist/nota.js --template=example-aerix --data=json/example.json
 ````
 
 When finished Nota has rendered a simple PDF page, consisting of some custom
@@ -114,11 +113,6 @@ It seems PhantomJS only generates PDFs with selectable text on Linux due to a
 information/research on specifics and other operating systems is needed. For
 now we recommend using the Vagrant spec to run Nota virtualized on Linux.
 
-#### Bad kerning
-Under Linux the output PDF's text has bad kerning. See [this reported
-issue](https://github.com/ariya/phantomjs/issues/12016). More
-information/research on specifics is needed.
-
 #### Fonts
 Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in
 PhantomJS, the loading of webfonts (even if they're locally hosted) seems
@@ -138,7 +132,7 @@ documents through a programmable interfaces.
 Shortly after [inventid](https://www.inventid.nl) joined in on development
 after it adopted Nota for automating the production of event tickets.
 
-Both Aerix and inventid are two young, small and Dutch internetbureaus who are
+Both Aerix and inventid are two young Dutch internetbureaus who are
 passionate about making shiny apps and contributing to open source innovation.
 
 #### How to suggest improvements?
