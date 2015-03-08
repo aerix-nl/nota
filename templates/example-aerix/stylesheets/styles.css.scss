@@ -36,7 +36,7 @@ a, .link {
 }
 // Override bootstrap
 .muted {
-	color: transparentize($textColor, 0.7);
+	color: transparentize($textColor, 0.5) !important;
 }
 
 img#logo {

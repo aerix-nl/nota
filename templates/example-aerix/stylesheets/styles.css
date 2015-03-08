@@ -24,7 +24,7 @@ a, .link {
     color: #15678A !important; }
 
 .muted, div.company-info p#accounts, div#invoice-meta span {
-  color: rgba(26, 44, 51, 0.3); }
+  color: rgba(26, 44, 51, 0.5) !important; }
 
 img#logo {
   margin: 15mm 21mm;
