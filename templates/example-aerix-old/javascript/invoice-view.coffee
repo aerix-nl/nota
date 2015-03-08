@@ -1,12 +1,9 @@
-define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
-
+define ['nota-client', 'underscore.string'], (Nota, s)->
   class TemplateApp.InvoiceView extends Backbone.View
     initialize: ->
       _.extend(@, Backbone.Events)
       @setElement $("body") # Set root element
       @model.on 'change', @render, @
-      @i18n = new Jed
-        "missing_key_callback": (key)-> console.error "Missing key in i18n: #{key}"
 
     # Used for the html head title element
     documentName: -> 'Invoice '+@getFullID()
@@ -33,7 +30,6 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
 
     render: (options)->
       @trigger 'render:start'
-      #@el.style.opacity = 0.5
 
       partial = options?.partial
       # Render part of the view
@@ -49,18 +45,16 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
       #
       #   <a href="http://www.aerix.nl">Aerix(http://www.aerix.nl)</a>
       #
-      # By removing the text node we can sort of counter this. A better method
-      # (like a directive for the engine to prevent it from doing this in the
-      # first place) is needed.
+      # By removing the text node we can sort of counter this. A better method (like a
+      # directive for the engine to prevent it from doing this in the first place) is needed. 
       if Nota.phantomRuntime then $('a').html ''
       
-      #@el.style.opacity = 1
       @trigger 'render:done'
       @
 
     # Pretty much everything apart from the table
     _renderInvoiceDetails: ->
-      directives =
+      directives = 
         vatPercentage: =>
           @model.get("vatPercentage")*100
         companyFullname: =>

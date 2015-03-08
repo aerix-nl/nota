@@ -3,29 +3,34 @@
     var NotaClient;
     require.config({});
     NotaClient = (function() {
-      function NotaClient() {}
-
       NotaClient.prototype.phantomRuntime = window._phantom != null;
 
       NotaClient.prototype.documentMeta = {
-        data: {}
+        data: {},
+        fn: function() {},
+        context: {}
       };
 
-      NotaClient.prototype.init = function() {
+      function NotaClient() {
         _.extend(this, Backbone.Events);
-        this.on("all", this.msgServer, this);
+        this.on("all", this.logEvent, this);
         this.trigger('init');
         this.trigger('loaded');
-        return this;
-      };
+        this;
+      }
 
-      NotaClient.prototype.msgServer = function(msg) {
+      NotaClient.prototype.logEvent = function(message) {
         if (this.phantomRuntime) {
-          return window.callPhantom(msg);
+          return window.callPhantom(message);
+        } else {
+          return console.log(message);
         }
       };
 
       NotaClient.prototype.setDocumentMeta = function(documentMeta, context) {
+        if (documentMeta == null) {
+          throw new Error("Document meta not defined");
+        }
         if (typeof documentMeta === 'function') {
           this.documentMeta.fn = documentMeta;
           if (context != null) {
@@ -50,15 +55,21 @@
         }
       };
 
-      NotaClient.prototype.getData = function(callback) {
-        if (this.data == null) {
-          return require(['json!/data.json'], function(data) {
-            this.data = data;
-            return callback(this.data);
-          });
-        } else {
-          return callback(this.data);
+      NotaClient.prototype.getData = function(callback, force) {
+        if (force == null) {
+          force = true;
         }
+        if (!force && (this.data != null)) {
+          return typeof callback === "function" ? callback(this.data) : void 0;
+        }
+        this.trigger('data:fetching');
+        return require(['json!/data'], (function(_this) {
+          return function(data) {
+            _this.data = data;
+            _this.trigger('data:loaded');
+            return typeof callback === "function" ? callback(_this.data) : void 0;
+          };
+        })(this));
       };
 
       NotaClient.prototype.injectData = function(data) {
@@ -69,8 +80,7 @@
       return NotaClient;
 
     })();
-    this.Nota = new NotaClient();
-    return Nota.init();
+    return this.Nota = new NotaClient();
   });
 
 }).call(this);

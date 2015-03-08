@@ -1,0 +1,20 @@
+{
+  "serverAddress":      "localhost",
+  "serverPort":         7483,
+  "templatesPath":      "templates",
+
+
+  "logging": {
+    "notify":           true,
+    "pageResources":    false
+  },
+
+  "document": {
+    "defaultFilename":    "output.pdf",
+    "paperSize": {
+      "format":           "A4",
+      "orientation":      "portrait",
+      "border":           "0cm"
+    }
+  }
+}

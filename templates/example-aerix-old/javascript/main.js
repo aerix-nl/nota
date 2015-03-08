@@ -8,13 +8,13 @@
     paths: {
       'bootstrap': 'bootstrap/dist/js/bootstrap',
       'underscore.string': 'underscore.string/dist/underscore.string.min',
-      'jed': 'jed/jed',
+      'rivets': 'rivets/dist/rivets.bundled',
       'view': '/javascript/invoice-view',
       'model': '/javascript/invoice-model'
     }
   });
 
-  dependencies = ['view', 'model'];
+  dependencies = ['bootstrap', 'view', 'model'];
 
   define('template', dependencies, function(InvoiceView, InvoiceModel) {
     Nota.trigger('template:init');
@@ -23,13 +23,12 @@
       model: TemplateApp.model
     });
     Nota.setDocumentMeta(TemplateApp.view.documentMeta, TemplateApp.view);
-    if (Nota.phantomRuntime) {
-      Nota.on('data:injected', function(data) {
-        return TemplateApp.model.set(data, {
-          validate: true
-        });
+    Nota.on('data:injected', function(data) {
+      return TemplateApp.model.set(data, {
+        validate: true
       });
-    } else {
+    });
+    if (!Nota.phantomRuntime) {
       Nota.getData(function(data) {
         return TemplateApp.model.set(data, {
           validate: true

@@ -1,0 +1,18 @@
+@font-face {
+  font-family: 'Kreon';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Kreon Light'), local('Kreon-Light'), url(../fonts/Kreon-Light.ttf) format('ttf');
+}
+@font-face {
+  font-family: 'Kreon';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Kreon Regular'), local('Kreon-Regular'), url(../fonts/Kreon-Regular.ttf) format('ttf');
+}
+@font-face {
+  font-family: 'Kreon';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Kreon Bold'), local('Kreon-Bold'), url(../fonts/Kreon-Bold.ttf) format('ttf');
+}

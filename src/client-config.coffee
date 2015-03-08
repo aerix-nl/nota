@@ -1,22 +1,25 @@
 # We user RequireJS to load the client and it's dependencies
 requirejs.config {
-  baseUrl: '/vendor/'
-  # The following are 
+
+  # The following are
   paths:
     # Nota client itself
     'nota-client': '/lib/client'
     # And the entry point for template code
     'template': '/javascript/main'
 
-    # Backbone deps
-    'backbone': 'backbone/backbone'
-    'jquery': 'jquery/dist/jquery'
-    'underscore': 'underscore/underscore'
+    # Common dependencies
+    'backbone':   '/vendor/backbone/backbone'
+    'jquery':     '/vendor/jquery/dist/jquery'
+    'underscore': '/vendor/underscore/underscore'
 
     # RequireJS json! deps
-    'json': 'requirejs-plugins/src/json'
-    'text': 'requirejs-text/text'
-    'requirejs': 'requirejs/require'
+    'json':      '/vendor/requirejs-plugins/src/json'
+    'text':      '/vendor/requirejs-text/text'
+    'requirejs': '/vendor/requirejs/require'
+
+    # Data
+    'data': 'json!/data.json'
 
   shim:
     'template':
@@ -27,5 +30,6 @@ require ['nota-client', 'json!/bower.json'], (NotaClient, bower)->
     requirejs.config {
       paths: 'template': bower.main
     }
+
   require ['template'], (TemplateApp)->
   NotaClient.TemplateApp = TemplateApp if TemplateApp?

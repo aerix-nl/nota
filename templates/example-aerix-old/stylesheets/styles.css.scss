@@ -26,8 +26,7 @@ body {
 	@include box-shadow(0 0 30px 0 transparentize(black, 0.5));
 	@include box-sizing(border-box);
 	position: relative;
-	font-family: 'Avenir', $fallbackkFontstack;
-	font-weight: 500 !important;
+	font-family: 'Kreon', $fallbackkFontstack;
 }
 a, .link {
 	color: $primaryBlue !important;
@@ -37,7 +36,7 @@ a, .link {
 }
 // Override bootstrap
 .muted {
-	color: transparentize($textColor, 0.6) !important;
+	color: mix($textColor, white) !important;
 }
 
 img#logo {
@@ -52,16 +51,13 @@ div.company-info {
 	p#accounts {
 		@extend .muted;
 		margin-top: 1cm;
-		span {
-			color: $textColor;
-		}
 	}
 }
 div#envelope-window {
 	left: 21mm;
 	position: absolute;
 	top: 46mm;
-	font-family: 'Avenir Next', $fallbackkFontstack;
+	font-family: $fallbackkFontstack;
 
 	span#retour-line {
 		border-bottom: 1px solid black;
@@ -73,7 +69,7 @@ div#envelope-window {
 }
 
 div#invoice-meta {
-	$side: left;
+	$side: right;
 	float: $side;
 	text-align: $side;
 	clear: both;
@@ -83,7 +79,6 @@ div#invoice-meta {
 		line-height: 1em;
 		margin-top: 0;
 		margin-bottom: 1cm;
-		font-weight: 400;
 	}
 	table tr td:nth-child(2n) {
 		padding-left: 1cm;

@@ -1,167 +1,230 @@
-_       = require('underscore')._
-_.str   = require('underscore.string')
-http    = require('http')
-express = require('express')
-phantom = require('phantom')
-fs      = require('fs')
-argv    = require('optimist').argv
-open    = require("open")
-Page    = require('./page')
+nomnom   = require('nomnom')
+fs       = require('fs')
+path     = require('path')
+_        = require('underscore')._
+_.str    = require('underscore.string')
+open     = require('open')
+terminal = require('node-terminal')
+notifier = require('node-notifier')
 
-class NotaServer
-  # Some defaults
-  serverAddress: 'localhost'
-  serverPort: 7483
-  templatesPath: 'templates'
-  defaultFilename: 'output.pdf'
+NotaServer = require('./server')
+NotaHelper = require('./helper')
 
-  constructor: ( argv ) ->
-    # TODO: get server config from .json file
-    dataPath       = argv.data
-    templatePath   = argv.template
-    preview        = argv.show
-    outputPath     = argv.output
+class Nota
 
-    @serverPort    = argv.port if argv.port?
+  # Load the (default) configuration
+  defaults: JSON.parse(fs.readFileSync('config-default.json', 'utf8'))
 
-    # If --list output an index of all the templates found in the template directory
-    if argv.list?
-      return @listTemplatesIndex()
+  # Load the package definition so we have some meta data available such as
+  # version number.
+  meta: JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
+  constructor: ( ) ->
+    NotaHelper.on "warning", @logWarning, @
+
+    nomnom.options
+      template:
+        position: 0
+        help:     'The template path'
+      data:
+        position: 1
+        help:    'The data path'
+      output:
+        position: 2
+        help:    'The output file'
+
+      preview:
+        abbr: 'p'
+        flag: true
+        help: 'Preview in the browser'
+      list:
+        abbr: 'l'
+        flag: true
+        help: 'List all templates'
+        callback: @listTemplatesIndex
+      version:
+        abbr: 'v'
+        flag: true
+        help: 'Print version'
+        callback: -> @meta.version
+
+      notify:
+        abbr: 'n'
+        flag: true
+        help: 'Notify when a render job is finished'
+      resources:
+        flag: true
+        help: 'Show the events of page resource loading in output'
+      preserve:
+        flag: true
+        help: 'Prevents overwriting when output path is already occupied'
+
+    try
+      @options = @settleOptions nomnom.nom(), @defaults
+    catch e
+      @logError e
+      return
+
+    definition = NotaHelper.getTemplateDefinition @options.templatePath
+    if definition.meta is "not template"
+      @logError "Template %m#{definition.name}%N has no mandatory template.html file"
+      return
+
+    @options.data = @getInitData(@options)
+
+    # Start the server
+    @server = new NotaServer(@options)
+    @server.document.on 'all', @logEvent, @
+
+    # If we want a preview, open the web page
+    if @options.preview then open(@server.url())
+    # Else, perform the render job and close the server
+    else @server.document.on 'client:template:loaded', => @render(@options)
+
+  render: ( options )->
+    jobs = [{
+      data: options.data
+      outputPath: options.outputPath
+    }]
+    @server.render jobs,
+      preserve: options.preserve
+      callback: ( succesful) =>
+        if options.logging.notify then @notify
+          title: "Nota: render job finished"
+          message: "#{jobs.length} document captured to .PDF"
+        @server.close()
+
+  # Settling options from parsed CLI arguments over defaults
+  settleOptions: ( args, defaults ) ->
+    options = _.extend {}, defaults
+    # Extend with mandatory arguments
+    options = _.extend options,
+      templatePath: args.template
+      dataPath:     args.data
+      outputPath:   args.output
+    # Extend with optional arguments
+    options.preview = args.preview                 if args.preview?
+    options.port = args.port                       if args.port?
+    options.logging.notify = args.notify           if args.notify?
+    options.logging.pageResources = args.resources if args.resources?
+    options.preserve = args.preserve               if args.preserve?
+    
+    options.templatePath =  @findTemplatePath(options)
+    options.dataPath =      @findDataPath(options)
+    return options
+
+  getInitData: ( options ) ->
+
+    # Little bundle of logic that we can call later if no data has been provided
+    # to see if the template specified any example data.
+    exampleData = ->
+      try
+        definition = NotaHelper.getTemplateDefinition options.templatePath
+        if definition['example-data']?
+          dataPath = path.join options.templatePath, definition['example-data']
+          if NotaHelper.isData dataPath
+            return JSON.parse fs.readFileSync dataPath, encoding: 'utf8'
+      catch e
+        return null
+
+    # Get the data
+    if options.dataPath?
+      data = JSON.parse(fs.readFileSync(options.dataPath, encoding: 'utf8'))
+    else if (_data = exampleData())?
+      data = _data
+    else
+      data = {}
+
+  findTemplatePath: ( options ) ->
+    { templatePath } = options
     # Exit unless the --template and --data are passed
-    unless argv.template?
-      throw new Error("Please provide a template directory with '--template=<dir>'.")
-    unless argv.data?
-      throw new Error("Please provide a data JSON file with '--data=<file>'.")
+    unless templatePath?
+      throw new Error("Please provide a template.")
+        
+    # Find the correct template path
+    unless NotaHelper.isTemplate(templatePath)
 
-    # Check if the template paths is absolute
-    if not _.str.startsWith(templatePath, '/')
-      # If not we interpret it as relative to the templates directory from here on
-      templatePath = @templatesPath + '/' + templatePath
+      if NotaHelper.isTemplate(_templatePath =
+        "#{process.cwd()}/#{templatePath}")
+        templatePath = _templatePath
 
-    # Check if the template paths exist
-    unless fs.existsSync(templatePath) and fs.statSync(templatePath).isDirectory()
-      throw new Error("Failed to find template '#{templatePath}'.")
+      else if NotaHelper.isTemplate(_templatePath =
+        "#{@defaults.templatesPath}/#{templatePath}")
+        templatePath = _templatePath
 
-    # Check if the data path is absolute 
-    if not _.str.startsWith(dataPath, '/')
-      # If not we interpret it as relative to the selected template directory from here on
-      dataPath = templatePath + '/' + dataPath
+      else if (match = _(NotaHelper.getTemplatesIndex(@options.templatesPath)).findWhere {name: templatePath})?
+        throw new Error("No template at '#{templatePath}'. But we did find a
+        template which declares it's name as such. It's path is '#{match.dir}'")
 
-    # Check if the data path exists
-    unless @fileExists(dataPath)
+      else throw new Error("Failed to find template '#{templatePath}'.")
+    templatePath
 
-      # Check if is has the .json extension suffixed and try again
-      if not _.str.endsWith(dataPath, '.json')
+  findDataPath: ( options ) ->
+    { dataPath, templatePath, preview } = options
+    unless dataPath?
+      # When previewing we allow for no data to be specified, otherwise it's mandatory
+      if preview then return null else throw new Error("Please provide data'.")
 
-        dataPath = dataPath + '.json'
-        unless @fileExists(dataPath)
-          throw new Error("Failed to find data '#{dataPath}'.")
+    # Find the correct data path
+    unless NotaHelper.isData(dataPath)
 
-    data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
+      if NotaHelper.isData(_dataPath = "#{process.cwd()}/#{dataPath}")
+        dataPath = _dataPath
 
-    # Start express server to serve dependencies from a unified namespaces
-    @app = express()
-    @server = http.createServer(@app)
+      else if NotaHelper.isData(_dataPath = "#{templatePath}/#{dataPath}")
+        dataPath = _dataPath
 
-    # Open the server with servering the template path as root
-    @app.use express.static(templatePath)
-    # Serve 'template.html' by default (instead of index.html default behaviour)
-    @app.get '/', (req, res)-> res.redirect('/template.html')
-    # Expose some extras at the first specified subpaths
-    @app.use '/lib/', express.static("#{__dirname}/")
-    @app.use '/vendor/', express.static("#{__dirname}/../bower_components/")
-    @app.use '/data.json', express.static(dataPath)
+      else throw new Error("Failed to find data '#{dataPath}'.")
 
-    @server.listen(@serverPort)
+    dataPath
 
-    pageConfig = {
-      serverAddress: @serverAddress
-      serverPort: @serverPort
-      outputPath: outputPath
-      defaultFilename: @defaultFilename
-      initData: data
-    }
+  listTemplatesIndex: ( ) =>
+    NotaHelper.on "warning", @logWarning, @
 
-    # Render the page
-    @page = new Page(pageConfig)
-    @page.on 'ready',        => @page.capture()
-    @page.on 'capture:done',    @captured, @
-    @page.on 'fail',            @close,    @
-    @page.onAny                 @logPage,  @
-
-  logPage: ->
-    if _.str.startsWith 'client:' then console.log @event
-    else console.log "page:#{@event}"
-
-  fileExists: (path)->
-    fs.existsSync(path) and fs.statSync(path).isFile()
-
-  listTemplatesIndex: ->
-    index = @getTemplatesIndex()
+    templates = []
+    index = NotaHelper.getTemplatesIndex(@defaults.templatesPath)
 
     if _.size(index) is 0
       throw new Error("No (valid) templates found in templates directory.")
     else
-      # List them all in a style of: templates/hello_world 'Hello World' v1.0
-      for name, definition of index
-        console.log "#{definition.dir} '#{name}' v#{definition.version}" 
+      headerDir     = 'Template directory:'
+      headerName    = 'Template name:'
+      headerVersion = 'Template version:'
+      
+      fold = (memo, str)->
+        Math.max(memo, str.length)
+      lengths =
+        dirName: _.reduce _.keys(index), fold, headerDir.length
+        name:    _.reduce _(_(index).values()).pluck('name'), fold, headerName.length
 
-  getTemplatesIndex: (forceRebuild)->
-    # Exit if cache has already been built or force rebuild flag is set
-    return @index if @index? and not forceRebuild
+      headerDir     = _.str.pad 'Template directory:',  lengths.dirName, ' ', 'right'
+      headerName    = _.str.pad 'Template name:', lengths.name + 8, ' ', 'left'
+      # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
-    if not fs.existsSync(@templatesPath)
-      throw Error("Templates path '#{@templatesPath}' doesn't exist.")
+      terminal.colorize("nota %K#{headerDir}#{headerName} #{headerVersion}%n\n").colorize("%n")
+      templates = for dir, definition of index
+        dir     = _.str.pad definition.dir,  lengths.dirName, ' ', 'right'
+        name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
+        version = if definition.version? then 'v'+definition.version else ''
+        terminal.colorize("nota %m#{dir}%g#{name} %K#{version}%n\n").colorize("%n")
+    return '' # Somehow needed to make terminal output stop here
 
-    # Get an array of filenames (excluding '.' and '..')
-    templateDirs = fs.readdirSync(@templatesPath)
-    # Filter out all the directories
-    templateDirs = _.filter templateDirs, (dir)=>
-      fs.statSync(@templatesPath+'/'+dir).isDirectory()
-    
-    index = {}
+  logWarning: ( warningMsg )->
+    terminal.colorize("nota %3%kWARNING%n #{warningMsg}\n").colorize("%n")
 
-    for dir in templateDirs
-      # Get the template definition
-      isDefined = fs.existsSync(@templatesPath+"/#{dir}/bower.json")
+  logError: ( errorMsg )->
+    terminal.colorize("nota %1%kERROR%n #{errorMsg}\n").colorize("%n")
 
-      if not isDefined
-        templateDefinition =
-          name: dir
-          definition: 'not found'
-      else
-        definitionPath = @templatesPath+"/#{dir}/bower.json"
-        templateDefinition = JSON.parse fs.readFileSync definitionPath
-        templateDefinition.definition = 'read'
-        # TODO: check template definition against scheme for reuiqre properties
-        # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
+  logEvent: ( event )->
+    # To prevent the output being spammed full of resource log events we allow supressing it
+    if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
 
-      # Check requirements for tempalte
-      if not fs.existsSync("templates/"+dir+"/template.html")
-        console.warn "Template #{templateDefinition.name} has no mandatory 'template.html' file (omitting)"
-        continue 
+    terminal.colorize("nota %4%kEVENT%n #{event}\n").colorize("%n")
 
-      # Supplement the definition with some meta data that is now available
-      templateDefinition.dir = dir
-      # Save the definition in the index with it's name as the key
-      index[templateDefinition.name] = templateDefinition
+  notify: ( message )->
+    base =
+      title:    'Nota event'
+      icon:     path.join(__dirname, '../assets/images/icon.png')
+    notifier.notify _.extend base, message
 
-    # Save the index
-    @index = index
-    return index
-
-  captured: (meta)->
-    console.log "Output written: #{meta.filesystemName}"
-    process.exit()
-    # TODO: why u no work @close()?
-    @close()
-
-  close: ->
-    console.log 44
-    @page.close()
-    @server.close()
-    process.exit()
-
-
-Nota = new NotaServer(argv)
+Nota = new Nota()

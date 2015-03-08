@@ -16,8 +16,7 @@ body {
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
-  font-family: "Avenir", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif;
-  font-weight: 500 !important; }
+  font-family: "Kreon", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
 
 a, .link {
   color: #259CCF !important; }
@@ -25,7 +24,7 @@ a, .link {
     color: #15678A !important; }
 
 .muted, div.company-info p#accounts, div#invoice-meta span {
-  color: rgba(26, 44, 51, 0.4) !important; }
+  color: #8c9599 !important; }
 
 img#logo {
   margin: 15mm 21mm;
@@ -38,14 +37,12 @@ div.company-info {
   text-align: right; }
   div.company-info p#accounts {
     margin-top: 1cm; }
-    div.company-info p#accounts span {
-      color: #1A2C33; }
 
 div#envelope-window {
   left: 21mm;
   position: absolute;
   top: 46mm;
-  font-family: "Avenir Next", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
+  font-family: "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
   div#envelope-window span#retour-line {
     border-bottom: 1px solid black;
     display: block;
@@ -54,15 +51,14 @@ div#envelope-window {
     margin-bottom: 6mm; }
 
 div#invoice-meta {
-  float: left;
-  text-align: left;
+  float: right;
+  text-align: right;
   clear: both;
   margin: 8mm 15mm 8mm 21mm; }
   div#invoice-meta h3 {
     line-height: 1em;
     margin-top: 0;
-    margin-bottom: 1cm;
-    font-weight: 400; }
+    margin-bottom: 1cm; }
   div#invoice-meta table tr td:nth-child(2n) {
     padding-left: 1cm; }
 
