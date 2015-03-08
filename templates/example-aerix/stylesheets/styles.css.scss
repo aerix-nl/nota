@@ -26,7 +26,8 @@ body {
 	@include box-shadow(0 0 30px 0 transparentize(black, 0.5));
 	@include box-sizing(border-box);
 	position: relative;
-	font-family: 'Avenir Next', $fallbackkFontstack;
+	font-family: 'Avenir', $fallbackkFontstack;
+	font-weight: 500 !important;
 }
 a, .link {
 	color: $primaryBlue !important;
@@ -36,7 +37,7 @@ a, .link {
 }
 // Override bootstrap
 .muted {
-	color: transparentize($textColor, 0.5) !important;
+	color: transparentize($textColor, 0.6) !important;
 }
 
 img#logo {
@@ -72,7 +73,7 @@ div#envelope-window {
 }
 
 div#invoice-meta {
-	$side: right;
+	$side: left;
 	float: $side;
 	text-align: $side;
 	clear: both;
