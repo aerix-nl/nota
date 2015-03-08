@@ -91,7 +91,11 @@
       }
       this.options.data = this.getInitData(this.options);
       this.server = new NotaServer(this.options);
-      this.server.document.on('all', this.logEvent, this);
+      this.server.on('all', this.logEvent, this);
+      this.server.start();
+      if (!this.options.preview) {
+        this.server.document.on('all', this.logEvent, this);
+      }
       if (this.options.preview) {
         open(this.server.url());
       } else {

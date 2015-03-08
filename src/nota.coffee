@@ -74,8 +74,10 @@ class Nota
 
     # Start the server
     @server = new NotaServer(@options)
-    @server.document.on 'all', @logEvent, @
-
+    @server.on 'all', @logEvent, @
+    @server.start()
+    @server.document.on('all', @logEvent, @) unless @options.preview
+    
     # If we want a preview, open the web page
     if @options.preview then open(@server.url())
     # Else, perform the render job and close the server

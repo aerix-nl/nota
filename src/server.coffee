@@ -5,13 +5,18 @@ express  = require('express')
 phantom  = require('phantom')
 fs       = require('fs')
 open     = require("open")
+Backbone = require('backbone')
 
 Document = require('./document')
 
 class NotaServer
 
   constructor: ( @options ) ->
+    _.extend(@, Backbone.Events)
     { @serverAddress, @serverPort, @templatePath, @data } = @options
+
+  start: ->
+    @trigger "server:init"
 
     # Start express server to serve dependencies from a unified namespaces
     @app = express()
@@ -41,7 +46,9 @@ class NotaServer
       res.send JSON.stringify(@data)
 
     @server.listen(@serverPort)
+    @trigger "server:running"
 
+    return @ if @options.preview
     @document = new Document(@, @options.document)
 
   url: =>
@@ -74,6 +81,7 @@ class NotaServer
         options.callback()
 
   close: ->
+    @trigger 'server:closing'
     @document.close()
     @server.close()
     process.exit()

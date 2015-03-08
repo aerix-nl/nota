@@ -26,8 +26,7 @@ body {
 	@include box-shadow(0 0 30px 0 transparentize(black, 0.5));
 	@include box-sizing(border-box);
 	position: relative;
-	font-family: 'Avenir', $fallbackkFontstack;
-	font-weight: 500 !important;
+	font-family: 'DINPro', $fallbackkFontstack;
 }
 a, .link {
 	color: $primaryBlue !important;
