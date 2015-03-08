@@ -5,7 +5,8 @@
 /node_modules/
 
 # Aerix related stuff
-/templates/example-aerix/json/aerix-environment.coffee
+aerix-environment.coffee
+aerix-environment.json
 /templates/*/bower_components/
 /invoices/
 
