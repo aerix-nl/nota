@@ -1,3 +1,3 @@
-[submodule "examples/ticket/qrcode.js"]
-	path = examples/ticket/qrcode.js
+[submodule "templates/ticket/qrcode.js"]
+	path = templates/ticket/qrcode.js
 	url = https://github.com/davidshimjs/qrcodejs.git

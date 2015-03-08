@@ -30,7 +30,7 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
     isNaturalInt = (int, attr)->
       if isNaN parseInt(int, 10)
         throw new Error "#{attr} could not be parsed"
-      if parseInt(int, 10) <= 0 
+      if parseInt(int, 10) <= 0
         throw new Error "#{attr} must be a positive integer"
       if (parseInt(int, 10) isnt parseFloat(int, 10))
         throw new Error "#{attr} must be an integer"
