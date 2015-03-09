@@ -4,7 +4,7 @@ path     = require('path')
 _        = require('underscore')._
 _.str    = require('underscore.string')
 open     = require('open')
-terminal = require('node-terminal')
+chalk    = require('chalk');
 notifier = require('node-notifier')
 
 NotaServer = require('./server')
@@ -67,7 +67,7 @@ class Nota
 
     definition = NotaHelper.getTemplateDefinition @options.templatePath
     if definition.meta is "not template"
-      @logError "Template %m#{definition.name}%N has no mandatory template.html file"
+      @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
       return
 
     @options.data = @getInitData(@options)
@@ -203,25 +203,25 @@ class Nota
       headerName    = _.str.pad 'Template name:', lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
-      terminal.colorize("nota %K#{headerDir}#{headerName} #{headerVersion}%n\n").colorize("%n")
+      console.log "nota "+ chalk.gray(headerDir + headerName + headerVersion)
       templates = for dir, definition of index
         dir     = _.str.pad definition.dir,  lengths.dirName, ' ', 'right'
         name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
-        terminal.colorize("nota %m#{dir}%g#{name} %K#{version}%n\n").colorize("%n")
+        console.log "nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make terminal output stop here
 
   logWarning: ( warningMsg )->
-    terminal.colorize("nota %3%kWARNING%n #{warningMsg}\n").colorize("%n")
+    console.warn "nota " + chalk.bgYellow.black('WARNING') + ' ' + warningMsg
 
   logError: ( errorMsg )->
-    terminal.colorize("nota %1%kERROR%n #{errorMsg}\n").colorize("%n")
+    console.warn "nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg
 
   logEvent: ( event )->
     # To prevent the output being spammed full of resource log events we allow supressing it
     if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
-
-    terminal.colorize("nota %4%kEVENT%n #{event}\n").colorize("%n")
+    
+    console.warn "nota " + chalk.bgBlue.black('EVENT') + ' ' + event
 
   notify: ( message )->
     base =

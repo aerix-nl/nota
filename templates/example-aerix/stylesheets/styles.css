@@ -16,7 +16,8 @@ body {
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
-  font-family: "DINPro", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
+  font-family: "DINPro", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif;
+  font-size: 1.4em; }
 
 a, .link {
   color: #259CCF !important; }
@@ -43,8 +44,7 @@ div.company-info {
 div#envelope-window {
   left: 21mm;
   position: absolute;
-  top: 46mm;
-  font-family: "Avenir Next", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif; }
+  top: 46mm; }
   div#envelope-window span#retour-line {
     border-bottom: 1px solid black;
     display: block;
@@ -112,7 +112,7 @@ footer {
   bottom: 0;
   font-size: 0.8em;
   line-height: 1.2em;
-  margin: 0 2cm 4mm;
+  margin: 0 2cm 1cm;
   padding-top: 1mm;
   position: absolute;
   width: auto !important;

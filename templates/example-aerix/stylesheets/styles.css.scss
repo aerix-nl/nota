@@ -27,6 +27,7 @@ body {
 	@include box-sizing(border-box);
 	position: relative;
 	font-family: 'DINPro', $fallbackkFontstack;
+	font-size: 1.4em;
 }
 a, .link {
 	color: $primaryBlue !important;
@@ -60,7 +61,6 @@ div#envelope-window {
 	left: 21mm;
 	position: absolute;
 	top: 46mm;
-	font-family: 'Avenir Next', $fallbackkFontstack;
 
 	span#retour-line {
 		border-bottom: 1px solid black;
@@ -154,7 +154,7 @@ footer {
 	bottom: 0;
 	font-size: 0.8em;
 	line-height: 1.2em;
-	margin: 0 2cm 4mm;
+	margin: 0 2cm 1cm;
 	padding-top: 1mm;
 	position: absolute;
 	width: auto !important;

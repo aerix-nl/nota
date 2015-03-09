@@ -1,5 +1,5 @@
 (function() {
-  var Nota, NotaHelper, NotaServer, fs, nomnom, notifier, open, path, terminal, _,
+  var Nota, NotaHelper, NotaServer, chalk, fs, nomnom, notifier, open, path, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -14,7 +14,7 @@
 
   open = require('open');
 
-  terminal = require('node-terminal');
+  chalk = require('chalk');
 
   notifier = require('node-notifier');
 
@@ -86,7 +86,7 @@
       }
       definition = NotaHelper.getTemplateDefinition(this.options.templatePath);
       if (definition.meta === "not template") {
-        this.logError("Template %m" + definition.name + "%N has no mandatory template.html file");
+        this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
         return;
       }
       this.options.data = this.getInitData(this.options);
@@ -253,7 +253,7 @@
         };
         headerDir = _.str.pad('Template directory:', lengths.dirName, ' ', 'right');
         headerName = _.str.pad('Template name:', lengths.name + 8, ' ', 'left');
-        terminal.colorize("nota %K" + headerDir + headerName + " " + headerVersion + "%n\n").colorize("%n");
+        console.log("nota " + chalk.gray(headerDir + headerName + headerVersion));
         templates = (function() {
           var _results;
           _results = [];
@@ -262,7 +262,7 @@
             dir = _.str.pad(definition.dir, lengths.dirName, ' ', 'right');
             name = _.str.pad(definition.name, lengths.name + 8, ' ', 'left');
             version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(terminal.colorize("nota %m" + dir + "%g" + name + " %K" + version + "%n\n").colorize("%n"));
+            _results.push(console.log("nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
           }
           return _results;
         })();
@@ -271,18 +271,18 @@
     };
 
     Nota.prototype.logWarning = function(warningMsg) {
-      return terminal.colorize("nota %3%kWARNING%n " + warningMsg + "\n").colorize("%n");
+      return console.warn("nota " + chalk.bgYellow.black('WARNING') + ' ' + warningMsg);
     };
 
     Nota.prototype.logError = function(errorMsg) {
-      return terminal.colorize("nota %1%kERROR%n " + errorMsg + "\n").colorize("%n");
+      return console.warn("nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
     };
 
     Nota.prototype.logEvent = function(event) {
       if (_.str.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
         return;
       }
-      return terminal.colorize("nota %4%kEVENT%n " + event + "\n").colorize("%n");
+      return console.warn("nota " + chalk.bgBlue.black('EVENT') + ' ' + event);
     };
 
     Nota.prototype.notify = function(message) {

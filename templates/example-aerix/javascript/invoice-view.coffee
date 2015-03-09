@@ -82,8 +82,10 @@ define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
       @$('#invoice-id').html @getFullID()
       $("html head title").html @documentName()
 
-      # [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ]
-      monthNames = [ "januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december" ]
+      # [ "January", "February", "March", "April", "May", "June", "July",
+      # "August", "September", "October", "November", "December" ]
+      monthNames = [ "januari", "februari", "maart", "april", "mei", "juni",
+      "juli", "augustus", "september", "oktober", "november", "december" ]
       month = monthNames[date.getMonth()]
       year = date.getUTCFullYear()
       day = date.getUTCDate()
