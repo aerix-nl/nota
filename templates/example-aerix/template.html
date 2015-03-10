@@ -7,6 +7,7 @@
   <link href="stylesheets/styles.css" rel="stylesheet" type="text/css" media="all">
 	<link href="stylesheets/print.css" rel="stylesheet" type="text/css" media="print">
 
+	<script data-main='javascript/main' src='vendor/requirejs/require.js'></script>
 	<!-- Please read the Nota README.md on how to turn this into a PDF or preview it -->
 </head>
 <body>
@@ -21,11 +22,11 @@
 			<span class="website link">www.website.com</span>
 		</p>
 		<p id="accounts">
-			IBAN: <span class="iban">NL12 ABCD 1234 1234 12</span><br>
 			Bank: <span id="bank-name">Your Bankname</span><br>
 			BIC/SWIFT: <span id="bic">TRIONL2U</span><br>
-			BTW-nummer:	<span id="vat-number">AB123405923489</span><br>
-			KvK registratie: <span id="kvk">123456789</span><br>
+			IBAN: <span class="iban">NL12 ABCD 1234 1234 12</span><br>
+			BTW:	<span id="vat-number">AB123405923489</span><br>
+			KvK: <span id="kvk">123456789</span><br>
 		</p>
 	</div>
 	<div id="envelope-window">
@@ -41,7 +42,8 @@
 			<strong id="organization">Organisatie</strong><br>
 			<span id="contact-person">Klant Klantnaam</span><br>
 			<span id="address">Straatnaam 12b</span><br>
-			<span id="postal-code">1234AB</span>, <span id="place">Stad</span>
+			<span id="postal-code">1234AB</span>, <span id="place">Stad</span><br>
+			<span id="country">Land</span>
 		</p>
 	</div>
 	<div id="invoice-meta">

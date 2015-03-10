@@ -1,4 +1,4 @@
-define ['nota-client', 'underscore.string', 'jed'], (Nota, s, Jed)->
+define ['/nota.js', 'underscore.string', 'jed'], (Nota, s, Jed)->
 
   class TemplateApp.InvoiceView extends Backbone.View
     initialize: ->
