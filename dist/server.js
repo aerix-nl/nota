@@ -34,22 +34,10 @@
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](this.templatePath));
-      this.app.get('/', (function(_this) {
-        return function(req, res) {
-          return fs.readFile("" + _this.templatePath + "/template.html", "utf8", function(err, html) {
-            var insertionRegex, scriptTag, _ref;
-            insertionRegex = /(<head[s\S]*>)([\s\S]*<\/head>)/;
-            if (!((_ref = html.match(insertionRegex)) != null ? _ref.length = 3 : void 0)) {
-              throw new Error("No encapsulating <head></head> tags found in template");
-            }
-            scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'></script>";
-            return res.send(html.replace(insertionRegex, "$1\n\t" + scriptTag + "$2"));
-          });
-        };
-      })(this));
+      this.app.get('/', express["static"]("" + this.templatePath + "/template.html"));
       this.app.use('/lib/', express["static"]("" + __dirname + "/"));
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
-      this.app.use('/nota.js', express["static"]("" + __dirname + "/client-config.js"));
+      this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
           return res.send(JSON.stringify(_this.data));

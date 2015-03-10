@@ -9,20 +9,28 @@
       'bootstrap': 'bootstrap/dist/js/bootstrap',
       'underscore.string': 'underscore.string/dist/underscore.string.min',
       'jed': 'jed/jed',
+      'backbone': 'backbone/backbone',
+      'jquery': 'vendor/jquery/dist/jquery',
+      'underscore': 'vendor/underscore/underscore',
       'view': '/javascript/invoice-view',
       'model': '/javascript/invoice-model'
     }
   });
 
-  dependencies = ['view', 'model'];
+  dependencies = ['/nota.js', 'view', 'model'];
 
-  define('template', dependencies, function(InvoiceView, InvoiceModel) {
+  define(dependencies, function(Nota, InvoiceView, InvoiceModel) {
     Nota.trigger('template:init');
     TemplateApp.model = new TemplateApp.InvoiceModel();
     TemplateApp.view = new TemplateApp.InvoiceView({
       model: TemplateApp.model
     });
-    Nota.setDocumentMeta(TemplateApp.view.documentMeta, TemplateApp.view);
+    Nota.setDocumentMeta(function() {
+      var ctx, fn;
+      ctx = TemplateApp.view;
+      fn = ctx.documentMeta;
+      return fn.apply(ctx, arguments);
+    });
     if (Nota.phantomRuntime) {
       Nota.on('data:injected', function(data) {
         return TemplateApp.model.set(data, {

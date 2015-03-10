@@ -4,7 +4,7 @@ path     = require('path')
 _        = require('underscore')._
 _.str    = require('underscore.string')
 open     = require('open')
-chalk    = require('chalk');
+chalk    = require('chalk')
 notifier = require('node-notifier')
 
 NotaServer = require('./server')
