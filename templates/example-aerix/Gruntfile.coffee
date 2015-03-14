@@ -2,51 +2,46 @@ module.exports = (grunt) ->
   grunt.initConfig
     pkg: grunt.file.readJSON("package.json")
 
-    srcDir: "./src"
-    outputDir: "./dist"
-
-    # Compile to JS first, then we will compile the JSX in another task and move to /dist
     coffee:
-      options:
-        # This is IMPORTANT, because the first line has to be a JSX comment
-        bare: true
-      all:
+      source:
         files: [
           expand: true
-          cwd: 'src/'
+          cwd: 'src'
           src: ['**/*.coffee']
-          dest: 'src/'
+          dest: 'dist'
           ext: '.js'
         ]
 
-    react:
-      all:
-        files:
-          "<%= outputDir %>": "<%= srcDir %>"
+    sass:
+      compile:
+        options:
+          compass: true
+        files: [
+          expand: true
+          cwd: 'stylesheets'
+          src: ['**/*.scss']
+          dest: 'stylesheets'
+          ext: '.css'
+        ]
+
+    cjsx:
+      compile:
+        expand: true
+        sourceMap: true
+        src: ['src/**/*.cjsx'],
+        dest: 'dist',
+        ext: '.js'
 
     # Keep an eye on filesystem changes and rebuild
     watch:
       all:
-        files: "<%= srcDir %>/**/*.coffee"
+        files: ['src/**/*.cjsx', 'src/**/*.coffee', 'stylesheets/**/*.scss']
         tasks: ['build']
 
-    # Clean up artifacts
-    clean:
-      output: "<%= outputDir %>"
-
   grunt.loadNpmTasks 'grunt-contrib-coffee'
+  grunt.loadNpmTasks 'grunt-contrib-sass'
+  grunt.loadNpmTasks 'grunt-coffee-react'
   grunt.loadNpmTasks 'grunt-contrib-watch'
-  grunt.loadNpmTasks 'grunt-contrib-clean'
-  grunt.loadNpmTasks 'grunt-react'
-
-  # Make sure we get an error on compilation instead of a hang
-  grunt.registerTask 'spawn_react', 'Run React in a subprocess', () ->
-    done = this.async()
-    grunt.util.spawn grunt: true, args: ['react'], opts: {stdio: 'inherit'}, (err) ->
-      if err
-        grunt.log.writeln(">> Error compiling React JSX file!")
-        grunt.log.writeln(err)
-      done()
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask "build", ["coffee", "spawn_react"]
+  grunt.registerTask 'build', ['cjsx']
