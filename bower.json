@@ -1,5 +1,5 @@
 {
-  "name": "Nota",
+  "name": "nota",
   "version": "1.1.0",
   "descriptions": "Though the package.json declares the actual Nota package, this bower.json is needed to declare the frontend aspects of Nota.",
   "license": "MIT",
