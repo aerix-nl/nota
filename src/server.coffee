@@ -25,12 +25,15 @@ class NotaServer
     # Open the server with servering the template path as root
     @app.use express.static(@templatePath)
 
-    # Expose some extras at the first specified subpaths
+    # TODO: Why does this line not work instead:
+    # @app.get '/', express.static("#{@templatePath}/template.html")
+
     # Serve 'template.html' by default (instead of index.html default behaviour)
-    @app.get '/',        express.static("#{@templatePath}/template.html")
-    @app.use '/lib/',    express.static("#{__dirname}/")
-    @app.use '/vendor/', express.static("#{__dirname}/../bower_components/")
-    @app.use '/nota.js', express.static("#{__dirname}/client.js")
+    @app.get '/',         (req, res)=> res.redirect("/template.html")
+    # Expose some extras at the first specified subpaths
+    @app.use '/lib/',     express.static("#{__dirname}/")
+    @app.use '/vendor/',  express.static("#{__dirname}/../bower_components/")
+    @app.use '/nota.js',  express.static("#{__dirname}/client.js")
 
     @app.get '/data', ( req, res ) =>
       res.send JSON.stringify(@data)
@@ -50,6 +53,7 @@ class NotaServer
   render: ( jobs, options ) ->
     # TODO: use q here, because code kinda marches faster to the right than down
     rendered = 0
+    meta = []
     for job in jobs
       do (job, options) =>
         # TODO: kinda indecisive about whether to inject data or set the data
@@ -65,10 +69,11 @@ class NotaServer
           options.outputPath = job.outputPath
           @document.capture options
 
-    @document.on 'render:done', ->
+    @document.on 'render:done', (renderMeta)->
       rendered += 1
+      meta[rendered] = renderMeta
       if rendered is jobs.length
-        options.callback()
+        options.callback(meta)
 
   close: ->
     @trigger 'server:closing'

@@ -63,18 +63,13 @@
             return this.meta.version;
           }
         },
-        notify: {
-          abbr: 'n',
-          flag: true,
-          help: 'Notify when a render job is finished'
-        },
         resources: {
           flag: true,
           help: 'Show the events of page resource loading in output'
         },
         preserve: {
           flag: true,
-          help: 'Prevents overwriting when output path is already occupied'
+          help: 'Prevent overwriting when output path is already occupied'
         }
       });
       try {
@@ -118,8 +113,11 @@
       return this.server.render(jobs, {
         preserve: options.preserve,
         callback: (function(_this) {
-          return function(succesful) {
+          return function(meta) {
             if (options.logging.notify) {
+              notifier.on('click', function() {
+                return open(meta[1].outputPath);
+              });
               _this.notify({
                 title: "Nota: render job finished",
                 message: "" + jobs.length + " document captured to .PDF"
@@ -162,11 +160,11 @@
     Nota.prototype.getInitData = function(options) {
       var data, exampleData, _data;
       exampleData = function() {
-        var dataPath, definition, e;
+        var dataPath, definition, e, _ref;
         try {
           definition = NotaHelper.getTemplateDefinition(options.templatePath);
-          if (definition['example-data'] != null) {
-            dataPath = path.join(options.templatePath, definition['example-data']);
+          if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
+            dataPath = path.join(options.templatePath, definition['nota']['exampleData']);
             if (NotaHelper.isData(dataPath)) {
               return JSON.parse(fs.readFileSync(dataPath, {
                 encoding: 'utf8'
@@ -185,6 +183,7 @@
       } else if ((_data = exampleData()) != null) {
         return data = _data;
       } else {
+        this.logWarning("No data provided or found. Serving empty object.");
         return data = {};
       }
     };

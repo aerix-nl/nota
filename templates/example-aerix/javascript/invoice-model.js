@@ -39,8 +39,20 @@
         return this.get("vatPercentage") * (value || this.invoiceSubtotal());
       };
 
+      InvoiceModel.prototype.isInternational = function() {
+        var country, dutch;
+        country = this.get('client').country;
+        if (country != null) {
+          dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
+          if (dutch) {
+            return false;
+          }
+        }
+        return false;
+      };
+
       InvoiceModel.prototype.validate = function(attrs, options) {
-        var allItemsValid, country, date, dutch, id, isNaturalInt, period, postalCode;
+        var allItemsValid, date, id, isNaturalInt, period, postalCode;
         if (!(_.keys(attrs).length > 0)) {
           throw new Error("Provided model has no attributes. " + "Check the arguments of this model's initialization call.");
         }
@@ -80,11 +92,7 @@
           throw new Error("At least the organization name or contact person name must be provided");
         }
         postalCode = attrs.client.postalCode;
-        country = attrs.client.country;
-        if (country != null) {
-          dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
-        }
-        if ((postalCode.length != null) && (country != null) && dutch) {
+        if ((postalCode.length != null) && !this.isInternational()) {
           postalCode = s.clean(postalCode);
           if (postalCode.length < 6) {
             throw new Error("Postal code must be at least 6 characters long");

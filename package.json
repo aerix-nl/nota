@@ -32,13 +32,13 @@
     "underscore.string": "3.0.2"
   },
   "devDependencies": {
-    "node-inspector": "0.9.1",
+    "bower-requirejs": "1.1.2",
     "grunt": "~0.4.5",
     "grunt-contrib-coffee": "~0.10.1",
-    "grunt-contrib-watch": "~0.3.1",
     "grunt-contrib-sass": "~0.7.3",
-    "require": "0.5.0",
-    "bower-requirejs": "1.1.2"
+    "grunt-contrib-watch": "~0.3.1",
+    "node-inspector": "0.9.1",
+    "require": "0.5.0"
   },
   "main": "./dist/server.js",
   "scripts": {

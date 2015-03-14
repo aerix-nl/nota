@@ -12,6 +12,11 @@ requirejs.config {
     'backbone':           'backbone/backbone'
     'jquery':             'vendor/jquery/dist/jquery'
     'underscore':         'vendor/underscore/underscore'
+    'react':              'react/react-with-addons'
+    'JSXTransformer':     'jsx/JSXTransformer'
+    # Some RequireJS addons we need
+    'jsx':                'jsx/js/jsx'
+    'text':               'requirejs-text/text'
 
     # Template stuff
     'view': '/javascript/invoice-view'
@@ -48,7 +53,7 @@ define dependencies, (Nota, InvoiceView, InvoiceModel) ->
     TemplateApp.model.set(data, {validate: true})
 
   # Forward all view events to Nota client under a seperate namespace
-  TemplateApp.view.on 'all', (e)-> Nota.trigger "template:"+e
+  'render:done'
 
   # We're done with setup
   Nota.trigger 'template:loaded'

@@ -12,6 +12,10 @@
       'backbone': 'backbone/backbone',
       'jquery': 'vendor/jquery/dist/jquery',
       'underscore': 'vendor/underscore/underscore',
+      'react': 'react/react-with-addons',
+      'JSXTransformer': 'jsx/JSXTransformer',
+      'jsx': 'jsx/js/jsx',
+      'text': 'requirejs-text/text',
       'view': '/javascript/invoice-view',
       'model': '/javascript/invoice-model'
     }
@@ -44,9 +48,7 @@
         });
       });
     }
-    TemplateApp.view.on('all', function(e) {
-      return Nota.trigger("template:" + e);
-    });
+    'render:done';
     Nota.trigger('template:loaded');
     return TemplateApp;
   });

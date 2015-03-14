@@ -48,16 +48,12 @@ class Nota
         help: 'Print version'
         callback: -> @meta.version
 
-      notify:
-        abbr: 'n'
-        flag: true
-        help: 'Notify when a render job is finished'
       resources:
         flag: true
         help: 'Show the events of page resource loading in output'
       preserve:
         flag: true
-        help: 'Prevents overwriting when output path is already occupied'
+        help: 'Prevent overwriting when output path is already occupied'
 
     try
       @options = @settleOptions nomnom.nom(), @defaults
@@ -90,10 +86,13 @@ class Nota
     }]
     @server.render jobs,
       preserve: options.preserve
-      callback: ( succesful) =>
-        if options.logging.notify then @notify
-          title: "Nota: render job finished"
-          message: "#{jobs.length} document captured to .PDF"
+      callback: (meta) =>
+        if options.logging.notify
+          # Would be nice if you could click on the notification
+          notifier.on 'click', -> open meta[1].outputPath
+          @notify
+            title: "Nota: render job finished"
+            message: "#{jobs.length} document captured to .PDF"
         @server.close()
 
   # Settling options from parsed CLI arguments over defaults
@@ -122,8 +121,8 @@ class Nota
     exampleData = ->
       try
         definition = NotaHelper.getTemplateDefinition options.templatePath
-        if definition['example-data']?
-          dataPath = path.join options.templatePath, definition['example-data']
+        if definition['nota']?['exampleData']?
+          dataPath = path.join options.templatePath, definition['nota']['exampleData']
           if NotaHelper.isData dataPath
             return JSON.parse fs.readFileSync dataPath, encoding: 'utf8'
       catch e
@@ -135,6 +134,7 @@ class Nota
     else if (_data = exampleData())?
       data = _data
     else
+      @logWarning "No data provided or found. Serving empty object."
       data = {}
 
   findTemplatePath: ( options ) ->

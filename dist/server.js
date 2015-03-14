@@ -34,7 +34,11 @@
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](this.templatePath));
-      this.app.get('/', express["static"]("" + this.templatePath + "/template.html"));
+      this.app.get('/', (function(_this) {
+        return function(req, res) {
+          return res.redirect("/template.html");
+        };
+      })(this));
       this.app.use('/lib/', express["static"]("" + __dirname + "/"));
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
@@ -60,8 +64,9 @@
     };
 
     NotaServer.prototype.render = function(jobs, options) {
-      var job, rendered, _fn, _i, _len;
+      var job, meta, rendered, _fn, _i, _len;
       rendered = 0;
+      meta = [];
       _fn = (function(_this) {
         return function(job, options) {
           _this.data = job.data;
@@ -76,10 +81,11 @@
         job = jobs[_i];
         _fn(job, options);
       }
-      return this.document.on('render:done', function() {
+      return this.document.on('render:done', function(renderMeta) {
         rendered += 1;
+        meta[rendered] = renderMeta;
         if (rendered === jobs.length) {
-          return options.callback();
+          return options.callback(meta);
         }
       });
     };

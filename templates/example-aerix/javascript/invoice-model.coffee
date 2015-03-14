@@ -19,6 +19,14 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
   # VAT over the provided value or the invoice subtotal
   VAT: (value)-> @get("vatPercentage") * (value or @invoiceSubtotal() )
   
+  isInternational: ->
+    country = @get('client').country
+    if country?
+      dutch = s.contains(country.toLowerCase(), "netherlands") or
+              s.contains(country.toLowerCase(), "nederland")
+      if dutch then return false
+    false # If no country is specified, we assume Dutch, so not international
+
   # Validate the new attributes of the model before accepting them
   validate: (attrs, options)->
     unless _.keys(attrs).length > 0
@@ -53,14 +61,9 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
       throw new Error "At least the organization name or contact person name must be provided"
       
     postalCode = attrs.client.postalCode
-    country = attrs.client.country
-    if country?
-      dutch = s.contains(country.toLowerCase(), "netherlands") or
-              s.contains(country.toLowerCase(), "nederland")
-
     # Postal code is optional, for clients where it is still unknown, but when
     # defined, Dutch postal codes are only valid when 6 characters long.
-    if postalCode.length? and country? and dutch
+    if postalCode.length? and not @isInternational()
       postalCode = s.clean(postalCode)
       if postalCode.length < 6
         throw new Error "Postal code must be at least 6 characters long"

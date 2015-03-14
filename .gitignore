@@ -1,8 +1,8 @@
 .DS_Store
 
-/.sass-cache/
-/bower_components/
-/node_modules/
+.sass-cache
+bower_components
+node_modules
 
 # Aerix related stuff
 aerix-environment.coffee

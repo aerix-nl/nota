@@ -10,8 +10,6 @@ NotaHelper = require('./helper')
 # This class is basically a wrapper of a PhantomJS instance
 class Document
 
-  timeout: 1500
-
   constructor: ( @server, @options ) ->
     _.extend(@, Backbone.Events)
 
@@ -110,7 +108,7 @@ class Document
     if @counter.length is 0
       @timer = setTimeout =>
         @trigger "page:loaded"
-      , @timeout
+      , @options.timeout
 
   injectData: (data)->
     @rendered = false

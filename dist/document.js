@@ -17,8 +17,6 @@
   NotaHelper = require('./helper');
 
   Document = (function() {
-    Document.prototype.timeout = 1500;
-
     function Document(server, options) {
       this.server = server;
       this.options = options;
@@ -139,7 +137,7 @@
           return function() {
             return _this.trigger("page:loaded");
           };
-        })(this), this.timeout);
+        })(this), this.options.timeout);
       }
     };
 

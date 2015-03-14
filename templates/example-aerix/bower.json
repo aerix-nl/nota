@@ -1,6 +1,6 @@
 {
   "name": "aerix-invoice-nota-template",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "authors": ["Felix Akkermans <felix@aerix.nl"],
   "description": "The invoice template used by Aerix (original Nota developer) in production.",
   "licence": "MIT",
@@ -9,8 +9,19 @@
     "bootstrap": "3.3.2",
     "backbone": "1.1.2",
     "underscore.string": "2.3.3",
+    "react": "0.13.0",
+    "jsx-requirejs-plugin": "0.5.2",
+    "requirejs-text": "2.0.13",
     "jed": "1.1.0"
   },
 
-  "example-data": "json/example.json" 
+  "nota": {
+    "exampleData": "json/example.json",
+    "defaultFilename":    "output.pdf",
+    "paperSize": {
+      "format":           "A4",
+      "orientation":      "portrait",
+      "border":           "0cm"
+    }
+  }
 }
