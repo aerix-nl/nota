@@ -12,10 +12,16 @@ requirejs.config {
     'backbone':           'backbone/backbone'
     'jquery':             'vendor/jquery/dist/jquery'
     'underscore':         'vendor/underscore/underscore'
+    'rivets':             'rivets/dist/rivets'
+    'sightglass':         'sightglass/index'
 
     # Template stuff
     'view': '/dist/invoice-view'
     'model': '/dist/invoice-model'
+
+  shim:
+    rivets:
+      deps: ['sightglass']
 }
 
 # In the above config not all dependencies are declared because

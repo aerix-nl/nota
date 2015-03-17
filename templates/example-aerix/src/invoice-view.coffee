@@ -1,6 +1,6 @@
 # @cjsx React.DOM
 
-define ['/nota.js', 'underscore.string', 'jed'], (Nota, s, Jed)->
+define ['/nota.js', 'underscore.string', 'jed', 'rivets'], (Nota, s, Jed, Rivets)->
 
   class TemplateApp.InvoiceView extends Backbone.View
     el: "body"
@@ -11,6 +11,8 @@ define ['/nota.js', 'underscore.string', 'jed'], (Nota, s, Jed)->
       @model.on 'change', @render, @
       @i18n = new Jed
         "missing_key_callback": (key)-> console.error "Missing key in i18n: #{key}"
+
+      Rivets.bind document.body, @model
 
     # Used for the html head title element
     documentName: -> 'Invoice '+@getFullID()

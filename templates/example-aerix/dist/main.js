@@ -12,8 +12,15 @@
       'backbone': 'backbone/backbone',
       'jquery': 'vendor/jquery/dist/jquery',
       'underscore': 'vendor/underscore/underscore',
+      'rivets': 'rivets/dist/rivets',
+      'sightglass': 'sightglass/index',
       'view': '/dist/invoice-view',
       'model': '/dist/invoice-model'
+    },
+    shim: {
+      rivets: {
+        deps: ['sightglass']
+      }
     }
   });
 

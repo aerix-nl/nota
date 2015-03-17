@@ -2,62 +2,58 @@
   module.exports = function(grunt) {
     grunt.initConfig({
       pkg: grunt.file.readJSON("package.json"),
-      srcDir: "./src",
-      outputDir: "./dist",
       coffee: {
-        options: {
-          bare: true
-        },
-        all: {
+        compile: {
           files: [
             {
               expand: true,
-              cwd: 'src/',
+              cwd: 'src',
               src: ['**/*.coffee'],
-              dest: 'src/',
+              dest: 'dist',
               ext: '.js'
             }
           ]
         }
       },
-      react: {
+      sass: {
+        compile: {
+          options: {
+            compass: true
+          },
+          files: [
+            {
+              expand: true,
+              cwd: 'stylesheets',
+              src: ['**/*.scss'],
+              dest: 'stylesheets',
+              ext: '.css'
+            }
+          ]
+        }
+      },
+      cjsx: {
+        compile: {
+          expand: true,
+          sourceMap: true,
+          cwd: 'src',
+          src: ['**/*.cjsx'],
+          dest: 'dist',
+          ext: '.js'
+        }
+      },
+      watch: {
         all: {
-          files: {
-            "<%= outputDir %>": "<%= srcDir %>"
-          }
+          files: ['src/**/*.cjsx', 'src/**/*.coffee', 'stylesheets/**/*.scss'],
+          tasks: ['build']
         }
-      },
-      regarde: {
-        coffee: {
-          files: "<%= srcDir %>/**/*.coffee",
-          tasks: ["coffee", "spawn_react"]
-        }
-      },
-      clean: {
-        output: "<%= outputDir %>"
       }
     });
     grunt.loadNpmTasks('grunt-contrib-coffee');
-    grunt.loadNpmTasks('grunt-regarde');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-react');
-    grunt.registerTask('spawn_react', 'Run React in a subprocess', function() {
-      var done;
-      done = this.async();
-      return grunt.util.spawn({
-        grunt: true,
-        args: ['react'],
-        opts: {
-          stdio: 'inherit'
-        }
-      }, function(err) {
-        if (err) {
-          grunt.log.writeln(">> Error compiling React JSX file!");
-        }
-        return done();
-      });
-    });
-    return grunt.registerTask("build", ["coffee", "spawn_react"]);
+    grunt.loadNpmTasks('grunt-contrib-sass');
+    grunt.loadNpmTasks('grunt-coffee-react');
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.registerTask('default', ['watch']);
+    return grunt.registerTask('build', ['cjsx:compile', 'coffee:compile', 'sass:compile']);
   };
 
 }).call(this);

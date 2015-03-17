@@ -7,21 +7,21 @@
   "description": "The invoice template used by Aerix (original Nota developer) in production.",
   "licence": "MIT",
   "dependencies": {
-    "bootstrap":          "3.3.2",
-    "backbone":           "1.1.2",
-    "underscore.string":  "2.3.3",
-    "requirejs-text":     "2.0.13",
-    "jed":                "1.1.0",
-    "rivets":             "0.6.10",
-    "backbone.stickit":   "~0.9.0"
+    "bootstrap": "3.3.2",
+    "backbone": "1.1.2",
+    "underscore.string": "2.3.3",
+    "requirejs-text": "2.0.13",
+    "jed": "1.1.0",
+    "backbone.stickit": "~0.9.0",
+    "rivets": "~0.8.0"
   },
   "nota": {
-    "exampleData":        "json/example.json",
-    "defaultFilename":    "output.pdf",
+    "exampleData": "json/example.json",
+    "defaultFilename": "output.pdf",
     "paperSize": {
-      "format":           "A4",
-      "orientation":      "portrait",
-      "border":           "0cm"
+      "format": "A4",
+      "orientation": "portrait",
+      "border": "0cm"
     }
   }
 }
