@@ -19,8 +19,7 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
   # VAT over the provided value or the invoice subtotal
   VAT: (value)-> @get("vatPercentage") * (value or @invoiceSubtotal() )
   
-  isInternational: ->
-    country = @get('client').country
+  isInternational: (country)->
     if country?
       dutch = s.contains(country.toLowerCase(), "netherlands") or
               s.contains(country.toLowerCase(), "nederland")
@@ -45,7 +44,7 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
 
     id = attrs.meta.id
     unless id? then throw new Error "No invoice ID provided"
-    if period? then isNaturalInt(period, "Invoice ID")
+    if id? then isNaturalInt(id, "Invoice ID")
 
     period = attrs.meta.period
     if period? then isNaturalInt(period, "Invoice period")
@@ -63,7 +62,7 @@ define ['backbone', 'underscore.string'], (Backbone, s)-> class TemplateApp.Invo
     postalCode = attrs.client.postalCode
     # Postal code is optional, for clients where it is still unknown, but when
     # defined, Dutch postal codes are only valid when 6 characters long.
-    if postalCode.length? and not @isInternational()
+    if postalCode.length? and not @isInternational(attrs.client.country)
       postalCode = s.clean(postalCode)
       if postalCode.length < 6
         throw new Error "Postal code must be at least 6 characters long"

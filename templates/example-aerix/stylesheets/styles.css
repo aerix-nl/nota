@@ -3,42 +3,30 @@ html {
   background-color: lightgrey; }
 
 body {
-  background-color: white;
-  color: #1A2C33 !important;
-  margin: 35px auto;
-  width: 210mm;
-  min-height: 297mm;
   padding-bottom: 3cm;
-  -moz-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
-  -webkit-box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 30px 0 rgba(0, 0, 0, 0.5);
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-  position: relative;
+  color: #1A2C33 !important;
   font-family: "DINPro", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif;
-  font-size: 1.4em; }
+  font-size: 1.4em;
+  padding: 15mm 21mm; }
 
 a, .link {
   color: #259CCF !important; }
   a:hover, .link:hover {
     color: #15678A !important; }
 
-.muted, div.company-info p#accounts, div#invoice-meta span {
+.muted, div#company-info p#accounts, div#invoice-meta span {
   color: rgba(26, 44, 51, 0.4) !important; }
 
 img#logo {
-  margin: 15mm 21mm;
   width: 75mm; }
 
-div.company-info {
+div#company-info {
   display: inline-block;
   float: right;
-  margin: 15mm 15mm 15mm 0;
   text-align: right; }
-  div.company-info p#accounts {
+  div#company-info p#accounts {
     margin-top: 1cm; }
-    div.company-info p#accounts span {
+    div#company-info p#accounts span {
       color: #1A2C33; }
 
 div#envelope-window {
@@ -56,7 +44,7 @@ div#invoice-meta {
   float: left;
   text-align: left;
   clear: both;
-  margin: 8mm 15mm 8mm 21mm; }
+  margin: 8mm 0 8mm 0; }
   div#invoice-meta h3 {
     line-height: 1em;
     margin-top: 0;
@@ -66,8 +54,7 @@ div#invoice-meta {
     padding-left: 1cm; }
 
 div#invoice-body {
-  clear: both;
-  margin: 0 15mm 0 21mm; }
+  clear: both; }
   div#invoice-body table {
     width: 100%;
     margin-bottom: 1cm; }
@@ -109,13 +96,13 @@ div#invoice-body {
 
 footer {
   border-top: 1px solid #1A2C33;
-  bottom: 0;
+  bottom: 15mm;
+  left: 21mm;
+  right: 21mm;
   font-size: 0.8em;
   line-height: 1.2em;
-  margin: 0 2cm 1cm;
   padding-top: 1mm;
   position: absolute;
-  width: auto !important;
   letter-spacing: 0.013em; }
 
 /*# sourceMappingURL=styles.css.map */

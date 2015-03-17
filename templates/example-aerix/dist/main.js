@@ -12,12 +12,8 @@
       'backbone': 'backbone/backbone',
       'jquery': 'vendor/jquery/dist/jquery',
       'underscore': 'vendor/underscore/underscore',
-      'react': 'react/react-with-addons',
-      'JSXTransformer': 'jsx/JSXTransformer',
-      'jsx': 'jsx/js/jsx',
-      'text': 'requirejs-text/text',
-      'view': '/javascript/invoice-view',
-      'model': '/javascript/invoice-model'
+      'view': '/dist/invoice-view',
+      'model': '/dist/invoice-model'
     }
   });
 
@@ -25,7 +21,7 @@
 
   define(dependencies, function(Nota, InvoiceView, InvoiceModel) {
     Nota.trigger('template:init');
-    TemplateApp.model = new TemplateApp.InvoiceModel();
+    TemplateApp.model = new TemplateApp.InvoiceModel;
     TemplateApp.view = new TemplateApp.InvoiceView({
       model: TemplateApp.model
     });
@@ -48,7 +44,7 @@
         });
       });
     }
-    'render:done';
+    TemplateApp.view.on('all', Nota.logEvent, Nota);
     Nota.trigger('template:loaded');
     return TemplateApp;
   });

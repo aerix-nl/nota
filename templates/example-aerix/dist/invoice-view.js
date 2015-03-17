@@ -1,14 +1,16 @@
 (function() {
-  var __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
 
-  define(['/nota.js', 'underscore.string', 'jed', 'react'], function(Nota, s, Jed, React) {
-    return TemplateApp.InvoiceView = (function(_super) {
-      __extends(InvoiceView, _super);
+  define(['/nota.js', 'underscore.string', 'jed'], function(Nota, s, Jed) {
+    return TemplateApp.InvoiceView = (function(superClass) {
+      extend(InvoiceView, superClass);
 
       function InvoiceView() {
         return InvoiceView.__super__.constructor.apply(this, arguments);
       }
+
+      InvoiceView.prototype.el = "body";
 
       InvoiceView.prototype.initialize = function() {
         _.extend(this, Backbone.Events);
@@ -33,9 +35,9 @@
         project = this.model.get("projectName");
         if (project != null) {
           project = project.replace(/\s/g, '-');
-          return "" + (this.getFullID()) + "_" + customer + "_" + project + ".pdf";
+          return (this.getFullID()) + "_" + customer + "_" + project + ".pdf";
         } else {
-          return "" + (this.getFullID()) + "_" + customer + ".pdf";
+          return (this.getFullID()) + "_" + customer + ".pdf";
         }
       };
 
@@ -111,8 +113,8 @@
         validYear = date.getUTCFullYear();
         validDay = date.getUTCDate();
         this._mapObjToDOM({
-          invoiceDate: "" + day + " " + month + " " + year,
-          expirationDate: "" + validDay + " " + validMonth + " " + validYear
+          invoiceDate: day + " " + month + " " + year,
+          expirationDate: validDay + " " + validMonth + " " + validYear
         });
         this._pluralize({
           itemCount: this.model.get("invoiceItems").length
@@ -123,12 +125,12 @@
       };
 
       InvoiceView.prototype._renderInvoiceTable = function() {
-        var $itemPrototype, $row, footerAggregate, index, itemObj, _ref;
+        var $itemPrototype, $row, footerAggregate, index, itemObj, ref;
         $itemPrototype = $(this.$("div#invoice-body table tbody tr.item")[0]).clone();
         this.$('div#invoice-body table tbody').empty();
-        _ref = this.model.get("invoiceItems");
-        for (index in _ref) {
-          itemObj = _ref[index];
+        ref = this.model.get("invoiceItems");
+        for (index in ref) {
+          itemObj = ref[index];
           $row = $itemPrototype.clone();
           itemObj.subtotal = this.model.itemSubtotal(itemObj);
           this._mapObjToDOM(itemObj, $row);
@@ -143,12 +145,12 @@
       };
 
       InvoiceView.prototype._formatCurrency = function(value) {
-        var currency, currencySeparator, decimalPlaces, fraction, fractionSeparator, integer, roundedValue, roundingBase, _ref;
+        var currency, currencySeparator, decimalPlaces, fraction, fractionSeparator, integer, ref, roundedValue, roundingBase;
         fractionSeparator = this.model.fractionSeparator || ',';
         decimalPlaces = this.model.decimalPlaces || 2;
         roundingBase = Math.pow(10, decimalPlaces);
         roundedValue = Math.round(value * roundingBase) / roundingBase;
-        _ref = roundedValue.toString().split('.'), integer = _ref[0], fraction = _ref[1];
+        ref = roundedValue.toString().split('.'), integer = ref[0], fraction = ref[1];
         fraction = s.pad(fraction, decimalPlaces, '0', 'right');
         currency = this.model.get("currencySymbol");
         currencySeparator = this.model.get("currencySeparator") || ' ';
@@ -156,7 +158,7 @@
       };
 
       InvoiceView.prototype._mapObjToDOM = function(obj, domScope, directives, recursive) {
-        var $el, $matches, el, key, value, _i, _len, _ref, _results;
+        var $el, $matches, el, i, key, len, ref, results, value;
         if (domScope == null) {
           domScope = this.$el;
         }
@@ -164,59 +166,59 @@
           recursive = domScope !== this.$el;
         }
         obj = _.extend({}, obj, directives);
-        _ref = _.keys(obj);
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          key = _ref[_i];
+        ref = _.keys(obj);
+        results = [];
+        for (i = 0, len = ref.length; i < len; i++) {
+          key = ref[i];
           $matches = $('.' + s.dasherize(key) + ', ' + '#' + s.dasherize(key), domScope);
           if (!$matches.length > 0) {
             continue;
           }
           if (Object.prototype.toString.call(key[obj]) === "[object Object]" && recursive) {
-            _results.push(this._mapObjToDOM(obj[key], domScope, directives));
+            results.push(this._mapObjToDOM(obj[key], domScope, directives));
           } else {
-            _results.push((function() {
-              var _j, _len1, _results1;
-              _results1 = [];
-              for (_j = 0, _len1 = $matches.length; _j < _len1; _j++) {
-                el = $matches[_j];
+            results.push((function() {
+              var j, len1, results1;
+              results1 = [];
+              for (j = 0, len1 = $matches.length; j < len1; j++) {
+                el = $matches[j];
                 value = obj[key];
                 $el = $(el);
                 if (Object.prototype.toString.call(obj[key]) === "[object Function]") {
                   value = value($el);
                 }
                 if ($el.attr("data-currency") != null) {
-                  _results1.push($el.html(this._formatCurrency(value)));
+                  results1.push($el.html(this._formatCurrency(value)));
                 } else {
-                  _results1.push($el.html(value));
+                  results1.push($el.html(value));
                 }
               }
-              return _results1;
+              return results1;
             }).call(this));
           }
         }
-        return _results;
+        return results;
       };
 
       InvoiceView.prototype._pluralize = function(obj, domScope) {
-        var $el, $matches, catchArbitrary, catchNegative, catchPositive, count, el, key, pluralizedForm, _i, _len, _ref, _results;
+        var $el, $matches, catchArbitrary, catchNegative, catchPositive, count, el, i, key, len, pluralizedForm, ref, results;
         if (domScope == null) {
           domScope = this.$el;
         }
-        _ref = _.keys(obj);
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          key = _ref[_i];
+        ref = _.keys(obj);
+        results = [];
+        for (i = 0, len = ref.length; i < len; i++) {
+          key = ref[i];
           $matches = $("[data-pluralize='" + (s.dasherize(key)) + "']", domScope);
           if (!$matches.length > 0) {
             continue;
           }
           count = obj[key];
-          _results.push((function() {
-            var _j, _len1, _results1;
-            _results1 = [];
-            for (_j = 0, _len1 = $matches.length; _j < _len1; _j++) {
-              el = $matches[_j];
+          results.push((function() {
+            var j, len1, results1;
+            results1 = [];
+            for (j = 0, len1 = $matches.length; j < len1; j++) {
+              el = $matches[j];
               $el = $(el);
               pluralizedForm = $("[data-pluralize='" + count + "']", $el);
               if (!pluralizedForm.length > 0) {
@@ -235,12 +237,12 @@
                 }
               }
               $el.children().hide();
-              _results1.push($(pluralizedForm).show());
+              results1.push($(pluralizedForm).show());
             }
-            return _results1;
+            return results1;
           })());
         }
-        return _results;
+        return results;
       };
 
       return InvoiceView;

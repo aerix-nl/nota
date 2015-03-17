@@ -1,22 +1,16 @@
 # @cjsx React.DOM
 
-define ['/nota.js', 'underscore.string', 'jed', 'react'], (Nota, s, Jed, React)->
+define ['/nota.js', 'underscore.string', 'jed'], (Nota, s, Jed)->
 
   class TemplateApp.InvoiceView extends Backbone.View
+    el: "body"
+
     initialize: ->
       _.extend(@, Backbone.Events)
       @setElement $("body") # Set root element
       @model.on 'change', @render, @
       @i18n = new Jed
         "missing_key_callback": (key)-> console.error "Missing key in i18n: #{key}"
-
-      NeatComponent = React.createClass
-        render: ->
-          <div className="neat-component">
-            {<h1>A Component is I</h1> if @props.showTitle}
-            <hr />
-            {<p>This line has been printed {n} times</p> for n in [1..10]}
-          </div>
 
     # Used for the html head title element
     documentName: -> 'Invoice '+@getFullID()
@@ -64,6 +58,8 @@ define ['/nota.js', 'underscore.string', 'jed', 'react'], (Nota, s, Jed, React)-
       # first place) is needed.
       if Nota.phantomRuntime then $('a').html ''
       
+
+
       #@el.style.opacity = 1
       @trigger 'render:done'
       @

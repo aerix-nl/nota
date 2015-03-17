@@ -1,10 +1,10 @@
 (function() {
-  var __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
 
   define(['backbone', 'underscore.string'], function(Backbone, s) {
-    return TemplateApp.InvoiceModel = (function(_super) {
-      __extends(InvoiceModel, _super);
+    return TemplateApp.InvoiceModel = (function(superClass) {
+      extend(InvoiceModel, superClass);
 
       function InvoiceModel() {
         return InvoiceModel.__super__.constructor.apply(this, arguments);
@@ -39,9 +39,8 @@
         return this.get("vatPercentage") * (value || this.invoiceSubtotal());
       };
 
-      InvoiceModel.prototype.isInternational = function() {
-        var country, dutch;
-        country = this.get('client').country;
+      InvoiceModel.prototype.isInternational = function(country) {
+        var dutch;
         if (country != null) {
           dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
           if (dutch) {
@@ -61,21 +60,21 @@
         }
         isNaturalInt = function(int, attr) {
           if (isNaN(parseInt(int, 10))) {
-            throw new Error("" + attr + " could not be parsed");
+            throw new Error(attr + " could not be parsed");
           }
           if (parseInt(int, 10) <= 0) {
-            throw new Error("" + attr + " must be a positive integer");
+            throw new Error(attr + " must be a positive integer");
           }
           if (parseInt(int, 10) !== parseFloat(int, 10)) {
-            throw new Error("" + attr + " must be an integer");
+            throw new Error(attr + " must be an integer");
           }
         };
         id = attrs.meta.id;
         if (id == null) {
           throw new Error("No invoice ID provided");
         }
-        if (typeof period !== "undefined" && period !== null) {
-          isNaturalInt(period, "Invoice ID");
+        if (id != null) {
+          isNaturalInt(id, "Invoice ID");
         }
         period = attrs.meta.period;
         if (period != null) {
@@ -92,7 +91,7 @@
           throw new Error("At least the organization name or contact person name must be provided");
         }
         postalCode = attrs.client.postalCode;
-        if ((postalCode.length != null) && !this.isInternational()) {
+        if ((postalCode.length != null) && !this.isInternational(attrs.client.country)) {
           postalCode = s.clean(postalCode);
           if (postalCode.length < 6) {
             throw new Error("Postal code must be at least 6 characters long");
@@ -106,8 +105,8 @@
           throw new Error("No things/items to show in invoice provided. Must be an dictionary object with at least one entry");
         }
         return allItemsValid = _.every(attrs.invoiceItems, function(item, idx) {
-          var price, _ref;
-          if (!((((_ref = item.description) != null ? _ref.length : void 0) != null) > 0)) {
+          var price, ref;
+          if (!((((ref = item.description) != null ? ref.length : void 0) != null) > 0)) {
             throw new Error("Description not provided or of no length");
           }
           price = parseFloat(item.price, 10);

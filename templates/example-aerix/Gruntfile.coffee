@@ -3,7 +3,7 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON("package.json")
 
     coffee:
-      source:
+      compile:
         files: [
           expand: true
           cwd: 'src'
@@ -28,7 +28,8 @@ module.exports = (grunt) ->
       compile:
         expand: true
         sourceMap: true
-        src: ['src/**/*.cjsx'],
+        cwd: 'src'
+        src: ['**/*.cjsx'],
         dest: 'dist',
         ext: '.js'
 
@@ -44,4 +45,4 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'build', ['cjsx']
+  grunt.registerTask 'build', ['cjsx:compile', 'coffee:compile', 'sass:compile']

@@ -12,15 +12,10 @@ requirejs.config {
     'backbone':           'backbone/backbone'
     'jquery':             'vendor/jquery/dist/jquery'
     'underscore':         'vendor/underscore/underscore'
-    'react':              'react/react-with-addons'
-    'JSXTransformer':     'jsx/JSXTransformer'
-    # Some RequireJS addons we need
-    'jsx':                'jsx/js/jsx'
-    'text':               'requirejs-text/text'
 
     # Template stuff
-    'view': '/javascript/invoice-view'
-    'model': '/javascript/invoice-model'
+    'view': '/dist/invoice-view'
+    'model': '/dist/invoice-model'
 }
 
 # In the above config not all dependencies are declared because
@@ -32,8 +27,9 @@ dependencies = ['/nota.js', 'view', 'model']
 define dependencies, (Nota, InvoiceView, InvoiceModel) ->
   Nota.trigger 'template:init'
 
-  TemplateApp.model = new TemplateApp.InvoiceModel()
-  TemplateApp.view = new TemplateApp.InvoiceView({ model: TemplateApp.model })
+  TemplateApp.model = new TemplateApp.InvoiceModel
+  TemplateApp.view = new TemplateApp.InvoiceView
+    model: TemplateApp.model
 
   # Provide Nota client with a function to aquire meta data
   Nota.setDocumentMeta ->
@@ -53,7 +49,7 @@ define dependencies, (Nota, InvoiceView, InvoiceModel) ->
     TemplateApp.model.set(data, {validate: true})
 
   # Forward all view events to Nota client under a seperate namespace
-  'render:done'
+  TemplateApp.view.on 'all', Nota.logEvent, Nota
 
   # We're done with setup
   Nota.trigger 'template:loaded'
