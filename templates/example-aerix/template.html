@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Aerix example invoice template</title>
+	<title>{ meta | documentName }</title>
 
   <link href="stylesheets/styles.css" rel="stylesheet" type="text/css" media="all">
 	<link href="stylesheets/preview.css" rel="stylesheet" type="text/css" media="screen">
@@ -14,58 +14,69 @@
 	<img id="logo" src="images/aerix-logo.svg" alt="Aerix company logo" />
 	<div id="company-info">
 		<p>
-			{ invoiceTotal | currency <   }
-			<strong class="company-fullname">Company Ltd.</strong><br>
-			<span class="street-address">Street Name 12b</span><br>
-			<span class="post-address">1234 AB</span>, <span class="place">Town</span><br>
-			<span class="country">Country</span><br>
-			<span class="email link">address@mail.com</span><br>
-			<span class="website link">www.website.com</span>
+			<strong class="company-fullname">{ origin | companyFull }</strong><br>
+			<span class="street-address">{ origin.address }</span><br>
+			<span class="post-address">{ origin.postalcode }</span>,
+			<span class="place">{ origin.town }</span><br>
+			<span class="country">{ origin.country }</span><br>
+			<a class="email" rv-href="origin.email|email">{ origin.email }</a><br>
+			<a class="website" rv-href="origin.website|website">{ origin.website }</a>
 		</p>
 		<p id="accounts">
-
-			Bank: <span id="bank-name">MyBank</span><br>
-			BIC/SWIFT: <span id="bic">TRIONL2U</span><br>
-			IBAN: <span class="iban">NL12 ABCD 1234 1234 12</span><br>
-			BTW:	<span id="vat-number">AB123405923489</span><br>
-			KvK: <span id="kvk">123456789</span><br>
+			IBAN: <span class="iban">{ origin.iban }</span><br>
+			Bank: <span id="bank-name">{ origin.bank }</span><br>
+			BIC/SWIFT: <span id="bic">{ origin.bic }</span><br>
+			BTW:	<span id="vat-number">{ origin.vat }</span><br>
+			KvK: <span id="kvk">{ origin.kvk }</span><br>
 		</p>
 	</div>
 	<div id="envelope-window">
 		<span id="retour-line">
-			<strong class="company-fullname">Company Ltd.</strong>, 
-			<span class="street-address">Street Name 12b</span>,
-			<span class="post-address">123 4AB</span>
-			<span class="place">Town</span>,
-			<span class="country">Country</span>
+			<strong class="company-fullname">{ origin | companyFull }</strong>, 
+			<span class="street-address">{ origin.address }</span>,
+			<span class="post-address">{ origin.postalcode }</span>
+			<span class="place">{ origin.town }</span>,
+			<span class="country">{ origin.country }</span>
 		</span>
 
 		<p id="client-block">
-			<strong id="organization">Organisatie</strong><br>
-			<span id="contact-person">Klant Klantnaam</span><br>
-			<span id="address">Straatnaam 12b</span><br>
-			<span id="postal-code">1234AB</span>, <span id="place">Stad</span><br>
-			<span id="country">Land</span>
+			<strong id="organization"	rv-show="client.organization">
+				{ client.organization }
+			</strong><br>
+			<span id="contact-person"	rv-show="client.contactPerson">
+				{ client.contactPerson }
+			</span><br>
+			<span id="address"			rv-show="client.address">{ client.address }</span><br>
+			<span id="postal-code" 	rv-show="client.postalcode">{ client.postalcode }</span>
+			<span id="place" 				rv-show="client.town">, { client.town }</span><br>
+			<span id="country" 			rv-show="client.country | isInternational">
+				{ client.country }
+			</span>
 		</p>
 	</div>
 	<div id="invoice-meta">
-		<span class="muted">factuurnummer</span>
-		<h3 id="invoice-id">2013.0099</h3>
+		<span class="muted" data-i18n="invoice-number">invoice number</span>
+		<h3 id="invoice-id">{ meta | fullID }</h3>
 		<table>
 			<tr>
-				<td class="muted">factuurdatum</td><td class="muted">vervaldatum</td>
+				<td class="muted" data-i18n="invoice-date">invoice date</td>
+				<td class="muted" data-i18n="valid-through">valid through</td>
 			</tr>
 			<tr>
-				<td id="invoice-date">18 Oktober 2013</td><td id="expiration-date">1 Novermber 2013</td>
+				<td id="invoice-date">
+					{ meta.date | invoiceDate client.country }
+				</td>
+				<td id="expiration-date">
+					{ meta.date | expiryDate validityPeriod client.country }
+				</td>
 			</tr>
 		</table>
 	</div>
 	<div id="invoice-body">
 		<p class="opening">
-			Beste <span class="client-string">Klant Klantnaam</span>, hierbij de factuur voor de volgende geleverde
-			<span data-pluralize="item-count">
-				<span data-pluralize="1">dienst</span>
-				<span data-pluralize="+">diensten</span>
+			Dear<span class="client-string"> { client | clientDisplay }</span>, hereby the invoice for the following delivered <span class="pluralize">
+				<span class="plural">services</span>
+				<span class="singular">service</span>
 			</span>:
 		</p>
 		<table>
@@ -77,12 +88,12 @@
 			</colgroup>
 
 			<thead>
-				<tr><th colspan="4" class="project-name">Project name:</th></tr>
+				<tr><th colspan="4" class="project-name">{ projectName }:</th></tr>
 				<tr class="table-meta">
-					<th>Dienst</th>
-					<th>Prijs</th>
-					<th>Aantal</th>
-					<th>Bedrag</th>
+					<th>Service</th>
+					<th>Price</th>
+					<th>Quantity</th>
+					<th>Price</th>
 				</tr>
 			</thead>
 
@@ -111,7 +122,7 @@
 				<tr><td colspan="3">Subtotaal</td><td class="subtotal" data-currency>€ 1234,56</td></tr>
 				<tr>
 					<td colspan="3">BTW (<span class="vat-percentage"></span>%)</td>
-					<td class="vat" data-currency>€ 2345,67</td>
+					<td class="vat">{ invoiceItems | invoiceSubtotal | VAT vatPercentage | currency }</td>
 				</tr>
 				<tr><td colspan="3">Totaal</td><td class="total" data-currency>€ 2345,67</td></tr>
 			</tfoot>

@@ -29,7 +29,7 @@ class NotaServer
     # @app.get '/', express.static("#{@templatePath}/template.html")
 
     # Serve 'template.html' by default (instead of index.html default behaviour)
-    @app.get '/',         (req, res)=> res.redirect("/template.html")
+    @app.get '/',         (req, res)-> res.redirect("/template.html")
     # Expose some extras at the first specified subpaths
     @app.use '/lib/',     express.static("#{__dirname}/")
     @app.use '/vendor/',  express.static("#{__dirname}/../bower_components/")
@@ -73,7 +73,7 @@ class NotaServer
       rendered += 1
       meta[rendered] = renderMeta
       if rendered is jobs.length
-        options.callback(meta)
+        options.callback?(meta)
 
   close: ->
     @trigger 'server:closing'

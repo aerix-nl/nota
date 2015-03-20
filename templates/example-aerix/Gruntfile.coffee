@@ -24,14 +24,14 @@ module.exports = (grunt) ->
           ext: '.css'
         ]
 
-    cjsx:
-      compile:
-        expand: true
-        sourceMap: true
-        cwd: 'src'
-        src: ['**/*.cjsx'],
-        dest: 'dist',
-        ext: '.js'
+    # cjsx:
+    #   compile:
+    #     expand: true
+    #     sourceMap: true
+    #     cwd: 'src'
+    #     src: ['**/*.cjsx'],
+    #     dest: 'dist',
+    #     ext: '.js'
 
     # Keep an eye on filesystem changes and rebuild
     watch:
@@ -45,4 +45,4 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'build', ['cjsx:compile', 'coffee:compile', 'sass:compile']
+  grunt.registerTask 'build', ['coffee:compile', 'sass:compile'] #'cjsx:compile'

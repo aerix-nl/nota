@@ -12,9 +12,6 @@ requirejs.config {
     'json':      '/vendor/requirejs-plugins/src/json'
     'text':      '/vendor/requirejs-text/text'
     'requirejs': '/vendor/requirejs/require'
-
-    # Data
-    'data': 'json!/data.json'
 }
 
 define ['backbone', 'json'], ->

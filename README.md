@@ -1,22 +1,30 @@
 # Nota
-<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png"> Nota
-eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty
+<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
+
+Nota eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty
 (PDF) documents. Perfect for things like automating invoice or ticket
 generation, but of course not limited to. Nota can be used for any kind of
 document typesetting, layout and markup jobs, especially those that require
 automation and custom processing/presentation of data.
 
 Develop and debug while feeling right at home in your favorite browser, with a
-1:1 preview of what Nota turns into a .PDF for you. If you like to write your
-templates in CoffeeScript and SASS, Grunt will automatically compile your
-assets as you dev. Get all your favorite libraries and frontend goodies like
-Bootstrap, Backbone.js or AngularJS wired up in seconds with Bower. Nota makes
-designing and programming your documents a breeze.
+1:1 preview of what Nota turns into a .PDF for you. Nota makes designing and
+programming your documents a breeze with `--preview`.
 
-Spare yourself the headache and mind numbing routine of creating series of
+Spare yourself the mind numbing routine of creating series of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
 intellectual slave labour.
+```
+jobs = [{
+  data:       'data1.json'
+  outputPath: 'output1.pdf'
+}, {
+  data:       'data2.json'
+  outputPath: 'output2.pdf'
+}]
+server.render jobs
+```
 
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems)) in the depencencies that are still being

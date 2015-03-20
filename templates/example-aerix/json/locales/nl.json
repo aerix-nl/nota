@@ -1,0 +1,11 @@
+{
+  "invoice-number": ["factuurnummer"],
+  "invoice-date":   ["factuurdatum"],
+  "valid-through":  ["vervaldatum"],
+  "dear":           ["Beste"],
+  "opening":        [", hierbij de factuur voor de volgende geleverde "],
+  "service":        ["dienst", "diensten"],
+  "price":          ["Prijs"],
+  "quantity":       ["Aantal"],
+  "price":          ["Bedrag"]
+}

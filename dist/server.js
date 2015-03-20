@@ -34,11 +34,9 @@
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](this.templatePath));
-      this.app.get('/', (function(_this) {
-        return function(req, res) {
-          return res.redirect("/template.html");
-        };
-      })(this));
+      this.app.get('/', function(req, res) {
+        return res.redirect("/template.html");
+      });
       this.app.use('/lib/', express["static"]("" + __dirname + "/"));
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
@@ -85,7 +83,7 @@
         rendered += 1;
         meta[rendered] = renderMeta;
         if (rendered === jobs.length) {
-          return options.callback(meta);
+          return typeof options.callback === "function" ? options.callback(meta) : void 0;
         }
       });
     };
