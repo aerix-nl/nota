@@ -1,30 +1,22 @@
 (function() {
-  define(['underscore.string', 'moment', 'moment_nl'], function(s, moment) {
-    var Invoice;
-    return Invoice = {
-      predicates: {
-        isInternational: function(country) {
-          var dutch;
-          if (country != null) {
-            dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
-            if (dutch) {
-              return false;
-            }
-          }
-          return false;
-        },
-        isNaturalInt: function(int, attr) {
-          if (isNaN(parseInt(int, 10))) {
-            throw new Error(attr + " could not be parsed");
-          }
-          if (parseInt(int, 10) <= 0) {
-            throw new Error(attr + " must be a positive integer");
-          }
-          if (parseInt(int, 10) !== parseFloat(int, 10)) {
-            throw new Error(attr + " must be an integer");
-          }
-        }
+  var dependencies;
+
+  dependencies = ['underscore.string', 'i18next', 'json!translation_nl', 'json!translation_en', 'moment', 'moment_nl'];
+
+  define(dependencies, function(s, i18n, nl, en, moment) {
+    var Invoice, localisations;
+    localisations = {
+      en: {
+        translation: en
       },
+      nl: {
+        translation: nl
+      }
+    };
+    i18n.init({
+      resStore: localisations
+    });
+    return Invoice = {
       formatters: {
         companyFull: function(origin) {
           return origin.company + " " + origin.lawform;
@@ -102,6 +94,32 @@
             };
           };
         })(this)
+      },
+      predicates: {
+        isInternational: function(country) {
+          var dutch;
+          if (country != null) {
+            dutch = s.contains(country.toLowerCase(), "netherlands") || s.contains(country.toLowerCase(), "nederland");
+            if (dutch) {
+              return false;
+            }
+          }
+          return false;
+        },
+        isNaturalInt: function(int, attr) {
+          if (isNaN(parseInt(int, 10))) {
+            throw new Error(attr + " could not be parsed");
+          }
+          if (parseInt(int, 10) <= 0) {
+            throw new Error(attr + " must be a positive integer");
+          }
+          if (parseInt(int, 10) !== parseFloat(int, 10)) {
+            throw new Error(attr + " must be an integer");
+          }
+        }
+      },
+      i18n: function(key, count) {
+        return console.log(key, count);
       },
       validate: function(data) {
         var allItemsValid, date, id, period, postalCode;

@@ -1,23 +1,20 @@
-define ['underscore.string', 'moment', 'moment_nl'], (s, moment)->
-  Invoice =
-    #
-    # Predicates
-    #
-    predicates:
-      isInternational: (country)->
-        if country?
-          dutch = s.contains(country.toLowerCase(), "netherlands") or
-                  s.contains(country.toLowerCase(), "nederland")
-          if dutch then return false
-        false # If no country is specified, we assume Dutch, so not international
+dependencies = [
+  'underscore.string',
+  'i18next',
+  'json!translation_nl',
+  'json!translation_en',
+  'moment',
+  'moment_nl'
+]
+define dependencies, (s, i18n, nl, en, moment)->
 
-      isNaturalInt: (int, attr)->
-        if isNaN parseInt(int, 10)
-          throw new Error "#{attr} could not be parsed"
-        if parseInt(int, 10) <= 0
-          throw new Error "#{attr} must be a positive integer"
-        if (parseInt(int, 10) isnt parseFloat(int, 10))
-          throw new Error "#{attr} must be an integer"
+  localisations =
+    en: { translation: en }
+    nl: { translation: nl }
+
+  i18n.init resStore: localisations
+
+  Invoice =
 
     #
     # Formatters
@@ -85,6 +82,29 @@ define ['underscore.string', 'moment', 'moment_nl'], (s, moment)->
         'id':               Invoice.formatters.fullID(data.meta)
         'documentName':     Invoice.formatters.documentName(data.meta)
         'filesystemName':   Invoice.formatters.filesystemName(data.meta, data.client, data.project)
+
+    #
+    # Predicates
+    #
+    predicates:
+      isInternational: (country)->
+        if country?
+          dutch = s.contains(country.toLowerCase(), "netherlands") or
+                  s.contains(country.toLowerCase(), "nederland")
+          if dutch then return false
+        false # If no country is specified, we assume Dutch, so not international
+
+      isNaturalInt: (int, attr)->
+        if isNaN parseInt(int, 10)
+          throw new Error "#{attr} could not be parsed"
+        if parseInt(int, 10) <= 0
+          throw new Error "#{attr} must be a positive integer"
+        if (parseInt(int, 10) isnt parseFloat(int, 10))
+          throw new Error "#{attr} must be an integer"
+
+    i18n: (key, count)->
+      # i18n.t
+      console.log key, count
 
     # Validate the new attributes of the model before accepting them
     validate: (data)->

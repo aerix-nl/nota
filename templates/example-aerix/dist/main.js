@@ -28,35 +28,21 @@
     }
   });
 
-  dependencies = ['/nota.js', 'invoice', 'rivets', 'underscore.string', 'i18next', 'json!translation_nl', 'json!translation_en', 'moment', 'moment_nl'];
+  dependencies = ['/nota.js', 'invoice', 'rivets', 'underscore.string', 'moment', 'moment_nl'];
 
-  define(dependencies, function(Nota, Invoice, rivets, s, i18n, nl, en, moment) {
-    var localisations, render;
+  define(dependencies, function(Nota, Invoice, rivets, s, moment) {
+    var render;
     Nota.trigger('template:init');
-    return;
     _.extend(rivets.formatters, Invoice.formatters);
     _.extend(rivets.formatters, Invoice.predicates);
-    localisations = {
-      en: {
-        translation: en
-      },
-      nl: {
-        translation: nl
-      }
-    };
+    rivets.formatters.i18n = Invoice.i18n;
     render = function(data) {
-      var lang;
+      var language;
+      language = Invoice.isInternational(data) ? 'en' : 'nl';
+      Invoice.i18next.setLng(language);
       Nota.trigger('render:start');
       rivets.bind(document.body, data);
       rivets.bind(document.head, data);
-      lang = Invoice.predicates.isInternational(data.country) ? 'en' : 'nl';
-      i18n.init({
-        lng: lang,
-        resStore: localisations
-      }, function(t) {
-        $('div#invoice-meta').i18n();
-        return $('div#invoice-meta').i18n();
-      });
       return Nota.trigger('render:done');
     };
     Nota.setDocumentMeta(Invoice.formatters.documentMeta);

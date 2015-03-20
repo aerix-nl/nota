@@ -36,35 +36,24 @@ dependencies = [
   'invoice',
   'rivets',
   'underscore.string',
-  'i18next',
-  'json!translation_nl',
-  'json!translation_en',
   'moment',
   'moment_nl'
 ]
 
 # We receive the dependencies as args in the same order as they are in the array
-define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
+define dependencies, (Nota, Invoice, rivets, s, moment) ->
   Nota.trigger 'template:init'
-  return
+
   _.extend rivets.formatters, Invoice.formatters
   _.extend rivets.formatters, Invoice.predicates
-
-  localisations =
-    en: { translation: en }
-    nl: { translation: nl }
+  rivets.formatters.i18n = Invoice.i18n
 
   render = (data)->
+    language = if Invoice.isInternational(data) then 'en' else 'nl'
+    Invoice.i18next.setLng language
     Nota.trigger 'render:start'
     rivets.bind document.body, data
     rivets.bind document.head, data
-
-    lang = if Invoice.predicates.isInternational(data.country) then 'en' else 'nl'
-    i18n.init lng: lang, resStore: localisations, (t)->
-      $('div#invoice-meta').i18n()
-      $('div#invoice-meta').i18n()
-      
-
     Nota.trigger 'render:done'
 
   # Provide Nota client with a function to aquire meta data

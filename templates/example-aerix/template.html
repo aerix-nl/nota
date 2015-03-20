@@ -55,12 +55,12 @@
 		</p>
 	</div>
 	<div id="invoice-meta">
-		<span class="muted" data-i18n="invoice-number">invoice number</span>
+		<span class="muted">{ 'invoice-number' | i18n }</span>
 		<h3 id="invoice-id">{ meta | fullID }</h3>
 		<table>
 			<tr>
-				<td class="muted" data-i18n="invoice-date">invoice date</td>
-				<td class="muted" data-i18n="valid-through">valid through</td>
+				<td class="muted">invoice-date</td>
+				<td class="muted">valid-through</td>
 			</tr>
 			<tr>
 				<td id="invoice-date">
@@ -74,10 +74,10 @@
 	</div>
 	<div id="invoice-body">
 		<p class="opening">
-			Dear<span class="client-string"> { client | clientDisplay }</span>, hereby the invoice for the following delivered <span class="pluralize">
-				<span class="plural">services</span>
-				<span class="singular">service</span>
-			</span>:
+			<span>{ 'dear' | i18n }</span>
+			<span class="client-string">{ client | clientDisplay }</span>
+			<span>{ 'hereby' | i18n }</span>
+			<span>{ 'service' | i18n (invoiceItems | itemCount) }</span>:
 		</p>
 		<table>
 			<colgroup>
@@ -98,23 +98,11 @@
 			</thead>
 
 			<tbody>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
-				</tr>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
-				</tr>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
+				<tr class="item" rv-each-invoiceItem="invoiceItems">
+					<td class="description">{ 'Item description' | i18n (invoiceItems | length) < client.country }</td>
+					<td class="price" data-currency>{ invoiceItem.price | currency }</td>
+					<td class="quantity">{ invoiceItem.quantity }</td>
+					<td class="subtotal" data-currency>{ invoiceItem.quantity | multiply invoiceItem.price | currency }</td>
 				</tr>
 			</tbody>
 

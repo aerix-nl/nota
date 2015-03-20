@@ -1,11 +1,12 @@
 {
-  "invoice-number": ["invoice number"],
-  "invoice-date":   ["invoice date"],
-  "valid-through":  ["valid through"],
-  "dear":           ["Deste"],
-  "opening":        [", hereby the invoice for the following delivered "],
-  "service":        ["service", "services"],
-  "price":          ["price"],
-  "quantity":       ["quantity"],
-  "price":          ["price"]
+  "invoice-number": "invoice number",
+  "invoice-date":   "invoice date",
+  "valid-through":  "valid through",
+  "dear":           "Deste",
+  "opening":        ", hereby the invoice for the following delivered ",
+  "service":        "service",
+  "service_plural": "services",
+  "price":          "price",
+  "quantity":       "quantity",
+  "price":          "price"
 }
