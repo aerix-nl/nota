@@ -4,15 +4,15 @@ html {
 
 body {
   padding-bottom: 3cm;
-  color: #1A2C33 !important;
+  color: #1a2c33 !important;
   font-family: "DINPro", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif;
   font-size: 1.4em;
   padding: 15mm 21mm; }
 
 a, .link {
-  color: #259CCF !important; }
+  color: #259ccf !important; }
   a:hover, .link:hover {
-    color: #15678A !important; }
+    color: #15678a !important; }
 
 .muted, div#company-info p#accounts, div#invoice-meta span {
   color: rgba(26, 44, 51, 0.4) !important; }
@@ -27,7 +27,7 @@ div#company-info {
   div#company-info p#accounts {
     margin-top: 1cm; }
     div#company-info p#accounts span {
-      color: #1A2C33; }
+      color: #1a2c33; }
 
 div#envelope-window {
   left: 21mm;
@@ -69,7 +69,7 @@ div#invoice-body {
       text-align: right; }
     div#invoice-body table th.project-name {
       height: 2em;
-      border-bottom: 2px solid #1A2C33 !important;
+      border-bottom: 2px solid #1a2c33 !important;
       text-align: center; }
     div#invoice-body table tr.table-meta {
       height: 2em;
@@ -95,7 +95,7 @@ div#invoice-body {
         vertical-align: bottom; }
 
 footer {
-  border-top: 1px solid #1A2C33;
+  border-top: 1px solid #1a2c33;
   bottom: 15mm;
   left: 21mm;
   right: 21mm;
@@ -104,5 +104,3 @@ footer {
   padding-top: 1mm;
   position: absolute;
   letter-spacing: 0.013em; }
-
-/*# sourceMappingURL=styles.css.map */

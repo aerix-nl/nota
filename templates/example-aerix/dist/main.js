@@ -1,5 +1,13 @@
 (function() {
-  var dependencies;
+  var base, dependencies;
+
+  (base = Function.prototype).bind || (base.bind = function(_this) {
+    return (function(_this) {
+      return function() {
+        return _this.apply(_this, arguments);
+      };
+    })(this);
+  });
 
   requirejs.config({
     baseUrl: '../bower_components/',

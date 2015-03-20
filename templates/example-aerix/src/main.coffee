@@ -1,3 +1,5 @@
+Function.prototype.bind ||= ( _this ) -> => @apply(_this, arguments)
+
 requirejs.config {
   baseUrl: '../bower_components/'
   paths:
