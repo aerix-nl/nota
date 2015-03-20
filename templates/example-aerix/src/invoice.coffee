@@ -8,13 +8,12 @@ dependencies = [
 ]
 define dependencies, (s, i18n, nl, en, moment)->
 
-  localisations =
+  i18n.init resStore: 
     en: { translation: en }
     nl: { translation: nl }
 
-  i18n.init resStore: localisations
-
   Invoice =
+    i18next: i18n
 
     #
     # Formatters

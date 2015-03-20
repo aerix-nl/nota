@@ -4,19 +4,19 @@
   dependencies = ['underscore.string', 'i18next', 'json!translation_nl', 'json!translation_en', 'moment', 'moment_nl'];
 
   define(dependencies, function(s, i18n, nl, en, moment) {
-    var Invoice, localisations;
-    localisations = {
-      en: {
-        translation: en
-      },
-      nl: {
-        translation: nl
-      }
-    };
+    var Invoice;
     i18n.init({
-      resStore: localisations
+      resStore: {
+        en: {
+          translation: en
+        },
+        nl: {
+          translation: nl
+        }
+      }
     });
     return Invoice = {
+      i18next: i18n,
       formatters: {
         companyFull: function(origin) {
           return origin.company + " " + origin.lawform;

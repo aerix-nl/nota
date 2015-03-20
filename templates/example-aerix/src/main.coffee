@@ -49,7 +49,7 @@ define dependencies, (Nota, Invoice, rivets, s, moment) ->
   rivets.formatters.i18n = Invoice.i18n
 
   render = (data)->
-    language = if Invoice.isInternational(data) then 'en' else 'nl'
+    language = if Invoice.predicates.isInternational(data.country) then 'en' else 'nl'
     Invoice.i18next.setLng language
     Nota.trigger 'render:start'
     rivets.bind document.body, data

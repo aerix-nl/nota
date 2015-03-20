@@ -38,7 +38,7 @@
     rivets.formatters.i18n = Invoice.i18n;
     render = function(data) {
       var language;
-      language = Invoice.isInternational(data) ? 'en' : 'nl';
+      language = Invoice.predicates.isInternational(data.country) ? 'en' : 'nl';
       Invoice.i18next.setLng(language);
       Nota.trigger('render:start');
       rivets.bind(document.body, data);
