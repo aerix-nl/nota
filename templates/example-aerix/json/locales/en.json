@@ -3,10 +3,11 @@
   "invoice-date":   "invoice date",
   "valid-through":  "valid through",
   "dear":           "Deste",
-  "opening":        ", hereby the invoice for the following delivered ",
+  "hereby":         ", hereby the invoice for the following delivered ",
   "service":        "service",
   "service_plural": "services",
   "price":          "price",
   "quantity":       "quantity",
-  "price":          "price"
+  "amount":         "amount",
+  "subtotal":       "subtotal"
 }

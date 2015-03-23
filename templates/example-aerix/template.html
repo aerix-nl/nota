@@ -14,7 +14,7 @@
 	<img id="logo" src="images/aerix-logo.svg" alt="Aerix company logo" />
 	<div id="company-info">
 		<p>
-			<strong class="company-fullname">{ origin | companyFull }</strong><br>
+			<strong class="company-fullname">{ | companyFull }</strong><br>
 			<span class="street-address">{ origin.address }</span><br>
 			<span class="post-address">{ origin.postalcode }</span>,
 			<span class="place">{ origin.town }</span><br>
@@ -47,20 +47,19 @@
 				{ client.contactPerson }
 			</span><br>
 			<span id="address"			rv-show="client.address">{ client.address }</span><br>
-			<span id="postal-code" 	rv-show="client.postalcode">{ client.postalcode }</span>
-			<span id="place" 				rv-show="client.town">, { client.town }</span><br>
+			<span id="postal-code" 	rv-show="client.postalcode">{ client.postalcode }</span><span id="place" 												 rv-show="client.town">, { client.town }</span><br>
 			<span id="country" 			rv-show="client.country | isInternational">
 				{ client.country }
 			</span>
 		</p>
 	</div>
 	<div id="invoice-meta">
-		<span class="muted">{ 'invoice-number' | i18n }</span>
-		<h3 id="invoice-id">{ meta | fullID }</h3>
+		<span class="muted">{ 'invoice-number' | i18n | capitalize }</span>
+		<h3 id="invoice-id">{ | fullID }</h3>
 		<table>
 			<tr>
-				<td class="muted">invoice-date</td>
-				<td class="muted">valid-through</td>
+				<td class="muted">{ 'invoice-date' 	| i18n | capitalize }</td>
+				<td class="muted">{ 'valid-through' | i18n | capitalize }</td>
 			</tr>
 			<tr>
 				<td id="invoice-date">
@@ -74,10 +73,9 @@
 	</div>
 	<div id="invoice-body">
 		<p class="opening">
-			<span>{ 'dear' | i18n }</span>
-			<span class="client-string">{ client | clientDisplay }</span>
-			<span>{ 'hereby' | i18n }</span>
-			<span>{ 'service' | i18n (invoiceItems | itemCount) }</span>:
+			<span>{ 'dear' 		| i18n | capitalize}</span>
+			<span>{ client 		| clientDisplay }</span><span>{ 'hereby' | i18n }</span>
+			<span>{ 'service' | i18n invoiceItems 'length' }</span>:
 		</p>
 		<table>
 			<colgroup>
@@ -90,29 +88,33 @@
 			<thead>
 				<tr><th colspan="4" class="project-name">{ projectName }:</th></tr>
 				<tr class="table-meta">
-					<th>Service</th>
-					<th>Price</th>
-					<th>Quantity</th>
-					<th>Price</th>
+					<th>{ 'service' 	| i18n | capitalize }</th>
+					<th>{ 'price' 		| i18n | capitalize }</th>
+					<th>{ 'quantity' 	| i18n | capitalize }</th>
+					<th>{ 'amount' 		| i18n | capitalize }</th>
 				</tr>
 			</thead>
 
 			<tbody>
-				<tr class="item" rv-each-invoiceItem="invoiceItems">
-					<td class="description">{ 'Item description' | i18n (invoiceItems | length) < client.country }</td>
-					<td class="price" data-currency>{ invoiceItem.price | currency }</td>
-					<td class="quantity">{ invoiceItem.quantity }</td>
-					<td class="subtotal" data-currency>{ invoiceItem.quantity | multiply invoiceItem.price | currency }</td>
+				<tr class="item" rv-each-item="invoiceItems">
+					<td class="description"	>{ item.description }</td>
+					<td class="price"				>{ item.price | currency currencySymbol}</td>
+					<td class="quantity"		>{ item.quantity }</td>
+					<td class="subtotal" 		>{ item | itemSubtotal | currency currencySymbol}</td>
 				</tr>
 			</tbody>
 
 			<tfoot>
-				<tr><td colspan="3">Subtotaal</td><td class="subtotal" data-currency>€ 1234,56</td></tr>
 				<tr>
-					<td colspan="3">BTW (<span class="vat-percentage"></span>%)</td>
-					<td class="vat">{ invoiceItems | invoiceSubtotal | VAT vatPercentage | currency }</td>
+					<td colspan="3">{ 'subtotal' | i18n | capitalize}</td>
+					<td class="subtotal">{ invoiceItems | invoiceSubtotal | currency currencySymbol}</td>
 				</tr>
-				<tr><td colspan="3">Totaal</td><td class="total" data-currency>€ 2345,67</td></tr>
+				<tr>
+					<td colspan="3">{ 'vat' | i18n } (<span class="vat-percentage">{vatPercentage | mult 100 }</span>%)</td>
+					<td class="vat">{ invoiceItems | invoiceSubtotal | VAT vatPercentage | currency currencySymbol}</td>
+				</tr>
+				<tr><td colspan="3">{ 'total' | i18n }</td>
+				<td class="total">{ invoiceItems | invoiceTotal | currency currencySymbol }</td></tr>
 			</tfoot>
 		</table>
 		<span id="closing">

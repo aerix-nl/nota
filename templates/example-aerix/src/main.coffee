@@ -5,7 +5,8 @@ requirejs.config {
   paths:
     # Vendor goodies this template depends on
     'jquery':             'jquery/dist/jquery'
-    'bootstrap':          'bootstrap/dist/js/bootstrap'
+    'bootstrap':          'bootstrap/dist/bootstrap'
+    'backbone':           'backbone/backbone'
     'underscore':         'underscore/underscore'
     'underscore.string':  'underscore.string/dist/underscore.string.min'
     'jed':                'jed/jed'
@@ -30,6 +31,7 @@ requirejs.config {
       deps: ['sightglass']
 }
 
+'use strict'
 # In the above config not all dependencies are declared because
 # some of them which this template depends on (e.g. Backbone, _)
 # have already been made available by Nota client earlier.
@@ -38,28 +40,46 @@ dependencies = [
   'invoice',
   'rivets',
   'underscore.string',
+  'i18next',
+  'json!translation_nl',
+  'json!translation_en',
   'moment',
   'moment_nl'
 ]
 
 # We receive the dependencies as args in the same order as they are in the array
-define dependencies, (Nota, Invoice, rivets, s, moment) ->
+define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
   Nota.trigger 'template:init'
 
-  _.extend rivets.formatters, Invoice.formatters
-  _.extend rivets.formatters, Invoice.predicates
-  rivets.formatters.i18n = Invoice.i18n
+  invoice = new Invoice()
+   
+  i18n.init { 
+    resStore:
+      en: { translation: en }
+      nl: { translation: nl }
+
+    missingKeyHandler: (lng, ns, key, defaultValue, lngs) ->
+      throw new Error arguments
+  }
+
+  rivets.formatters.i18n = (key, count, readout)->
+    if count?
+      if readout? then count = count['length']
+      i18n.t key, count: count
+    else i18n.t key
+
+  _.extend rivets.formatters, invoice
 
   render = (data)->
-    language = if Invoice.predicates.isInternational(data.country) then 'en' else 'nl'
-    Invoice.i18next.setLng language
+    invoice.set(data, validate: true)
+    i18n.setLng invoice.language()
     Nota.trigger 'render:start'
     rivets.bind document.body, data
     rivets.bind document.head, data
     Nota.trigger 'render:done'
 
   # Provide Nota client with a function to aquire meta data
-  Nota.setDocumentMeta Invoice.formatters.documentMeta
+  Nota.setDocumentMeta invoice.documentMeta
 
   if Nota.phantomRuntime
     # Listen and wait for the server to inject data
@@ -71,5 +91,6 @@ define dependencies, (Nota, Invoice, rivets, s, moment) ->
   # We're done with setup
   Nota.trigger 'template:loaded'
 
-  # Export Invoice var for use in other modules
-  return Invoice
+  # Export invoice var for use in other modules
+  @invoice = invoice
+  return invoice

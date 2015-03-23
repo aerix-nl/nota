@@ -16,7 +16,8 @@
     "requirejs-plugins": "1.0.3",
     "rivets": "~0.8.0",
     "momentjs": "~2.9.0",
-    "i18next": "~1.8.0"
+    "i18next": "~1.8.0",
+    "backbone": "~1.1.2"
   },
   "nota": {
     "exampleData": "json/example.json",

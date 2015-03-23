@@ -1,112 +1,107 @@
 dependencies = [
+  'backbone'
+  'underscore'
   'underscore.string',
-  'i18next',
-  'json!translation_nl',
-  'json!translation_en',
   'moment',
   'moment_nl'
 ]
-define dependencies, (s, i18n, nl, en, moment)->
+define dependencies, (Backbone, _, s, moment)->
 
-  i18n.init resStore: 
-    en: { translation: en }
-    nl: { translation: nl }
+  class Invoice extends Backbone.Model
 
-  Invoice =
-    i18next: i18n
+    language: (country)->
+      return 'nl' unless country? # If no country is specified, we assume Dutch
+      dutch = s.contains(country.toLowerCase(), "netherlands") or
+              s.contains(country.toLowerCase(), "nederland")
+      if dutch then return 'nl' else 'en'
 
-    #
-    # Formatters
-    #
-    formatters:
-      companyFull: (origin) ->
-        return "#{origin.company} #{origin.lawform}"
-      email: (email) ->
-        return "mailto:#{email}"
-      website: (website) ->
-        return "https:www.#{website}"
-      fullID: (meta)->
-        date = new Date(meta.date)
-        date.getUTCFullYear()+'.'+s.pad(meta.id.toString(), 4, '0')
-      invoiceDate: (date, country)->
-        if Invoice.predicates.isInternational(country)
-          moment.locale 'en'
-        else
-          moment.locale 'nl'
+    isInternational: (country)=>
+      @language(country) isnt 'nl'
 
-        moment(date).format('LL')
-      expiryDate: (date, period, country)->
-        if Invoice.predicates.isInternational(country)
-          moment.locale 'en'
-        else
-          moment.locale 'nl'
+    isNaturalInt: (int, attr)->
+      if isNaN parseInt(int, 10)
+        throw new Error "#{attr} could not be parsed"
+      if parseInt(int, 10) <= 0
+        throw new Error "#{attr} must be a positive integer"
+      if (parseInt(int, 10) isnt parseFloat(int, 10))
+        throw new Error "#{attr} must be an integer"
 
-        moment(date).add(period, 'days').format('LL')
-      clientDisplay: (client) ->
-        client.contactPerson or client.organization
+    companyFull: =>
+      @get('origin').company+' '+@get('origin').lawform
 
-      # Calculates the item subtotal (price times quantity, and then a possible discount applied)
-      itemSubtotal: (itemObj)->
-        # Calculate the subtotal of this item
-        subtotal = itemObj.price * itemObj.quantity
-        # Apply discount over subtotal if it exists
-        if itemObj.discount? > 0 then subtotal = subtotal * (1-itemObj.discount)
-        subtotal
+    email: (email) ->
+      return "mailto:#{email}"
+    website: (website) ->
+      return "https:www.#{website}"
+    fullID: =>
+      meta = @get('meta')
+      date = new Date(meta.date)
+      date.getUTCFullYear()+'.'+s.pad(meta.id.toString(), 4, '0')
 
-      # Subtotal of all the invoice items without taxes, but including their individual discounts
-      invoiceSubtotal: (invoiceItems)->
-        _.reduce invoiceItems, ( (sum, item)-> sum + Invoice.formatters.itemSubtotal item ), 0
+    invoiceDate: =>
+      if @isInternational(@get('client').country)
+        moment.locale 'en'
+      else
+        moment.locale 'nl'
 
-      invoiceTotal: (invoiceItems)->
-        Invoice.formatters.invoiceSubtotal(invoiceItems) + Invoice.formatters.VAT(vat, invoiceItems)
-      
-      # VAT over the provided value or the invoice subtotal
-      VAT: (price, vat)->
-        vat * price
+      moment(@get('meta').date).format('LL')
+    expiryDate: (date, period, country)=>
+      if @isInternational(@get('client').country)
+        moment.locale 'en'
+      else
+        moment.locale 'nl'
 
-      # Used for the html head title element
-      documentName: (meta)-> 'Invoice '+ Invoice.formatters.fullID(meta)
+      moment(@get('meta').date).add(period, 'days').format('LL')
+    clientDisplay: (client) ->
+      client.contactPerson or client.organization
 
-      filesystemName: (meta, client, project)->
-        customer = client.organization || client.contactPerson
-        customer = customer.replace /\s/g, '-' # Spaces to dashes using regex
-        if project?
-          project = project.replace /\s/g, '-' # Spaces to dashes using regex
-          "#{Invoice.formatters.fullID(meta)}_#{customer}_#{project}.pdf"
-        else
-          "#{Invoice.formatters.fullID(meta)}_#{customer}.pdf"
+    # Calculates the item subtotal (price times quantity, and then a possible discount applied)
+    itemSubtotal: (itemObj)->
+      # Calculate the subtotal of this item
+      subtotal = itemObj.price * itemObj.quantity
+      # Apply discount over subtotal if it exists
+      if itemObj.discount? > 0 then subtotal = subtotal * (1-itemObj.discount)
+      subtotal
 
-      documentMeta: (data)=>
-        console.log @
-        'id':               Invoice.formatters.fullID(data.meta)
-        'documentName':     Invoice.formatters.documentName(data.meta)
-        'filesystemName':   Invoice.formatters.filesystemName(data.meta, data.client, data.project)
+    # Subtotal of all the invoice items without taxes, but including their individual discounts
+    invoiceSubtotal: =>
+      _.reduce @get('invoiceItems'), ( (sum, item)=> sum + @itemSubtotal item ), 0
 
-    #
-    # Predicates
-    #
-    predicates:
-      isInternational: (country)->
-        if country?
-          dutch = s.contains(country.toLowerCase(), "netherlands") or
-                  s.contains(country.toLowerCase(), "nederland")
-          if dutch then return false
-        false # If no country is specified, we assume Dutch, so not international
+    invoiceTotal: => @invoiceSubtotal() + @VAT()
+    
+    # VAT over the provided value or the invoice subtotal
+    VAT: (price = @invoiceSubtotal(), vat = @get('vatPercentage'))-> vat * price
 
-      isNaturalInt: (int, attr)->
-        if isNaN parseInt(int, 10)
-          throw new Error "#{attr} could not be parsed"
-        if parseInt(int, 10) <= 0
-          throw new Error "#{attr} must be a positive integer"
-        if (parseInt(int, 10) isnt parseFloat(int, 10))
-          throw new Error "#{attr} must be an integer"
+    # Used for the html head title element
+    documentName: => 'Invoice '+ @fullID()
 
-    i18n: (key, count)->
-      # i18n.t
-      console.log key, count
+    filesystemName: =>
+      project = @get('projectName')
+      customer = @get('client').organization || @get('client').contactPerson
+      customer = customer.replace /\s/g, '-' # Spaces to dashes using regex
+      if project?
+        project = project.replace /\s/g, '-' # Spaces to dashes using regex
+        "#{@fullID()}_#{customer}_#{project}.pdf"
+      else
+        "#{@fullID()}_#{customer}.pdf"
+
+    documentMeta: (data)=>
+      'id':               @fullID()
+      'documentName':     @documentName()
+      'filesystemName':   @filesystemName()
+
+    currency: (value, symbol) ->
+      parsed = parseInt(value)
+      if isNaN(parsed)
+        throw new Error("Could not parse value '" + value + "'")
+        return "#{symbol} 0,00"
+      else
+        return symbol + ' ' + value.toFixed(2)
+
+    capitalize: (string)-> s.capitalize(string)
 
     # Validate the new attributes of the model before accepting them
-    validate: (data)->
+    validate: (data)=>
       unless _.keys(data).length > 0
         throw new Error "Provided model has no attributes. "+
           "Check the arguments of this model's initialization call."
@@ -115,10 +110,10 @@ define dependencies, (s, i18n, nl, en, moment)->
 
       id = data.meta.id
       unless id? then throw new Error "No invoice ID provided"
-      if id? then Invoice.predicates.isNaturalInt(id, "Invoice ID")
+      if id? then @isNaturalInt(id, "Invoice ID")
 
       period = data.meta.period
-      if period? then Invoice.predicates.isNaturalInt(period, "Invoice period")
+      if period? then @isNaturalInt(period, "Invoice period")
 
       date = new Date data.meta.date
       unless (Object.prototype.toString.call(date) is "[object Date]") and not isNaN(date.getTime())
@@ -130,10 +125,10 @@ define dependencies, (s, i18n, nl, en, moment)->
       unless data.client.organization or data.client.contactPerson
         throw new Error "At least the organization name or contact person name must be provided"
         
-      postalCode = data.client.postalCode
+      postalCode = data.client.postalcode
       # Postal code is optional, for clients where it is still unknown, but when
       # defined, Dutch postal codes are only valid when 6 characters long.
-      if postalCode.length? and not Invoice.predicates.isInternational(data.client.country)
+      if postalCode.length? and not @isInternational(data.client.country)
         postalCode = s.clean(postalCode)
         if postalCode.length < 6
           throw new Error "Postal code must be at least 6 characters long"

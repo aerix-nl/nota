@@ -2,11 +2,12 @@
   "invoice-number": "factuurnummer",
   "invoice-date":   "factuurdatum",
   "valid-through":  "vervaldatum",
-  "dear":           "Beste",
-  "opening":        ", hierbij de factuur voor de volgende geleverde ",
+  "dear":           "beste",
+  "hereby":         ", hierbij de factuur voor de volgende geleverde ",
   "service":        "dienst",
   "service_plural": "diensten",
-  "price":          "Prijs",
-  "quantity":       "Aantal",
-  "price":          "Bedrag"
+  "price":          "prijs",
+  "quantity":       "aantal",
+  "amount":         "bedrag",
+  "subtotal":       "subtotaal"
 }
