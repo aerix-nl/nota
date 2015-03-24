@@ -70,7 +70,7 @@ define dependencies, (Backbone, _, s, moment)->
     invoiceTotal: => @invoiceSubtotal() + @VAT()
     
     # VAT over the provided value or the invoice subtotal
-    VAT: => 
+    VAT: =>
       @invoiceSubtotal() * @get('vatPercentage')
 
     vatPercentage: => (@get('vatPercentage') * 100)
@@ -138,9 +138,9 @@ define dependencies, (Backbone, _, s, moment)->
         else if not postalCode.match(/\d{4}\s?[A-z]{2}/)
           throw new Error 'Postal code must be of format /\\d{4}\\s?[A-z]{2}/, e.g. 1234AB or 1234 ab'
 
-      unless data.invoiceItems? and _.keys(data.invoiceItems).length? > 0
-        throw new Error "No things/items to show in invoice provided. Must be an
-        dictionary object with at least one entry"
+      unless data.invoiceItems?.length? and data.invoiceItems.length > 0
+        throw new Error "No items to show in invoice provided. Must be an
+        array with at least one entry"
 
       allItemsValid = _.every data.invoiceItems, (item, idx)->
         unless item.description?.length? > 0

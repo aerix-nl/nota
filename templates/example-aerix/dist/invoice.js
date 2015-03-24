@@ -171,7 +171,7 @@
       };
 
       Invoice.prototype.validate = function(data) {
-        var allItemsValid, date, id, period, postalCode;
+        var allItemsValid, date, id, period, postalCode, ref;
         if (!(_.keys(data).length > 0)) {
           throw new Error("Provided model has no attributes. " + "Check the arguments of this model's initialization call.");
         }
@@ -210,12 +210,12 @@
             throw new Error('Postal code must be of format /\\d{4}\\s?[A-z]{2}/, e.g. 1234AB or 1234 ab');
           }
         }
-        if (!((data.invoiceItems != null) && (_.keys(data.invoiceItems).length != null) > 0)) {
-          throw new Error("No things/items to show in invoice provided. Must be an dictionary object with at least one entry");
+        if (!((((ref = data.invoiceItems) != null ? ref.length : void 0) != null) && data.invoiceItems.length > 0)) {
+          throw new Error("No items to show in invoice provided. Must be an array with at least one entry");
         }
         return allItemsValid = _.every(data.invoiceItems, function(item, idx) {
-          var price, ref;
-          if (!((((ref = item.description) != null ? ref.length : void 0) != null) > 0)) {
+          var price, ref1;
+          if (!((((ref1 = item.description) != null ? ref1.length : void 0) != null) > 0)) {
             throw new Error("Description not provided or of no length");
           }
           price = parseFloat(item.price, 10);

@@ -75,13 +75,15 @@
       invoice.set(data, {
         validate: true
       });
-      i18n.setLng('en');
+      i18n.setLng(invoice.language());
       Nota.trigger('render:start');
       rivets.bind(document.body, data);
       rivets.bind(document.head, data);
       return Nota.trigger('render:done');
     };
-    Nota.setDocumentMeta(invoice.documentMeta);
+    Nota.setDocumentMeta(function() {
+      return invoice.documentMeta.apply(invoice, arguments);
+    });
     if (Nota.phantomRuntime) {
       Nota.on('data:injected', render);
     } else {

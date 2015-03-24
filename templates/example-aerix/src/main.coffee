@@ -72,14 +72,14 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
 
   render = (data)->
     invoice.set(data, validate: true)
-    i18n.setLng 'en' #invoice.language()
+    i18n.setLng invoice.language()
     Nota.trigger 'render:start'
     rivets.bind document.body, data
     rivets.bind document.head, data
     Nota.trigger 'render:done'
 
   # Provide Nota client with a function to aquire meta data
-  Nota.setDocumentMeta invoice.documentMeta
+  Nota.setDocumentMeta -> invoice.documentMeta.apply(invoice, arguments)
 
   if Nota.phantomRuntime
     # Listen and wait for the server to inject data
