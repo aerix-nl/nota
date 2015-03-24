@@ -75,7 +75,7 @@
       invoice.set(data, {
         validate: true
       });
-      i18n.setLng(invoice.language());
+      i18n.setLng('en');
       Nota.trigger('render:start');
       rivets.bind(document.body, data);
       rivets.bind(document.head, data);

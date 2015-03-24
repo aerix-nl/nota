@@ -53,7 +53,7 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
 
   invoice = new Invoice()
    
-  i18n.init { 
+  i18n.init {
     resStore:
       en: { translation: en }
       nl: { translation: nl }
@@ -72,7 +72,7 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
 
   render = (data)->
     invoice.set(data, validate: true)
-    i18n.setLng invoice.language()
+    i18n.setLng 'en' #invoice.language()
     Nota.trigger 'render:start'
     rivets.bind document.body, data
     rivets.bind document.head, data

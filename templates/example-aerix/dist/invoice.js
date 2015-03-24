@@ -13,9 +13,12 @@
 
       function Invoice() {
         this.validate = bind(this.validate, this);
+        this.currency = bind(this.currency, this);
         this.documentMeta = bind(this.documentMeta, this);
         this.filesystemName = bind(this.filesystemName, this);
         this.documentName = bind(this.documentName, this);
+        this.vatPercentage = bind(this.vatPercentage, this);
+        this.VAT = bind(this.VAT, this);
         this.invoiceTotal = bind(this.invoiceTotal, this);
         this.invoiceSubtotal = bind(this.invoiceSubtotal, this);
         this.expiryDate = bind(this.expiryDate, this);
@@ -117,14 +120,12 @@
         return this.invoiceSubtotal() + this.VAT();
       };
 
-      Invoice.prototype.VAT = function(price, vat) {
-        if (price == null) {
-          price = this.invoiceSubtotal();
-        }
-        if (vat == null) {
-          vat = this.get('vatPercentage');
-        }
-        return vat * price;
+      Invoice.prototype.VAT = function() {
+        return this.invoiceSubtotal() * this.get('vatPercentage');
+      };
+
+      Invoice.prototype.vatPercentage = function() {
+        return this.get('vatPercentage') * 100;
       };
 
       Invoice.prototype.documentName = function() {
@@ -154,10 +155,12 @@
 
       Invoice.prototype.currency = function(value, symbol) {
         var parsed;
+        if (symbol == null) {
+          symbol = this.get('currencySymbol');
+        }
         parsed = parseInt(value);
         if (isNaN(parsed)) {
           throw new Error("Could not parse value '" + value + "'");
-          return symbol + " 0,00";
         } else {
           return symbol + ' ' + value.toFixed(2);
         }

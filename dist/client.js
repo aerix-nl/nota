@@ -34,7 +34,7 @@
         if (this.phantomRuntime) {
           return window.callPhantom(message);
         } else {
-          return console.log(message);
+          return console.info(message);
         }
       };
 

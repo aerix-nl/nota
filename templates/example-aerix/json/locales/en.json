@@ -1,13 +1,28 @@
 {
-  "invoice-number": "invoice number",
-  "invoice-date":   "invoice date",
-  "valid-through":  "valid through",
-  "dear":           "Deste",
-  "hereby":         ", hereby the invoice for the following delivered ",
-  "service":        "service",
-  "service_plural": "services",
-  "price":          "price",
-  "quantity":       "quantity",
-  "amount":         "amount",
-  "subtotal":       "subtotal"
+  "invoice-number":         "invoice number",
+  "invoice-date":           "invoice date",
+  "valid-through":          "valid through",
+  "dear":                   "dear",
+  "hereby":                 ", hereby the invoice for the following delivered",
+  "service":                "service",
+  "service_plural":         "services",
+  "price":                  "price",
+  "quantity":               "quantity",
+  "amount":                 "amount",
+  "subtotal":               "subtotal",
+  "vat":                    "VAT",
+  "total":                  "total",
+
+  "closing-transfer":       "We kindly ask you to timely transfer the sum of",
+  "closing-to-account":     "to bank account",
+  "closing-denoting":       ", noting the invoice number",
+  "closing-questions":      "In case you have any questions about this invoice, please don't hesitate to get in touch with us at",
+
+  "expiry-start":           "This invoice expires in",
+  "expiry-please":          "days after the invoice date. Please timely transfer the total before",
+  "expiry-transfer":        "to",
+  "expiry-registered":      "registered to",
+  "expiry-denoting":        ", noting the invoice number",
+  
+  "terms":                  "This invoice has been set up in compliance with our general terms and conditions. These (in Dutch) are available at"
 }

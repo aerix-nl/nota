@@ -56,7 +56,7 @@ define ['backbone', 'json'], ->
 
     logEvent: (message) ->
       if @phantomRuntime then window.callPhantom(message)
-      else console.log(message)
+      else console.info(message)
 
     # documentMeta should either be a hash as specified in the property, or a
     # function that yields an equivalent hash. Optionally you can provide a

@@ -70,8 +70,10 @@ define dependencies, (Backbone, _, s, moment)->
     invoiceTotal: => @invoiceSubtotal() + @VAT()
     
     # VAT over the provided value or the invoice subtotal
-    VAT: (price = @invoiceSubtotal(), vat = @get('vatPercentage'))-> vat * price
+    VAT: => 
+      @invoiceSubtotal() * @get('vatPercentage')
 
+    vatPercentage: => (@get('vatPercentage') * 100)
     # Used for the html head title element
     documentName: => 'Invoice '+ @fullID()
 
@@ -90,11 +92,10 @@ define dependencies, (Backbone, _, s, moment)->
       'documentName':     @documentName()
       'filesystemName':   @filesystemName()
 
-    currency: (value, symbol) ->
+    currency: (value, symbol = @get('currencySymbol')) =>
       parsed = parseInt(value)
       if isNaN(parsed)
         throw new Error("Could not parse value '" + value + "'")
-        return "#{symbol} 0,00"
       else
         return symbol + ' ' + value.toFixed(2)
 
