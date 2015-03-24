@@ -73,10 +73,10 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
   render = (data)->
     invoice.set(data, validate: true)
     i18n.setLng invoice.language()
-    Nota.trigger 'render:start'
+    Nota.trigger 'template:render:start'
     rivets.bind document.body, data
     rivets.bind document.head, data
-    Nota.trigger 'render:done'
+    Nota.trigger 'template:render:done'
 
   # Provide Nota client with a function to aquire meta data
   Nota.setDocumentMeta -> invoice.documentMeta.apply(invoice, arguments)

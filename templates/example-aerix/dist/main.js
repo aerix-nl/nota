@@ -76,10 +76,10 @@
         validate: true
       });
       i18n.setLng(invoice.language());
-      Nota.trigger('render:start');
+      Nota.trigger('template:render:start');
       rivets.bind(document.body, data);
       rivets.bind(document.head, data);
-      return Nota.trigger('render:done');
+      return Nota.trigger('template:render:done');
     };
     Nota.setDocumentMeta(function() {
       return invoice.documentMeta.apply(invoice, arguments);

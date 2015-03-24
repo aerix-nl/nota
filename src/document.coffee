@@ -94,7 +94,7 @@ class Document
 
   onResourceRequested: ( request ) =>
     @trigger "page:resource:requested"
-    if @counter.indexOf(request.id) == -1
+    if @counter.indexOf(request.id) is -1
       @counter.push(request.id)
       clearTimeout(@timer)
 
