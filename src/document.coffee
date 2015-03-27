@@ -21,6 +21,9 @@ class Document
 
         # TODO: Get this stuff from the template definition (extend bower.json?)
         @page.set 'paperSize', @options.paperSize
+        # TODO: Find for a fix that makes the zoomFactor work again, and after
+        # find a real fix for this workaround to counter a strange zoom factor.
+        # @page.zoomFactor = 0.9360
 
         @page.onConsoleMessage  ( msg ) -> console.log   msg
         @page.set 'onError',    ( msg ) -> console.error msg
@@ -54,6 +57,12 @@ class Document
   capture: (captureOptions = {})->
     @trigger 'render:init'
     { outputPath } = captureOptions # For shorter code we unpack this var
+
+    # TODO: Remove this fix when hyperlinks are being rendered properly:
+    # https://github.com/ariya/phantomjs/issues/10196
+    @page.evaluate ->
+      $('a').each (idx, a)->
+        $(a).replaceWith $('<span class="link">'+$(a).text()+'</span>')[0]
 
     @getMeta (meta)=>
       # If the explicitly defined output path is merely an output directory,

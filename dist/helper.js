@@ -30,8 +30,11 @@
       return this.isDirectory(path);
     };
 
-    NotaHelper.prototype.getTemplatesIndex = function(basePath) {
+    NotaHelper.prototype.getTemplatesIndex = function(basePath, logWarnings) {
       var definition, dir, index, templateDirs, warningMsg, _i, _len;
+      if (logWarnings == null) {
+        logWarnings = true;
+      }
       if (!fs.existsSync(basePath)) {
         throw new Error("Templates basepath '" + basePath + "' doesn't exist");
       }
@@ -45,7 +48,9 @@
         definition = this.getTemplateDefinition(path.join(basePath, dir));
         if (definition.meta === 'not template') {
           warningMsg = "Template %m" + dir + "%N has no mandatory template.html file %K(omitting template)";
-          this.trigger("warning", warningMsg);
+          if (logWarnings) {
+            this.trigger("warning", warningMsg);
+          }
           continue;
         }
         index[definition.dir] = definition;
@@ -53,15 +58,20 @@
       return index;
     };
 
-    NotaHelper.prototype.getTemplateDefinition = function(dir) {
+    NotaHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
       var definitionPath, isDefined, templateDefinition, warningMsg;
+      if (logWarnings == null) {
+        logWarnings = true;
+      }
       if (!this.isDirectory(dir)) {
         throw new Error("Template '" + dir + "' not found");
       }
       isDefined = this.isFile(dir + "/bower.json");
       if (!isDefined) {
         warningMsg = "Template %m" + dir + "%N has no 'bower.json' definition %K(optional, but recommended)";
-        this.trigger("warning", warningMsg);
+        if (logWarnings) {
+          this.trigger("warning", warningMsg);
+        }
         templateDefinition = {
           name: path.basename(dir),
           meta: 'not found'

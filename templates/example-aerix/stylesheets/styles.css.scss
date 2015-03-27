@@ -11,9 +11,6 @@ $tertiaryBlue: #1A2C33;
 $textColor: $tertiaryBlue;
 
 $fallbackkFontstack: "Helvetica Neue", Helvetica, 'Trebuchet MS', Arial, sans-serif;
-html {
-	background-color: lightgrey;
-}
 
 $marginWidth: 21mm;
 $marginHeight: 15mm;
@@ -22,9 +19,11 @@ body {
   padding-bottom: 3cm;
 	color: $textColor !important;
 	font-family: 'DINPro', $fallbackkFontstack;
-	font-size: 1.4em;
+	font-size: 1.3em;
 	padding: $marginHeight $marginWidth;
+	min-height: 278mm; // Lower than the A4 297mm because of a zoom factor applied by PhantomJS (bug)
 }
+
 a, .link {
 	color: $primaryBlue !important;
 	&:hover {
@@ -90,16 +89,16 @@ div#invoice-body {
 		margin-bottom: 1cm;
 		colgroup {
 			col.servicename {
-				width: 60%;
+				width: 70%;
 			}
 			col.price {
-				width: 15%;
+				width: 12%;
 			}
 			col.quantity {
-				width: 10%;
+				width: 6%;
 			}
 			col.subtotal {
-				width: 15%;
+				width: 12%;
 				text-align: right;
 			}
 		}
@@ -144,12 +143,12 @@ div#invoice-body {
 }
 footer {
 	border-top: 1px solid $textColor;
+	position: absolute;
 	bottom: $marginHeight;
 	left: $marginWidth;
 	right: $marginWidth;
 	font-size: 0.8em;
 	line-height: 1.2em;
 	padding-top: 1mm;
-	position: absolute;
 	letter-spacing: 0.013em;
 }

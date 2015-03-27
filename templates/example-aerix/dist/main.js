@@ -61,7 +61,7 @@
     rivets.formatters.i18n = function(key, count, readout) {
       if (count != null) {
         if (readout != null) {
-          count = count['length'];
+          count = count[readout];
         }
         return i18n.t(key, {
           count: count

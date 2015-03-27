@@ -21,7 +21,7 @@ class NotaHelper
   isTemplate: ( path ) ->
     @isDirectory(path)
 
-  getTemplatesIndex: ( basePath ) ->
+  getTemplatesIndex: ( basePath, logWarnings = true ) ->
     if not fs.existsSync(basePath)
       throw new Error("Templates basepath '#{basePath}' doesn't exist")
 
@@ -38,14 +38,14 @@ class NotaHelper
       if definition.meta is 'not template'
         warningMsg = "Template %m#{dir}%N has no mandatory
         template.html file %K(omitting template)"
-        @trigger "warning", warningMsg
+        @trigger("warning", warningMsg) if logWarnings
         continue
       # Save the definition in the index with it's name as the key
       index[definition.dir] = definition
     # We're done here
     return index
 
-  getTemplateDefinition: ( dir ) ->
+  getTemplateDefinition: ( dir, logWarnings = true ) ->
     unless @isDirectory dir then throw new Error "Template '#{dir}' not found"
     # Get the template definition
     isDefined = @isFile( dir+"/bower.json")
@@ -53,7 +53,7 @@ class NotaHelper
     if not isDefined
       warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
       %K(optional, but recommended)"
-      @trigger "warning", warningMsg
+      @trigger("warning", warningMsg) if logWarnings
       templateDefinition =
         # Default it's name to it's directory name in absence of an 'official
         # statement' so we at least have some unique identifier.

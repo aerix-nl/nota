@@ -11,6 +11,7 @@
 	<!-- Please read the Nota README.md on how to turn this into a PDF or preview it -->
 </head>
 <body>
+	
 	<img id="logo" src="images/aerix-logo.svg" alt="Aerix company logo" />
 	<div id="company-info">
 		<p>
@@ -48,9 +49,7 @@
 			</span><br>
 			<span id="address"			rv-show="client.address">{ client.address }</span><br>
 			<span id="postal-code" 	rv-show="client.postalcode">{ client.postalcode }</span><span id="place" 												 rv-show="client.town">, { client.town }</span><br>
-			<span id="country" 			rv-show="client.country | isInternational">
-				{ client.country }
-			</span>
+			<span id="country" 			rv-show="client.country | isInternational">{ client.country }</span>
 		</p>
 	</div>
 	<div id="invoice-meta">
@@ -74,7 +73,8 @@
 	<div id="invoice-body">
 		<p class="opening">
 			<span>{ 'dear' 		| i18n | capitalize}</span>
-			<span>{ client 		| clientDisplay }</span><span>{ 'hereby' | i18n }</span>
+			<span>{ client 		| clientDisplay }</span>
+			<span>{ 'hereby' 	| i18n }</span>
 			<span>{ 'service' | i18n invoiceItems 'length' }</span>:
 		</p>
 		<table>
@@ -127,10 +127,10 @@
 	</div>
 	<footer class="row-fluid">
 		<p class="span6">
-			{ 'expiry-start' | i18n } <span class="validity-period">{ validityPeriod }</span> { 'expiry-please' | i18n } <span id="expiration-date"></span> { 'expiry-transfer' | i18n } <span class="iban">{ origin.iban }</span> { 'expiry-registered' | i18n } <span class="company-name">{ origin.company }</span>{ 'expiry-denoting' | i18n }.
+			{ 'expiry-start' | i18n } <span class="validity-period">{ validityPeriod }</span> { 'expiry-please' | i18n } <span id="expiration-date"></span> { 'expiry-transfer' | i18n } <span class="iban">{ origin.iban }</span> { 'expiry-registered' | i18n } <span class="company-name">{ origin.company }</span> { 'expiry-denoting' | i18n }.
 		</p>
 		<p class="span5 offset1">
-			{ 'terms' | i18n }:<br><a href="https://aerix.nl/algemene-voorwaarden">aerix.nl/algemene-voorwaarden</a>.
+			{ 'terms' | i18n }: <a href="https://aerix.nl/algemene-voorwaarden">aerix.nl/algemene-voorwaarden</a>.
 		</p>
 	</footer>
 </body>

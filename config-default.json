@@ -15,7 +15,7 @@
     "paperSize": {
       "format":           "A4",
       "orientation":      "portrait",
-      "border":           "0cm"
+      "margin":           "0cm"
     }
   }
 }

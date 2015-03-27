@@ -1,13 +1,18 @@
 @import url(../bower_components/bootstrap/dist/css/bootstrap.css);
-html {
-  background-color: lightgrey; }
-
 body {
   padding-bottom: 3cm;
   color: #1A2C33 !important;
   font-family: "DINPro", "Helvetica Neue", Helvetica, "Trebuchet MS", Arial, sans-serif;
-  font-size: 1.4em;
-  padding: 15mm 21mm; }
+  font-size: 1.3em;
+  padding: 15mm 21mm;
+  min-height: 278mm;
+  z-index: 0; }
+
+.grey {
+  background-color: lightgrey !important;
+  position: absolute;
+  left: 0;
+  top: 0; }
 
 a, .link {
   color: #259CCF !important; }
@@ -59,13 +64,13 @@ div#invoice-body {
     width: 100%;
     margin-bottom: 1cm; }
     div#invoice-body table colgroup col.servicename {
-      width: 60%; }
+      width: 70%; }
     div#invoice-body table colgroup col.price {
-      width: 15%; }
+      width: 12%; }
     div#invoice-body table colgroup col.quantity {
-      width: 10%; }
+      width: 6%; }
     div#invoice-body table colgroup col.subtotal {
-      width: 15%;
+      width: 12%;
       text-align: right; }
     div#invoice-body table th.project-name {
       height: 2em;
@@ -96,13 +101,13 @@ div#invoice-body {
 
 footer {
   border-top: 1px solid #1A2C33;
+  position: absolute;
   bottom: 15mm;
   left: 21mm;
   right: 21mm;
   font-size: 0.8em;
   line-height: 1.2em;
   padding-top: 1mm;
-  position: absolute;
   letter-spacing: 0.013em; }
 
 /*# sourceMappingURL=styles.css.map */

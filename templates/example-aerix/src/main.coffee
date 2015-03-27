@@ -49,6 +49,7 @@ dependencies = [
 
 # We receive the dependencies as args in the same order as they are in the array
 define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
+  # Signal begin of setup
   Nota.trigger 'template:init'
 
   invoice = new Invoice()
@@ -64,7 +65,7 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
 
   rivets.formatters.i18n = (key, count, readout)->
     if count?
-      if readout? then count = count['length']
+      if readout? then count = count[readout]
       i18n.t key, count: count
     else i18n.t key
 
@@ -81,16 +82,17 @@ define dependencies, (Nota, Invoice, rivets, s, i18n, nl, en, moment) ->
   # Provide Nota client with a function to aquire meta data
   Nota.setDocumentMeta -> invoice.documentMeta.apply(invoice, arguments)
 
-  if Nota.phantomRuntime
-    # Listen and wait for the server to inject data
-    Nota.on 'data:injected', render
+  # Listen and wait for the server to inject data
+  if Nota.phantomRuntime then Nota.on 'data:injected', render
+
   # Unless we're not running in PhantomJS and we'll never receive an
-  # injection and we'll have to fetch it ourselves
+  # injection: we'll have to fetch it ourselves from the server
   else Nota.getData render
 
   # We're done with setup
   Nota.trigger 'template:loaded'
 
-  # Export invoice var for use in other modules
+  # Hang the invoice object in the global namespace so we can get to it when
+  # debugging and it for use in other modules
   @invoice = invoice
   return invoice

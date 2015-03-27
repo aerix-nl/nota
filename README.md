@@ -124,9 +124,14 @@ now we recommend using the Vagrant spec to run Nota virtualized on Linux.
 Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in
 PhantomJS, the loading of webfonts (even if they're locally hosted) seems
 broken. For now you'll have to install the fonts on the system manually, and
-then they'll load as expected. More research on in development versions of
+then they'll load as expected. More research on development versions of
 PhantomJS is needed.
 
+### Color definitions revert to black
+It looks like all use of color in the CSS (for text/borders/backgrounds etc.) is lost and returned to black upon rendering. This can be worked around for the while by adding the `!important` keyword after the color declaration, e.g. like this `h1 { color: red !important }`. More research needed on why and other solutions.
+
+### Paper size and zoom factor
+It looks like when rendering the page receives a zoom factor of about 1.068, causing the content flow to run longer than what is seen when rendered in the web browser. This is likely to be fixed, or at least allow for a compensating counter zoomfactor in PhantomJS 2 according to [this bug](https://github.com/ariya/phantomjs/issues/12685).
 
 ## Meta
 
