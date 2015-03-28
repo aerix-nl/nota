@@ -240,9 +240,9 @@
       if (_.size(index) === 0) {
         throw new Error("No (valid) templates found in templates directory.");
       } else {
-        headerDir = 'Template directory:';
-        headerName = 'Template name:';
-        headerVersion = 'Template version:';
+        headerDir = 'Directory';
+        headerName = 'Template name';
+        headerVersion = 'Version';
         fold = function(memo, str) {
           return Math.max(memo, str.length);
         };
@@ -250,9 +250,9 @@
           dirName: _.reduce(_.keys(index), fold, headerDir.length),
           name: _.reduce(_(_(index).values()).pluck('name'), fold, headerName.length)
         };
-        headerDir = _.str.pad('Template directory:', lengths.dirName, ' ', 'right');
-        headerName = _.str.pad('Template name:', lengths.name + 8, ' ', 'left');
-        console.log("nota " + chalk.gray(headerDir + headerName + headerVersion));
+        headerDir = _.str.pad(headerDir, lengths.dirName, ' ', 'right');
+        headerName = _.str.pad(headerName, lengths.name + 8, ' ', 'left');
+        console.log("nota " + chalk.gray(headerDir + headerName + ' ' + headerVersion));
         templates = (function() {
           var _results;
           _results = [];

@@ -189,9 +189,9 @@ class Nota
     if _.size(index) is 0
       throw new Error("No (valid) templates found in templates directory.")
     else
-      headerDir     = 'Template directory:'
-      headerName    = 'Template name:'
-      headerVersion = 'Template version:'
+      headerDir     = 'Directory'
+      headerName    = 'Template name'
+      headerVersion = 'Version'
       
       fold = (memo, str)->
         Math.max(memo, str.length)
@@ -199,11 +199,11 @@ class Nota
         dirName: _.reduce _.keys(index), fold, headerDir.length
         name:    _.reduce _(_(index).values()).pluck('name'), fold, headerName.length
 
-      headerDir     = _.str.pad 'Template directory:',  lengths.dirName, ' ', 'right'
-      headerName    = _.str.pad 'Template name:', lengths.name + 8, ' ', 'left'
+      headerDir     = _.str.pad headerDir,  lengths.dirName, ' ', 'right'
+      headerName    = _.str.pad headerName, lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
-      console.log "nota "+ chalk.gray(headerDir + headerName + headerVersion)
+      console.log "nota "+ chalk.gray(headerDir + headerName + ' ' + headerVersion)
       templates = for dir, definition of index
         dir     = _.str.pad definition.dir,  lengths.dirName, ' ', 'right'
         name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'

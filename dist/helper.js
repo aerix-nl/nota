@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, NotaHelper, fs, path, _;
+  var Backbone, NotaHelper, chalk, fs, path, _;
 
   fs = require('fs');
 
@@ -8,6 +8,8 @@
   Backbone = require('backbone');
 
   path = require('path');
+
+  chalk = require('chalk');
 
   NotaHelper = (function() {
     function NotaHelper() {
@@ -47,7 +49,7 @@
         dir = templateDirs[_i];
         definition = this.getTemplateDefinition(path.join(basePath, dir));
         if (definition.meta === 'not template') {
-          warningMsg = "Template %m" + dir + "%N has no mandatory template.html file %K(omitting template)";
+          warningMsg = "Template " + (chalk.magenta(dir)) + " has no mandatory template.html file " + (chalk.gray('(omitting template)'));
           if (logWarnings) {
             this.trigger("warning", warningMsg);
           }
@@ -68,7 +70,7 @@
       }
       isDefined = this.isFile(dir + "/bower.json");
       if (!isDefined) {
-        warningMsg = "Template %m" + dir + "%N has no 'bower.json' definition %K(optional, but recommended)";
+        warningMsg = "Template " + (chalk.magenta(dir)) + " has no 'bower.json' definition " + (chalk.gray('(optional, but recommended)'));
         if (logWarnings) {
           this.trigger("warning", warningMsg);
         }
