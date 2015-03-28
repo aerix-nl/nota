@@ -2,6 +2,7 @@ fs            = require('fs')
 _             = require('underscore')._
 Backbone      = require('backbone')
 path          = require('path')
+chalk         = require('chalk')
 
 # Utility class to help it with common filesystem and template/data related questiosn
 class NotaHelper
@@ -36,8 +37,8 @@ class NotaHelper
     for dir in templateDirs
       definition = @getTemplateDefinition path.join(basePath, dir)
       if definition.meta is 'not template'
-        warningMsg = "Template %m#{dir}%N has no mandatory
-        template.html file %K(omitting template)"
+        warningMsg = "Template #{chalk.magenta(dir)} has no mandatory
+        template.html file #{chalk.gray '(omitting template)'}"
         @trigger("warning", warningMsg) if logWarnings
         continue
       # Save the definition in the index with it's name as the key
@@ -51,8 +52,8 @@ class NotaHelper
     isDefined = @isFile( dir+"/bower.json")
 
     if not isDefined
-      warningMsg = "Template %m#{dir}%N has no 'bower.json' definition
-      %K(optional, but recommended)"
+      warningMsg = "Template #{chalk.magenta(dir)} has no 'bower.json' definition
+      #{chalk.gray '(optional, but recommended)'}"
       @trigger("warning", warningMsg) if logWarnings
       templateDefinition =
         # Default it's name to it's directory name in absence of an 'official
