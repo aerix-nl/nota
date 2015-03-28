@@ -110,28 +110,37 @@ of Nota. Here's some things to take into account:
 Even though WebKit supports this, due to a
 [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
 PhantomJS builts on the current output PDFs have no clickable links. This has
-quite some pressing attention and already a proposed fix, so it's likely to be
-fixed soon, but no fix committed to Qt yet. For now we recommend making links
-that have URL as the text so users can copy-paste that, or avoid them.
+quite some pressing attention, so it's likely to be fixed soon, but no fix
+committed yet. For now we recommend making links that have URL as the text so
+users can copy-paste that, or avoid them.
 
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a
-[bug](https://github.com/ariya/phantomjs/issues/10373). More
-information/research on specifics and other operating systems is needed. For
-now we recommend using the Vagrant spec to run Nota virtualized on Linux.
+[bug](https://github.com/ariya/phantomjs/issues/10373). For now we recommend
+using the Vagrant spec to run Nota virtualized on Linux. Needs checking if
+solved in PhantomJS 2.
 
 #### Fonts
-Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in
+Due to [a bug](https://github.com/ariya/phantomjs/issues/10592) in
 PhantomJS, the loading of webfonts (even if they're locally hosted) seems
-broken. For now you'll have to install the fonts on the system manually, and
-then they'll load as expected. More research on development versions of
-PhantomJS is needed.
+broken. For now you'll have to install the fonts on the system itself, and
+then they'll load as expected. Needs checking if solved in PhantomJS 2.
 
 ### Color definitions revert to black
-It looks like all use of color in the CSS (for text/borders/backgrounds etc.) is lost and returned to black upon rendering. This can be worked around for the while by adding the `!important` keyword after the color declaration, e.g. like this `h1 { color: red !important }`. More research needed on why and other solutions.
+It looks like all use of color in the CSS (for text/borders/backgrounds etc.)
+is lost and returned to black upon rendering. This can be worked around for
+the while by adding the `!important` keyword after the color declaration, e.g.
+like this `h1 { color: red !important }`. More research needed on why and
+other solutions.
 
 ### Paper size and zoom factor
-It looks like when rendering the page receives a zoom factor of about 1.068, causing the content flow to run longer than what is seen when rendered in the web browser. This is likely to be fixed, or at least allow for a compensating counter zoomfactor in PhantomJS 2 according to [this bug](https://github.com/ariya/phantomjs/issues/12685).
+It looks like when rendering the page receives a zoom factor of about 1.068 is
+applied, causing the content flow to run longer than what is seen when
+rendered in the web browser. This is likely to be fixed, or at least allow for
+a compensating counter zoomfactor in PhantomJS 2 according to [this
+bug](https://github.com/ariya/phantomjs/issues/12685). For now we recommend
+creating extra space for content flow or making some seperate CSS declarations
+for print, like a smaller font size to counter this.
 
 ## Meta
 
