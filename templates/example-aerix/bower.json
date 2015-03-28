@@ -20,7 +20,7 @@
     "backbone": "~1.1.2"
   },
   "nota": {
-    "exampleData": "json/example.json",
+    "exampleData": "json/preview.json",
     "defaultFilename": "output.pdf",
     "paperSize": {
       "format": "A4",
