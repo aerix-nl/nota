@@ -110,23 +110,6 @@
       }
     };
 
-    NotaHelper.prototype.getInitData = function(options) {
-      var data, dataPath, templatePath, _data;
-      templatePath = options.templatePath, dataPath = options.dataPath;
-      if (dataPath != null) {
-        return data = JSON.parse(fs.readFileSync(dataPath, {
-          encoding: 'utf8'
-        }));
-      } else if ((_data = this.getExampleData(options)) != null) {
-        return data = _data;
-      } else {
-        if (typeof this.logWarning === "function") {
-          this.logWarning("No data provided or found. Serving empty object.");
-        }
-        return data = {};
-      }
-    };
-
     NotaHelper.prototype.findTemplatePath = function(options) {
       var match, templatePath, templatesPath, _templatePath;
       templatePath = options.templatePath, templatesPath = options.templatesPath;

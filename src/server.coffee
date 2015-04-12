@@ -13,7 +13,7 @@ class NotaServer
 
   constructor: ( @options ) ->
     _.extend(@, Backbone.Events)
-    { @serverAddress, @serverPort, @templatePath, @data } = @options
+    { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
 
   start: ->
     @trigger "server:init"
@@ -36,7 +36,7 @@ class NotaServer
     @app.use '/nota.js',  express.static("#{__dirname}/client.js")
 
     @app.get '/data', ( req, res ) =>
-      res.send JSON.stringify(@data)
+      res.send fs.readFileSync(@dataPath, encoding: 'utf8')
 
     @server.listen(@serverPort)
     @trigger "server:running"
@@ -47,8 +47,7 @@ class NotaServer
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
 
-  serve: ( data ) ->
-    @data = data
+  serve: ( @dataPath )->
 
   render: ( jobs, options ) ->
     # TODO: use q here, because code kinda marches faster to the right than down
@@ -63,8 +62,8 @@ class NotaServer
         # want to monitor the job rendering progress with your browser. By
         # refreshing the page you can get the data of the current job being
         # rendered in your browser.
-        @data = job.data
-        @document.injectData(job.data)
+        @dataPath = job.dataPath
+        @document.injectData(job.dataPath)
         @document.once "page:ready", =>
           options.outputPath = job.outputPath
           @document.capture options

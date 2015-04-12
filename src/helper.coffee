@@ -85,21 +85,6 @@ class NotaHelper
       else @logWarning? "Example data path declaration found in template
       definition, but file doesn't exist."
 
-  getInitData: ( options ) ->
-    { templatePath, dataPath } = options
-    
-    # Try to get the data if path is provided
-    if dataPath?
-      data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
-    # Else we see if there is example data available
-    else if (_data = @getExampleData options )?
-      
-      data = _data
-    # TODO: serving empty data is probably a bad idea API wise?
-    else
-      @logWarning? "No data provided or found. Serving empty object."
-      data = {}
-
   findTemplatePath: ( options ) ->
     { templatePath, templatesPath } = options
     # Exit unless the --template and --data are passed

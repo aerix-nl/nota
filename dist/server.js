@@ -26,7 +26,7 @@
       this.options = options;
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
-      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.data = _ref.data;
+      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
     }
 
     NotaServer.prototype.start = function() {
@@ -42,7 +42,9 @@
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
-          return res.send(JSON.stringify(_this.data));
+          return res.send(fs.readFileSync(_this.dataPath, {
+            encoding: 'utf8'
+          }));
         };
       })(this));
       this.server.listen(this.serverPort);
@@ -57,8 +59,8 @@
       return "http://" + this.serverAddress + ":" + this.serverPort + "/";
     };
 
-    NotaServer.prototype.serve = function(data) {
-      return this.data = data;
+    NotaServer.prototype.serve = function(dataPath) {
+      this.dataPath = dataPath;
     };
 
     NotaServer.prototype.render = function(jobs, options) {
@@ -67,8 +69,8 @@
       meta = [];
       _fn = (function(_this) {
         return function(job, options) {
-          _this.data = job.data;
-          _this.document.injectData(job.data);
+          _this.dataPath = job.dataPath;
+          _this.document.injectData(job.dataPath);
           return _this.document.once("page:ready", function() {
             options.outputPath = job.outputPath;
             return _this.document.capture(options);

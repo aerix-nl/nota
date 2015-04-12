@@ -66,8 +66,6 @@ class Nota
       @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
       return
 
-    @options.data = @helper.getInitData(@options)
-
     # Start the server
     @server = new NotaServer(@options)
     @server.on 'all', @logEvent, @
@@ -81,7 +79,7 @@ class Nota
 
   render: ( options )->
     jobs = [{
-      data: options.data
+      dataPath:   options.dataPath
       outputPath: options.outputPath
     }]
     @server.render jobs,

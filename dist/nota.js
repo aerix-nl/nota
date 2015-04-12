@@ -84,7 +84,6 @@
         this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
         return;
       }
-      this.options.data = this.helper.getInitData(this.options);
       this.server = new NotaServer(this.options);
       this.server.on('all', this.logEvent, this);
       this.server.start();
@@ -106,7 +105,7 @@
       var jobs;
       jobs = [
         {
-          data: options.data,
+          dataPath: options.dataPath,
           outputPath: options.outputPath
         }
       ];
