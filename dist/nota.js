@@ -1,12 +1,12 @@
 (function() {
-  var Nota, NotaHelper, NotaServer, chalk, fs, nomnom, notifier, open, path, _,
+  var Nota, NotaHelper, NotaServer, Path, chalk, fs, nomnom, notifier, open, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
 
   fs = require('fs');
 
-  path = require('path');
+  Path = require('path');
 
   _ = require('underscore')._;
 
@@ -23,22 +23,22 @@
   NotaHelper = require('./helper');
 
   Nota = (function() {
-    Nota.prototype.defaults = JSON.parse(fs.readFileSync('config-default.json', 'utf8'));
+    Nota.prototype.defaults = require('../config-default.json');
 
-    Nota.prototype.meta = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    Nota.prototype.meta = require('../package.json');
 
     function Nota() {
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
       var definition, e;
-      NotaHelper.on("warning", this.logWarning, this);
+      this.helper = new NotaHelper(this.logWarning);
       nomnom.options({
         template: {
           position: 0,
-          help: 'The template path'
+          help: 'The template directory path'
         },
         data: {
           position: 1,
-          help: 'The data path'
+          help: 'The data file path'
         },
         output: {
           position: 2,
@@ -79,12 +79,12 @@
         this.logError(e);
         return;
       }
-      definition = NotaHelper.getTemplateDefinition(this.options.templatePath);
+      definition = this.helper.getTemplateDefinition(this.options.templatePath);
       if (definition.meta === "not template") {
         this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
         return;
       }
-      this.options.data = this.getInitData(this.options);
+      this.options.data = this.helper.getInitData(this.options);
       this.server = new NotaServer(this.options);
       this.server.on('all', this.logEvent, this);
       this.server.start();
@@ -152,91 +152,15 @@
       if (args.preserve != null) {
         options.preserve = args.preserve;
       }
-      options.templatePath = this.findTemplatePath(options);
-      options.dataPath = this.findDataPath(options);
+      options.templatePath = this.helper.findTemplatePath(options);
+      options.dataPath = this.helper.findDataPath(options);
       return options;
-    };
-
-    Nota.prototype.getInitData = function(options) {
-      var data, exampleData, _data;
-      exampleData = function() {
-        var dataPath, definition, e, _ref;
-        try {
-          definition = NotaHelper.getTemplateDefinition(options.templatePath);
-          if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
-            dataPath = path.join(options.templatePath, definition['nota']['exampleData']);
-            if (NotaHelper.isData(dataPath)) {
-              return JSON.parse(fs.readFileSync(dataPath, {
-                encoding: 'utf8'
-              }));
-            }
-          }
-        } catch (_error) {
-          e = _error;
-          return null;
-        }
-      };
-      if (options.dataPath != null) {
-        return data = JSON.parse(fs.readFileSync(options.dataPath, {
-          encoding: 'utf8'
-        }));
-      } else if ((_data = exampleData()) != null) {
-        return data = _data;
-      } else {
-        this.logWarning("No data provided or found. Serving empty object.");
-        return data = {};
-      }
-    };
-
-    Nota.prototype.findTemplatePath = function(options) {
-      var match, templatePath, _templatePath;
-      templatePath = options.templatePath;
-      if (templatePath == null) {
-        throw new Error("Please provide a template.");
-      }
-      if (!NotaHelper.isTemplate(templatePath)) {
-        if (NotaHelper.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
-          templatePath = _templatePath;
-        } else if (NotaHelper.isTemplate(_templatePath = "" + this.defaults.templatesPath + "/" + templatePath)) {
-          templatePath = _templatePath;
-        } else if ((match = _(NotaHelper.getTemplatesIndex(this.options.templatesPath)).findWhere({
-          name: templatePath
-        })) != null) {
-          throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
-        } else {
-          throw new Error("Failed to find template '" + templatePath + "'.");
-        }
-      }
-      return templatePath;
-    };
-
-    Nota.prototype.findDataPath = function(options) {
-      var dataPath, preview, templatePath, _dataPath;
-      dataPath = options.dataPath, templatePath = options.templatePath, preview = options.preview;
-      if (dataPath == null) {
-        if (preview) {
-          return null;
-        } else {
-          throw new Error("Please provide data'.");
-        }
-      }
-      if (!NotaHelper.isData(dataPath)) {
-        if (NotaHelper.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
-          dataPath = _dataPath;
-        } else if (NotaHelper.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
-          dataPath = _dataPath;
-        } else {
-          throw new Error("Failed to find data '" + dataPath + "'.");
-        }
-      }
-      return dataPath;
     };
 
     Nota.prototype.listTemplatesIndex = function() {
       var definition, dir, fold, headerDir, headerName, headerVersion, index, lengths, name, templates, version;
-      NotaHelper.on("warning", this.logWarning, this);
       templates = [];
-      index = NotaHelper.getTemplatesIndex(this.defaults.templatesPath);
+      index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
         throw new Error("No (valid) templates found in templates directory.");
       } else {
@@ -270,7 +194,7 @@
     };
 
     Nota.prototype.logWarning = function(warningMsg) {
-      return console.warn("nota " + chalk.bgYellow.black('WARNING') + ' ' + warningMsg);
+      return console.warn("nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
     };
 
     Nota.prototype.logError = function(errorMsg) {
@@ -288,7 +212,7 @@
       var base;
       base = {
         title: 'Nota event',
-        icon: path.join(__dirname, '../assets/images/icon.png')
+        icon: Path.join(__dirname, '../assets/images/icon.png')
       };
       return notifier.notify(_.extend(base, message));
     };

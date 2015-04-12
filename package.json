@@ -1,7 +1,7 @@
 {
   "name": "nota",
   "version": "1.1.0",
-  "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents. Perfect for things like automating invoice generation, but not limited to. Nota can be used for any kind of document typesetting, layout and markup jobs, especially those that require automation and custom processing/rendering of data. Nota allows you to focus your time on the design and implementation of your template and writing it's logic, by providing you a framework for fast previewing and debugging in the web browser, and the modern webdevelopment conveniences of writing in CoffeeScript and SASS on Backbone.js, Underscore.js and the likes.",
+  "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents.",
   "homepage": "https://github.com/FelixAkk/nota",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   },
   "bugs": {
     "url": "https://github.com/FelixAkk/nota/issues",
-    "email": "felix.akkermans@gmail.com"
+    "email": "felix@aerix.nl"
   },
   "authors": [
     "Felix Akkermans <felix@aerix.nl>",
@@ -22,7 +22,6 @@
     "chalk": "^1.0.0",
     "express": "4.8.5",
     "node-notifier": "4.1.2",
-    "node-terminal": "0.1.1",
     "nomnom": "~1.8.1",
     "open": "0.0.3",
     "optimist": "0.6.0",

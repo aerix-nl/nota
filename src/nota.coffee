@@ -1,6 +1,6 @@
 nomnom   = require('nomnom')
 fs       = require('fs')
-path     = require('path')
+Path     = require('path')
 _        = require('underscore')._
 _.str    = require('underscore.string')
 open     = require('open')
@@ -13,22 +13,22 @@ NotaHelper = require('./helper')
 class Nota
 
   # Load the (default) configuration
-  defaults: JSON.parse(fs.readFileSync('config-default.json', 'utf8'))
+  defaults: require '../config-default.json'
 
   # Load the package definition so we have some meta data available such as
   # version number.
-  meta: JSON.parse(fs.readFileSync('package.json', 'utf8'))
+  meta: require '../package.json'
 
   constructor: ( ) ->
-    NotaHelper.on "warning", @logWarning, @
+    @helper = new NotaHelper(@logWarning)
 
     nomnom.options
       template:
         position: 0
-        help:     'The template path'
+        help:     'The template directory path'
       data:
         position: 1
-        help:    'The data path'
+        help:    'The data file path'
       output:
         position: 2
         help:    'The output file'
@@ -61,12 +61,12 @@ class Nota
       @logError e
       return
 
-    definition = NotaHelper.getTemplateDefinition @options.templatePath
+    definition = @helper.getTemplateDefinition @options.templatePath
     if definition.meta is "not template"
       @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
       return
 
-    @options.data = @getInitData(@options)
+    @options.data = @helper.getInitData(@options)
 
     # Start the server
     @server = new NotaServer(@options)
@@ -110,81 +110,14 @@ class Nota
     options.logging.pageResources = args.resources if args.resources?
     options.preserve = args.preserve               if args.preserve?
     
-    options.templatePath =  @findTemplatePath(options)
-    options.dataPath =      @findDataPath(options)
+    options.templatePath =  @helper.findTemplatePath(options)
+    options.dataPath =      @helper.findDataPath(options)
     return options
 
-  getInitData: ( options ) ->
-
-    # Little bundle of logic that we can call later if no data has been provided
-    # to see if the template specified any example data.
-    exampleData = ->
-      try
-        definition = NotaHelper.getTemplateDefinition options.templatePath
-        if definition['nota']?['exampleData']?
-          dataPath = path.join options.templatePath, definition['nota']['exampleData']
-          if NotaHelper.isData dataPath
-            return JSON.parse fs.readFileSync dataPath, encoding: 'utf8'
-      catch e
-        return null
-
-    # Get the data
-    if options.dataPath?
-      data = JSON.parse(fs.readFileSync(options.dataPath, encoding: 'utf8'))
-    else if (_data = exampleData())?
-      data = _data
-    else
-      @logWarning "No data provided or found. Serving empty object."
-      data = {}
-
-  findTemplatePath: ( options ) ->
-    { templatePath } = options
-    # Exit unless the --template and --data are passed
-    unless templatePath?
-      throw new Error("Please provide a template.")
-        
-    # Find the correct template path
-    unless NotaHelper.isTemplate(templatePath)
-
-      if NotaHelper.isTemplate(_templatePath =
-        "#{process.cwd()}/#{templatePath}")
-        templatePath = _templatePath
-
-      else if NotaHelper.isTemplate(_templatePath =
-        "#{@defaults.templatesPath}/#{templatePath}")
-        templatePath = _templatePath
-
-      else if (match = _(NotaHelper.getTemplatesIndex(@options.templatesPath)).findWhere {name: templatePath})?
-        throw new Error("No template at '#{templatePath}'. But we did find a
-        template which declares it's name as such. It's path is '#{match.dir}'")
-
-      else throw new Error("Failed to find template '#{templatePath}'.")
-    templatePath
-
-  findDataPath: ( options ) ->
-    { dataPath, templatePath, preview } = options
-    unless dataPath?
-      # When previewing we allow for no data to be specified, otherwise it's mandatory
-      if preview then return null else throw new Error("Please provide data'.")
-
-    # Find the correct data path
-    unless NotaHelper.isData(dataPath)
-
-      if NotaHelper.isData(_dataPath = "#{process.cwd()}/#{dataPath}")
-        dataPath = _dataPath
-
-      else if NotaHelper.isData(_dataPath = "#{templatePath}/#{dataPath}")
-        dataPath = _dataPath
-
-      else throw new Error("Failed to find data '#{dataPath}'.")
-
-    dataPath
 
   listTemplatesIndex: ( ) =>
-    NotaHelper.on "warning", @logWarning, @
-
     templates = []
-    index = NotaHelper.getTemplatesIndex(@defaults.templatesPath)
+    index = @helper.getTemplatesIndex(@defaults.templatesPath)
 
     if _.size(index) is 0
       throw new Error("No (valid) templates found in templates directory.")
@@ -209,10 +142,10 @@ class Nota
         name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
         console.log "nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)
-    return '' # Somehow needed to make terminal output stop here
+    return '' # Somehow needed to make execution stop here with --list
 
   logWarning: ( warningMsg )->
-    console.warn "nota " + chalk.bgYellow.black('WARNING') + ' ' + warningMsg
+    console.warn "nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
 
   logError: ( errorMsg )->
     console.warn "nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg
@@ -226,7 +159,7 @@ class Nota
   notify: ( message )->
     base =
       title:    'Nota event'
-      icon:     path.join(__dirname, '../assets/images/icon.png')
+      icon:     Path.join(__dirname, '../assets/images/icon.png')
     notifier.notify _.extend base, message
 
 Nota = new Nota()
