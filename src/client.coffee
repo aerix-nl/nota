@@ -1,4 +1,20 @@
-define 'nota-client', ['backbone', 'json'], ->
+
+
+# We user RequireJS to load the dependencies
+requirejs.config {
+  paths:
+    # Common dependencies
+    'backbone':   '/vendor/backbone/backbone'
+    'jquery':     '/vendor/jquery/dist/jquery'
+    'underscore': '/vendor/underscore/underscore'
+
+    # RequireJS json! deps
+    'json':      '/vendor/requirejs-plugins/src/json'
+    'text':      '/vendor/requirejs-text/text'
+    'requirejs': '/vendor/requirejs/require'
+}
+
+define ['backbone', 'json'], ->
   # Reset require.js because we're done loading our dependencies
   # And so that any use hereafter require has a clean slate.
   # In this case the template will load after Nota client, which
@@ -40,7 +56,7 @@ define 'nota-client', ['backbone', 'json'], ->
 
     logEvent: (message) ->
       if @phantomRuntime then window.callPhantom(message)
-      else console.log(message)
+      else console.info(message)
 
     # documentMeta should either be a hash as specified in the property, or a
     # function that yields an equivalent hash. Optionally you can provide a
@@ -86,5 +102,6 @@ define 'nota-client', ['backbone', 'json'], ->
 
   # Hook ourself into the global namespace so we can be interfaced with
   this.Nota = new NotaClient()
+
 
 

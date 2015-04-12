@@ -34,22 +34,12 @@
       this.app = express();
       this.server = http.createServer(this.app);
       this.app.use(express["static"](this.templatePath));
-      this.app.get('/', (function(_this) {
-        return function(req, res) {
-          return fs.readFile("" + _this.templatePath + "/template.html", "utf8", function(err, html) {
-            var insertionRegex, scriptTag, _ref;
-            insertionRegex = /(<head[s\S]*>)([\s\S]*<\/head>)/;
-            if (!((_ref = html.match(insertionRegex)) != null ? _ref.length = 3 : void 0)) {
-              throw new Error("No encapsulating <head></head> tags found in template");
-            }
-            scriptTag = "<script data-main='nota' src='vendor/requirejs/require.js'></script>";
-            return res.send(html.replace(insertionRegex, "$1\n\t" + scriptTag + "$2"));
-          });
-        };
-      })(this));
+      this.app.get('/', function(req, res) {
+        return res.redirect("/template.html");
+      });
       this.app.use('/lib/', express["static"]("" + __dirname + "/"));
       this.app.use('/vendor/', express["static"]("" + __dirname + "/../bower_components/"));
-      this.app.use('/nota.js', express["static"]("" + __dirname + "/client-config.js"));
+      this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
           return res.send(JSON.stringify(_this.data));
@@ -72,8 +62,9 @@
     };
 
     NotaServer.prototype.render = function(jobs, options) {
-      var job, rendered, _fn, _i, _len;
+      var job, meta, rendered, _fn, _i, _len;
       rendered = 0;
+      meta = [];
       _fn = (function(_this) {
         return function(job, options) {
           _this.data = job.data;
@@ -88,10 +79,11 @@
         job = jobs[_i];
         _fn(job, options);
       }
-      return this.document.on('render:done', function() {
+      return this.document.on('render:done', function(renderMeta) {
         rendered += 1;
+        meta[rendered] = renderMeta;
         if (rendered === jobs.length) {
-          return options.callback();
+          return typeof options.callback === "function" ? options.callback(meta) : void 0;
         }
       });
     };

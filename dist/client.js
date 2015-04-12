@@ -1,5 +1,16 @@
 (function() {
-  define('nota-client', ['backbone', 'json'], function() {
+  requirejs.config({
+    paths: {
+      'backbone': '/vendor/backbone/backbone',
+      'jquery': '/vendor/jquery/dist/jquery',
+      'underscore': '/vendor/underscore/underscore',
+      'json': '/vendor/requirejs-plugins/src/json',
+      'text': '/vendor/requirejs-text/text',
+      'requirejs': '/vendor/requirejs/require'
+    }
+  });
+
+  define(['backbone', 'json'], function() {
     var NotaClient;
     require.config({});
     NotaClient = (function() {
@@ -23,7 +34,7 @@
         if (this.phantomRuntime) {
           return window.callPhantom(message);
         } else {
-          return console.log(message);
+          return console.info(message);
         }
       };
 

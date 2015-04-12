@@ -2,67 +2,80 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Aerix example invoice template</title>
+	<title>{ meta | documentName }</title>
 
   <link href="stylesheets/styles.css" rel="stylesheet" type="text/css" media="all">
-	<link href="stylesheets/print.css" rel="stylesheet" type="text/css" media="print">
+	<link href="stylesheets/preview.css" rel="stylesheet" type="text/css" media="screen">
 
+	<script data-main='dist/main' src='vendor/requirejs/require.js'></script>
 	<!-- Please read the Nota README.md on how to turn this into a PDF or preview it -->
 </head>
 <body>
+	
 	<img id="logo" src="images/aerix-logo.svg" alt="Aerix company logo" />
-	<div class="company-info">
+	<div id="company-info">
 		<p>
-			<strong class="company-fullname">Company Ltd.</strong><br>
-			<span class="street-address">Street Name 12b</span><br>
-			<span class="post-address">1234 AB</span>, <span class="place">Town</span><br>
-			<span class="country">Country</span><br>
-			<span class="email link">address@mail.com</span><br>
-			<span class="website link">www.website.com</span>
+			<strong class="company-fullname">{ | companyFull }</strong><br>
+			<span class="street-address">{ origin.address }</span><br>
+			<span class="post-address">{ origin.postalcode }</span>,
+			<span class="place">{ origin.town }</span><br>
+			<span class="country">{ origin.country }</span><br>
+			<a class="email" rv-href="origin.email|email">{ origin.email }</a><br>
+			<a class="website" rv-href="origin.website|website">{ origin.website }</a>
 		</p>
 		<p id="accounts">
-			IBAN: <span class="iban">NL12 ABCD 1234 1234 12</span><br>
-			Bank: <span id="bank-name">Your Bankname</span><br>
-			BIC/SWIFT: <span id="bic">TRIONL2U</span><br>
-			BTW-nummer:	<span id="vat-number">AB123405923489</span><br>
-			KvK registratie: <span id="kvk">123456789</span><br>
+			IBAN: <span class="iban">{ origin.iban }</span><br>
+			Bank: <span id="bank-name">{ origin.bank }</span><br>
+			BIC/SWIFT: <span id="bic">{ origin.bic }</span><br>
+			BTW:	<span id="vat-number">{ origin.vat }</span><br>
+			KvK: <span id="kvk">{ origin.kvk }</span><br>
 		</p>
 	</div>
 	<div id="envelope-window">
 		<span id="retour-line">
-			<strong class="company-fullname">Company Ltd.</strong>, 
-			<span class="street-address">Street Name 12b</span>,
-			<span class="post-address">123 4AB</span>
-			<span class="place">Town</span>,
-			<span class="country">Country</span>
+			<strong class="company-fullname">{ origin | companyFull }</strong>, 
+			<span class="street-address">{ origin.address }</span>,
+			<span class="post-address">{ origin.postalcode }</span>
+			<span class="place">{ origin.town }</span>,
+			<span class="country">{ origin.country }</span>
 		</span>
 
 		<p id="client-block">
-			<strong id="organization">Organisatie</strong><br>
-			<span id="contact-person">Klant Klantnaam</span><br>
-			<span id="address">Straatnaam 12b</span><br>
-			<span id="postal-code">1234AB</span>, <span id="place">Stad</span>
+			<strong id="organization"	rv-show="client.organization">
+				{ client.organization }
+			</strong><br>
+			<span id="contact-person"	rv-show="client.contactPerson">
+				{ client.contactPerson }
+			</span><br>
+			<span id="address"			rv-show="client.address">{ client.address }</span><br>
+			<span id="postal-code" 	rv-show="client.postalcode">{ client.postalcode }</span><span id="place" 												 rv-show="client.town">, { client.town }</span><br>
+			<span id="country" 			rv-show="client.country | isInternational">{ client.country }</span>
 		</p>
 	</div>
 	<div id="invoice-meta">
-		<span class="muted">factuurnummer</span>
-		<h3 id="invoice-id">2013.0099</h3>
+		<span class="muted">{ 'invoice-number' | i18n | capitalize }</span>
+		<h3 id="invoice-id">{ | fullID }</h3>
 		<table>
 			<tr>
-				<td class="muted">factuurdatum</td><td class="muted">vervaldatum</td>
+				<td class="muted">{ 'invoice-date' 	| i18n | capitalize }</td>
+				<td class="muted">{ 'valid-through' | i18n | capitalize }</td>
 			</tr>
 			<tr>
-				<td id="invoice-date">18 Oktober 2013</td><td id="expiration-date">1 Novermber 2013</td>
+				<td id="invoice-date">
+					{ meta.date | invoiceDate client.country }
+				</td>
+				<td id="expiration-date">
+					{ meta.date | expiryDate validityPeriod client.country }
+				</td>
 			</tr>
 		</table>
 	</div>
 	<div id="invoice-body">
 		<p class="opening">
-			Beste <span class="client-string">Klant Klantnaam</span>, hierbij de factuur voor de volgende geleverde
-			<span data-pluralize="item-count">
-				<span data-pluralize="1">dienst</span>
-				<span data-pluralize="+">diensten</span>
-			</span>:
+			<span>{ 'dear' 		| i18n | capitalize}</span>
+			<span>{ client 		| clientDisplay }</span>
+			<span>{ 'hereby' 	| i18n }</span>
+			<span>{ 'service' | i18n invoiceItems 'length' }</span>:
 		</p>
 		<table>
 			<colgroup>
@@ -73,64 +86,51 @@
 			</colgroup>
 
 			<thead>
-				<tr><th colspan="4" class="project-name">Project name:</th></tr>
+				<tr><th colspan="4" class="project-name">{ projectName }:</th></tr>
 				<tr class="table-meta">
-					<th>Dienst</th>
-					<th>Prijs</th>
-					<th>Aantal</th>
-					<th>Bedrag</th>
+					<th>{ 'service' 	| i18n | capitalize }</th>
+					<th>{ 'price' 		| i18n | capitalize }</th>
+					<th>{ 'quantity' 	| i18n | capitalize }</th>
+					<th>{ 'amount' 		| i18n | capitalize }</th>
 				</tr>
 			</thead>
 
 			<tbody>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
-				</tr>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
-				</tr>
-				<tr class="item">
-					<td class="description">Item description</td>
-					<td class="price" data-currency>€ 1234,56</td>
-					<td class="quantity">1</td>
-					<td class="subtotal" data-currency>€ 1234,56</td>
+				<tr class="item" rv-each-item="invoiceItems">
+					<td class="description"	>{ item.description }</td>
+					<td class="price"				>{ item.price | currency }</td>
+					<td class="quantity"		>{ item.quantity }</td>
+					<td class="subtotal" 		>{ item | itemSubtotal | currency }</td>
 				</tr>
 			</tbody>
 
 			<tfoot>
-				<tr><td colspan="3">Subtotaal</td><td class="subtotal" data-currency>€ 1234,56</td></tr>
 				<tr>
-					<td colspan="3">BTW (<span class="vat-percentage"></span>%)</td>
-					<td class="vat" data-currency>€ 2345,67</td>
+					<td colspan="3">{ 'subtotal' | i18n | capitalize}</td>
+					<td class="subtotal">{ | invoiceSubtotal | currency }</td>
 				</tr>
-				<tr><td colspan="3">Totaal</td><td class="total" data-currency>€ 2345,67</td></tr>
+				<tr>
+					<td colspan="3">{ 'vat' | i18n } (<span class="vat-percentage">{ | vatPercentage }</span>%)</td>
+					<td class="vat">{ | VAT | currency }</td>
+				</tr>
+				<tr><td colspan="3">{ 'total' | i18n | capitalize }</td>
+				<td class="total">{ | invoiceTotal | currency }</td></tr>
 			</tfoot>
 		</table>
 		<span id="closing">
 			<p>
-				Wij verzoeken u hierbij vriendelijk tijdig het totaalbedrag van <b class="total"></b> over te maken
-				naar rekeningnummer <b class="iban"></b>, onder vermelding van het factuurnummer <b class="invoice-id"></b>.
+				{ 'closing-transfer' | i18n } <strong>{ | invoiceTotal | currency}</strong> { 'closing-to-account' | i18n } <strong>{ origin.iban }</strong>{ 'closing-denoting' | i18n } <strong>{ | fullID }</strong>.
 			</p><p>
-				Voor vragen over deze factuur kunt u uiteraard altijd contact met ons opnemen via <span class="email link">address@mail.com</span>.
+				{ 'closing-questions' | i18n } <a class="email" rv-href="origin.email|email">{ origin.email }</a>.
 			</p>
 		</span>
 	</div>
 	<footer class="row-fluid">
 		<p class="span6">
-			Deze factuur vervalt <span class="validity-period">14</span> dagen na factuurdatum. 
-			Gelieve voor <span id="expiration-date"></span> het totaalbedrag over te maken
-			naar <span class="iban"></span> t.n.v. <span class="company-name">Companyname</span>
-			o.v.v. het factuurnummer.
+			{ 'expiry-start' | i18n } <span class="validity-period">{ validityPeriod }</span> { 'expiry-please' | i18n } <span id="expiration-date"></span> { 'expiry-transfer' | i18n } <span class="iban">{ origin.iban }</span> { 'expiry-registered' | i18n } <span class="company-name">{ origin.company }</span> { 'expiry-denoting' | i18n }.
 		</p>
 		<p class="span5 offset1">
-			Deze factuur is opgesteld in overeenkomst met onze algemene voorwaarden. Deze zijn te vinden op:<br>
-			<span class="link">aerix.nl/algemene-voorwaarden</span>.
+			{ 'terms' | i18n }: <a href="https://aerix.nl/algemene-voorwaarden">aerix.nl/algemene-voorwaarden</a>.
 		</p>
 	</footer>
 </body>

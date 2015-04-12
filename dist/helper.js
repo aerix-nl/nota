@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, NotaHelper, fs, path, _;
+  var Backbone, NotaHelper, Path, chalk, fs, _;
 
   fs = require('fs');
 
@@ -7,10 +7,13 @@
 
   Backbone = require('backbone');
 
-  path = require('path');
+  Path = require('path');
+
+  chalk = require('chalk');
 
   NotaHelper = (function() {
-    function NotaHelper() {
+    function NotaHelper(logWarning) {
+      this.logWarning = logWarning;
       _.extend(this, Backbone.Events);
     }
 
@@ -30,22 +33,31 @@
       return this.isDirectory(path);
     };
 
-    NotaHelper.prototype.getTemplatesIndex = function(basePath) {
+    NotaHelper.prototype.getTemplatesIndex = function(basePath, logWarnings) {
       var definition, dir, index, templateDirs, warningMsg, _i, _len;
+      if (logWarnings == null) {
+        logWarnings = true;
+      }
       if (!fs.existsSync(basePath)) {
         throw new Error("Templates basepath '" + basePath + "' doesn't exist");
       }
       templateDirs = fs.readdirSync(basePath);
-      templateDirs = _.filter(templateDirs, function(dir) {
-        return fs.statSync(basePath + '/' + dir).isDirectory();
-      });
+      templateDirs = _.filter(templateDirs, (function(_this) {
+        return function(dir) {
+          return _this.isDirectory(Path.join(basePath, dir));
+        };
+      })(this));
       index = {};
       for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
         dir = templateDirs[_i];
-        definition = this.getTemplateDefinition(path.join(basePath, dir));
+        definition = this.getTemplateDefinition(Path.join(basePath, dir));
         if (definition.meta === 'not template') {
-          warningMsg = "Template %m" + dir + "%N has no mandatory template.html file %K(omitting template)";
-          this.trigger("warning", warningMsg);
+          warningMsg = "Template " + (chalk.magenta(dir)) + " has no mandatory template.html file " + (chalk.gray('(omitting template)'));
+          if (logWarnings) {
+            if (typeof this.logWarning === "function") {
+              this.logWarning(warningMsg);
+            }
+          }
           continue;
         }
         index[definition.dir] = definition;
@@ -53,17 +65,24 @@
       return index;
     };
 
-    NotaHelper.prototype.getTemplateDefinition = function(dir) {
+    NotaHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
       var definitionPath, isDefined, templateDefinition, warningMsg;
+      if (logWarnings == null) {
+        logWarnings = true;
+      }
       if (!this.isDirectory(dir)) {
         throw new Error("Template '" + dir + "' not found");
       }
       isDefined = this.isFile(dir + "/bower.json");
       if (!isDefined) {
-        warningMsg = "Template %m" + dir + "%N has no 'bower.json' definition %K(optional, but recommended)";
-        this.trigger("warning", warningMsg);
+        warningMsg = "Template " + (chalk.magenta(dir)) + " has no 'bower.json' definition " + (chalk.gray('(optional, but recommended)'));
+        if (logWarnings) {
+          if (typeof this.logWarning === "function") {
+            this.logWarning(warningMsg);
+          }
+        }
         templateDefinition = {
-          name: path.basename(dir),
+          name: Path.basename(dir),
           meta: 'not found'
         };
       } else {
@@ -74,14 +93,96 @@
       if (!fs.existsSync(dir + "/template.html")) {
         templateDefinition.meta = 'not template';
       }
-      templateDefinition.dir = path.basename(dir);
+      templateDefinition.dir = Path.basename(dir);
       return templateDefinition;
+    };
+
+    NotaHelper.prototype.getInitData = function(options) {
+      var data, dataPath, exampleData, templatePath, _data;
+      templatePath = options.templatePath, dataPath = options.dataPath;
+      exampleData = (function(_this) {
+        return function() {
+          var definition, e, exampleDataPath, _ref;
+          try {
+            definition = _this.getTemplateDefinition(templatePath);
+            if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
+              exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
+              if (_this.isData(exampleDataPath)) {
+                return JSON.parse(fs.readFileSync(exampleDataPath, {
+                  encoding: 'utf8'
+                }));
+              }
+            }
+          } catch (_error) {
+            e = _error;
+            if (typeof _this.logWarning === "function") {
+              _this.logWarning("Attempted to get example data of template but failed: " + e);
+            }
+            return null;
+          }
+        };
+      })(this);
+      if (dataPath != null) {
+        return data = JSON.parse(fs.readFileSync(dataPath, {
+          encoding: 'utf8'
+        }));
+      } else if ((_data = exampleData()) != null) {
+        if (typeof this.logWarning === "function") {
+          this.logWarning("No data provided. Serving example data as found in template definition.");
+        }
+        return data = _data;
+      } else {
+        if (typeof this.logWarning === "function") {
+          this.logWarning("No data provided or found. Serving empty object.");
+        }
+        return data = {};
+      }
+    };
+
+    NotaHelper.prototype.findTemplatePath = function(options) {
+      var match, templatePath, templatesPath, _templatePath;
+      templatePath = options.templatePath, templatesPath = options.templatesPath;
+      if (templatePath == null) {
+        throw new Error("Please provide a template with --template=<directory>");
+      }
+      if (!this.isTemplate(templatePath)) {
+        if (this.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
+          templatePath = _templatePath;
+        } else if (this.isTemplate(_templatePath = "" + templatesPath + "/" + templatePath)) {
+          templatePath = _templatePath;
+        } else if ((match = _(this.getTemplatesIndex(templatesPath)).findWhere({
+          name: templatePath
+        })) != null) {
+          throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
+        } else {
+          throw new Error("Failed to find template '" + templatePath + "'.");
+        }
+      }
+      return templatePath;
+    };
+
+    NotaHelper.prototype.findDataPath = function(options) {
+      var dataPath, templatePath, _dataPath;
+      dataPath = options.dataPath, templatePath = options.templatePath;
+      if (dataPath == null) {
+        return null;
+      }
+      if (!this.isData(dataPath)) {
+        if (this.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
+          dataPath = _dataPath;
+        } else if (this.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
+          dataPath = _dataPath;
+        } else {
+          throw new Error("Failed to find data '" + dataPath + "'.");
+        }
+      }
+      return dataPath;
     };
 
     return NotaHelper;
 
   })();
 
-  module.exports = new NotaHelper();
+  module.exports = NotaHelper;
 
 }).call(this);

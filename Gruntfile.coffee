@@ -12,30 +12,21 @@ module.exports = ( grunt ) ->
           ext: '.js'
         ]
 
-      templates:
-        files: [
-          expand: true
-          cwd: 'templates'
-          src: ['**/*.coffee']
-          dest: 'templates'
-          ext: '.js'
-        ]
-
     sass:
-      templates:
+      source:
         options:
           compass: true
         files: [
           expand: true
-          cwd: 'templates'
+          cwd: 'assets/stylesheets'
           src: ['**/*.scss']
-          dest: 'templates'
+          dest: 'assets/stylesheets'
           ext: '.css'
         ]
 
     watch:
       all:
-        files: ['src/**/*.coffee', 'templates/**/*.coffee', 'templates/**/*.scss']
+        files: ['src/**/*.coffee', 'assets/stylesheets/**/*.scss']
         tasks: ['build']
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
@@ -43,4 +34,4 @@ module.exports = ( grunt ) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'build',   ['coffee:source', 'coffee:templates', 'sass:templates']
+  grunt.registerTask 'build',   ['coffee:source', 'sass:source']

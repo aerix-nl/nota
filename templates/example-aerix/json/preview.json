@@ -5,19 +5,19 @@
     "date": "2013-12-25"
   },
   "origin": {
-    "companyName": "YourCompany",
-    "companyLawform": "Ltd.",
-    "streetAddress": "Your Street 13b",
-    "postAddress": "0987KJ",
-    "place": "Yourtown",
+    "company": "YourCompany",
+    "lawform": "Ltd.",
+    "address": "Your Street 13b",
+    "postalcode": "0987KJ",
+    "town": "Yourtown",
     "country": "Your Country",
     "email": "contact@mycompany.com",
     "website": "mycompany.com",
     "iban": "NL12 ABCD 1234 1234 12",
-    "bankName": "Triodos Bank",
+    "bank": "Triodos Bank",
     "bic": "RABONL2U",
     "kvk": "123456789",
-    "vatNumber": "AB1233405923489"
+    "vat": "AB1233405923489"
   },
   "validityPeriod": 14,
   "vatPercentage": 0.21,
@@ -26,8 +26,8 @@
     "organization": "Client Company Name",
     "contactPerson": "Client Contactperson Name",
     "address": "Client Street 11a",
-    "postalCode": "6543TR",
-    "place": "Client Town",
+    "postalcode": "6543TR",
+    "town": "Client Town",
     "country": "Netherlands, The"
   },
   "projectName": "Optional project name which will be placed on top of table",

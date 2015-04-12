@@ -10,8 +10,6 @@ NotaHelper = require('./helper')
 # This class is basically a wrapper of a PhantomJS instance
 class Document
 
-  timeout: 1500
-
   constructor: ( @server, @options ) ->
     _.extend(@, Backbone.Events)
 
@@ -23,6 +21,9 @@ class Document
 
         # TODO: Get this stuff from the template definition (extend bower.json?)
         @page.set 'paperSize', @options.paperSize
+        # TODO: Find for a fix that makes the zoomFactor work again, and after
+        # find a real fix for this workaround to counter a strange zoom factor.
+        # @page.zoomFactor = 0.9360
 
         @page.onConsoleMessage  ( msg ) -> console.log   msg
         @page.set 'onError',    ( msg ) -> console.error msg
@@ -56,6 +57,12 @@ class Document
   capture: (captureOptions = {})->
     @trigger 'render:init'
     { outputPath } = captureOptions # For shorter code we unpack this var
+
+    # TODO: Remove this fix when hyperlinks are being rendered properly:
+    # https://github.com/ariya/phantomjs/issues/10196
+    @page.evaluate ->
+      $('a').each (idx, a)->
+        $(a).replaceWith $('<span class="link">'+$(a).text()+'</span>')[0]
 
     @getMeta (meta)=>
       # If the explicitly defined output path is merely an output directory,
@@ -96,7 +103,7 @@ class Document
 
   onResourceRequested: ( request ) =>
     @trigger "page:resource:requested"
-    if @counter.indexOf(request.id) == -1
+    if @counter.indexOf(request.id) is -1
       @counter.push(request.id)
       clearTimeout(@timer)
 
@@ -110,7 +117,7 @@ class Document
     if @counter.length is 0
       @timer = setTimeout =>
         @trigger "page:loaded"
-      , @timeout
+      , @options.timeout
 
   injectData: (data)->
     @rendered = false

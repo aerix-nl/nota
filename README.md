@@ -1,22 +1,30 @@
 # Nota
-<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png"> Nota
-eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty
+<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
+
+Nota eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty
 (PDF) documents. Perfect for things like automating invoice or ticket
 generation, but of course not limited to. Nota can be used for any kind of
 document typesetting, layout and markup jobs, especially those that require
 automation and custom processing/presentation of data.
 
 Develop and debug while feeling right at home in your favorite browser, with a
-1:1 preview of what Nota turns into a .PDF for you. If you like to write your
-templates in CoffeeScript and SASS, Grunt will automatically compile your
-assets as you dev. Get all your favorite libraries and frontend goodies like
-Bootstrap, Backbone.js or AngularJS wired up in seconds with Bower. Nota makes
-designing and programming your documents a breeze.
+1:1 preview of what Nota turns into a .PDF for you. Nota makes designing and
+programming your documents a breeze with `--preview`.
 
-Spare yourself the headache and mind numbing routine of creating series of
+Spare yourself the mind numbing routine of creating series of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
 intellectual slave labour.
+```
+jobs = [{
+  data:       'data1.json'
+  outputPath: 'output1.pdf'
+}, {
+  data:       'data2.json'
+  outputPath: 'output2.pdf'
+}]
+server.render jobs
+```
 
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems)) in the depencencies that are still being
@@ -102,23 +110,37 @@ of Nota. Here's some things to take into account:
 Even though WebKit supports this, due to a
 [bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
 PhantomJS builts on the current output PDFs have no clickable links. This has
-quite some pressing attention and already a proposed fix, so it's likely to be
-fixed soon, but no fix committed to Qt yet. For now we recommend making links
-that have URL as the text so users can copy-paste that, or avoid them.
+quite some pressing attention, so it's likely to be fixed soon, but no fix
+committed yet. For now we recommend making links that have URL as the text so
+users can copy-paste that, or avoid them.
 
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a
-[bug](https://github.com/ariya/phantomjs/issues/10373). More
-information/research on specifics and other operating systems is needed. For
-now we recommend using the Vagrant spec to run Nota virtualized on Linux.
+[bug](https://github.com/ariya/phantomjs/issues/10373). For now we recommend
+using the Vagrant spec to run Nota virtualized on Linux. Needs checking if
+solved in PhantomJS 2.
 
 #### Fonts
-Due to [a bug](http://arunoda.me/blog/phantomjs-webfonts-build.html) in
+Due to [a bug](https://github.com/ariya/phantomjs/issues/10592) in
 PhantomJS, the loading of webfonts (even if they're locally hosted) seems
-broken. For now you'll have to install the fonts on the system manually, and
-then they'll load as expected. More research on in development versions of
-PhantomJS is needed.
+broken. For now you'll have to install the fonts on the system itself, and
+then they'll load as expected. Needs checking if solved in PhantomJS 2.
 
+### Color definitions revert to black
+It looks like all use of color in the CSS (for text/borders/backgrounds etc.)
+is lost and returned to black upon rendering. This can be worked around for
+the while by adding the `!important` keyword after the color declaration, e.g.
+like this `h1 { color: red !important }`. More research needed on why and
+other solutions.
+
+### Paper size and zoom factor
+It looks like when rendering the page receives a zoom factor of about 1.068 is
+applied, causing the content flow to run longer than what is seen when
+rendered in the web browser. This is likely to be fixed, or at least allow for
+a compensating counter zoomfactor in PhantomJS 2 according to [this
+bug](https://github.com/ariya/phantomjs/issues/12685). For now we recommend
+creating extra space for content flow or making some seperate CSS declarations
+for print, like a smaller font size to counter this.
 
 ## Meta
 

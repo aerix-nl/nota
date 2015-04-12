@@ -17,8 +17,6 @@
   NotaHelper = require('./helper');
 
   Document = (function() {
-    Document.prototype.timeout = 1500;
-
     function Document(server, options) {
       this.server = server;
       this.options = options;
@@ -87,6 +85,11 @@
       }
       this.trigger('render:init');
       outputPath = captureOptions.outputPath;
+      this.page.evaluate(function() {
+        return $('a').each(function(idx, a) {
+          return $(a).replaceWith($('<span class="link">' + $(a).text() + '</span>')[0]);
+        });
+      });
       return this.getMeta((function(_this) {
         return function(meta) {
           if (outputPath != null) {
@@ -139,7 +142,7 @@
           return function() {
             return _this.trigger("page:loaded");
           };
-        })(this), this.timeout);
+        })(this), this.options.timeout);
       }
     };
 

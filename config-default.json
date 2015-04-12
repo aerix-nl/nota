@@ -10,11 +10,12 @@
   },
 
   "document": {
+    "timeout":            1500,
     "defaultFilename":    "output.pdf",
     "paperSize": {
       "format":           "A4",
       "orientation":      "portrait",
-      "border":           "0cm"
+      "margin":           "0cm"
     }
   }
 }
