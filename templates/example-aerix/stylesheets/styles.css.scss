@@ -24,7 +24,7 @@ body {
 	min-height: 278mm; // Lower than the A4 297mm because of a zoom factor applied by PhantomJS (bug)
 }
 
-a, .link {
+a, .hyperlink {
 	color: $primaryBlue !important;
 	&:hover {
 		color: $secondaryBlue !important;

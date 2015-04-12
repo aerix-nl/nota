@@ -97,39 +97,27 @@
       return templateDefinition;
     };
 
+    NotaHelper.prototype.getExampleDataPath = function(templatePath) {
+      var definition, exampleDataPath, _ref;
+      definition = this.getTemplateDefinition(templatePath);
+      if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
+        exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
+        if (this.isData(exampleDataPath)) {
+          return exampleDataPath;
+        } else {
+          return typeof this.logWarning === "function" ? this.logWarning("Example data path declaration found in template definition, but file doesn't exist.") : void 0;
+        }
+      }
+    };
+
     NotaHelper.prototype.getInitData = function(options) {
-      var data, dataPath, exampleData, templatePath, _data;
+      var data, dataPath, templatePath, _data;
       templatePath = options.templatePath, dataPath = options.dataPath;
-      exampleData = (function(_this) {
-        return function() {
-          var definition, e, exampleDataPath, _ref;
-          try {
-            definition = _this.getTemplateDefinition(templatePath);
-            if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
-              exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
-              if (_this.isData(exampleDataPath)) {
-                return JSON.parse(fs.readFileSync(exampleDataPath, {
-                  encoding: 'utf8'
-                }));
-              }
-            }
-          } catch (_error) {
-            e = _error;
-            if (typeof _this.logWarning === "function") {
-              _this.logWarning("Attempted to get example data of template but failed: " + e);
-            }
-            return null;
-          }
-        };
-      })(this);
       if (dataPath != null) {
         return data = JSON.parse(fs.readFileSync(dataPath, {
           encoding: 'utf8'
         }));
-      } else if ((_data = exampleData()) != null) {
-        if (typeof this.logWarning === "function") {
-          this.logWarning("No data provided. Serving example data as found in template definition.");
-        }
+      } else if ((_data = this.getExampleData(options)) != null) {
         return data = _data;
       } else {
         if (typeof this.logWarning === "function") {
@@ -164,17 +152,23 @@
     NotaHelper.prototype.findDataPath = function(options) {
       var dataPath, templatePath, _dataPath;
       dataPath = options.dataPath, templatePath = options.templatePath;
-      if (dataPath == null) {
-        return null;
-      }
-      if (!this.isData(dataPath)) {
-        if (this.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
+      if (dataPath != null) {
+        if (this.isData(dataPath)) {
+          dataPath;
+        } else if (this.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
           dataPath = _dataPath;
         } else if (this.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
           dataPath = _dataPath;
         } else {
           throw new Error("Failed to find data '" + dataPath + "'.");
         }
+      } else if (_dataPath = this.getExampleDataPath(templatePath)) {
+        if (typeof this.logWarning === "function") {
+          this.logWarning("No data provided. Using example data as found in template definition.");
+        }
+        dataPath = _dataPath;
+      } else {
+        throw new Error("Please provide data with --data=<file path>");
       }
       return dataPath;
     };

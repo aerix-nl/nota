@@ -75,27 +75,25 @@ class NotaHelper
     templateDefinition.dir = Path.basename(dir)
     return templateDefinition
 
+  # Little bundle of logic that we can call later if no data has been provided
+  # to see if the template specified any example data.
+  getExampleDataPath: (templatePath)->
+    definition = @getTemplateDefinition templatePath
+    if definition['nota']?['exampleData']?
+      exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
+      if @isData exampleDataPath then return exampleDataPath
+      else @logWarning? "Example data path declaration found in template
+      definition, but file doesn't exist."
+
   getInitData: ( options ) ->
     { templatePath, dataPath } = options
-    # Little bundle of logic that we can call later if no data has been provided
-    # to see if the template specified any example data.
-    exampleData = =>
-      try
-        definition = @getTemplateDefinition templatePath
-        if definition['nota']?['exampleData']?
-          exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
-          if @isData exampleDataPath
-            return JSON.parse fs.readFileSync exampleDataPath, encoding: 'utf8'
-      catch e
-        @logWarning? "Attempted to get example data of template but failed: #{e}"
-        return null
-
+    
     # Try to get the data if path is provided
     if dataPath?
       data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
     # Else we see if there is example data available
-    else if (_data = exampleData())?
-      @logWarning? "No data provided. Serving example data as found in template definition."
+    else if (_data = @getExampleData options )?
+      
       data = _data
     # TODO: serving empty data is probably a bad idea API wise?
     else
@@ -128,18 +126,19 @@ class NotaHelper
 
   findDataPath: ( options ) ->
     { dataPath, templatePath } = options
-    return null unless dataPath?
-
-    # Find the correct data path
-    unless @isData(dataPath)
-
-      if @isData(_dataPath = "#{process.cwd()}/#{dataPath}")
+    if dataPath?
+      if @isData(dataPath)
+        dataPath
+      else if @isData(_dataPath = "#{process.cwd()}/#{dataPath}")
         dataPath = _dataPath
-
       else if @isData(_dataPath = "#{templatePath}/#{dataPath}")
         dataPath = _dataPath
-
       else throw new Error("Failed to find data '#{dataPath}'.")
+    else if _dataPath = @getExampleDataPath templatePath
+      @logWarning? "No data provided. Using example data as found in template definition."
+      dataPath = _dataPath
+    else
+      throw new Error("Please provide data with --data=<file path>")
 
     dataPath
 

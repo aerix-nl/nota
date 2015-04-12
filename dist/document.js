@@ -87,7 +87,7 @@
       outputPath = captureOptions.outputPath;
       this.page.evaluate(function() {
         return $('a').each(function(idx, a) {
-          return $(a).replaceWith($('<span class="link">' + $(a).text() + '</span>')[0]);
+          return $(a).replaceWith($('<span class="hyperlink">' + $(a).text() + '</span>')[0]);
         });
       });
       return this.getMeta((function(_this) {

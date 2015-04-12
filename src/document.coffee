@@ -62,7 +62,7 @@ class Document
     # https://github.com/ariya/phantomjs/issues/10196
     @page.evaluate ->
       $('a').each (idx, a)->
-        $(a).replaceWith $('<span class="link">'+$(a).text()+'</span>')[0]
+        $(a).replaceWith $('<span class="hyperlink">'+$(a).text()+'</span>')[0]
 
     @getMeta (meta)=>
       # If the explicitly defined output path is merely an output directory,
