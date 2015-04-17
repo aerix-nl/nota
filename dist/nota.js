@@ -1,5 +1,5 @@
 (function() {
-  var Nota, NotaHelper, NotaServer, Path, chalk, fs, nomnom, notifier, open, _,
+  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -20,7 +20,9 @@
 
   NotaServer = require('./server');
 
-  NotaHelper = require('./helper');
+  JobQueue = require('./queue');
+
+  TemplateUtils = require('./template_utils');
 
   Nota = (function() {
     Nota.prototype.defaults = require('../config-default.json');
@@ -28,9 +30,10 @@
     Nota.prototype.meta = require('../package.json');
 
     function Nota() {
+      this.logEvent = __bind(this.logEvent, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
       var definition, e;
-      this.helper = new NotaHelper(this.logWarning);
+      this.helper = new TemplateUtils(this.logWarning);
       nomnom.options({
         template: {
           position: 0,
@@ -84,8 +87,11 @@
         this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
         return;
       }
-      this.options.data = this.helper.getInitData(this.options);
-      this.server = new NotaServer(this.options);
+      this.server = new NotaServer(this.options, {
+        logEvent: this.logEvent,
+        logWarning: this.logWarning,
+        logError: this.logError
+      });
       this.server.on('all', this.logEvent, this);
       this.server.start();
       if (!this.options.preview) {
@@ -94,43 +100,42 @@
       if (this.options.preview) {
         open(this.server.url());
       } else {
-        this.server.document.on('client:template:loaded', (function(_this) {
-          return function() {
-            return _this.render(_this.options);
-          };
-        })(this));
+        this.render(this.options);
       }
     }
 
     Nota.prototype.render = function(options) {
-      var jobs;
+      var jobOptions, jobs;
       jobs = [
         {
-          data: options.data,
-          outputPath: options.outputPath
+          dataPath: options.dataPath,
+          outputPath: options.outputPath,
+          preserve: options.preserve
         }
       ];
-      return this.server.render(jobs, {
-        preserve: options.preserve,
+      jobOptions = {
+        type: this.options.document.templateType,
         callback: (function(_this) {
           return function(meta) {
+            console.log(meta);
             if (options.logging.notify) {
               notifier.on('click', function() {
                 return open(meta[1].outputPath);
               });
               _this.notify({
-                title: "Nota: render job finished",
-                message: "" + jobs.length + " document captured to .PDF"
+                title: "Nota: render jobs finished",
+                message: "" + jobs.length + " document(s) captured to .PDF"
               });
             }
             return _this.server.close();
           };
         })(this)
-      });
+      };
+      return this.server.queue(jobs, jobOptions);
     };
 
     Nota.prototype.settleOptions = function(args, defaults) {
-      var options;
+      var e, options;
       options = _.extend({}, defaults);
       options = _.extend(options, {
         templatePath: args.template,
@@ -154,6 +159,12 @@
       }
       options.templatePath = this.helper.findTemplatePath(options);
       options.dataPath = this.helper.findDataPath(options);
+      try {
+        _.extend(options.document, this.helper.getTemplateDefinition(options.templatePath).nota);
+      } catch (_error) {
+        e = _error;
+        this.logWarning(e);
+      }
       return options;
     };
 

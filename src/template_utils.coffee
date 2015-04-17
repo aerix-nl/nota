@@ -3,9 +3,10 @@ _             = require('underscore')._
 Backbone      = require('backbone')
 Path          = require('path')
 chalk         = require('chalk')
+cheerio       = require('cheerio')
 
 # Utility class to help it with common filesystem and template/data related questiosn
-class NotaHelper
+module.exports = class TemplateUtils
 
   constructor: ( @logWarning )->
     _.extend(@, Backbone.Events)
@@ -67,7 +68,7 @@ class NotaHelper
       # TODO: check template definition against scheme for reuiqre properties
       # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
 
-    # Check requirements for tempalte
+    # Check requirements for template
     if not fs.existsSync(dir+"/template.html")
       templateDefinition.meta = 'not template'
 
@@ -75,32 +76,28 @@ class NotaHelper
     templateDefinition.dir = Path.basename(dir)
     return templateDefinition
 
-  getInitData: ( options ) ->
-    { templatePath, dataPath } = options
-    # Little bundle of logic that we can call later if no data has been provided
-    # to see if the template specified any example data.
-    exampleData = =>
-      try
-        definition = @getTemplateDefinition templatePath
-        if definition['nota']?['exampleData']?
-          exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
-          if @isData exampleDataPath
-            return JSON.parse fs.readFileSync exampleDataPath, encoding: 'utf8'
-      catch e
-        @logWarning? "Attempted to get example data of template but failed: #{e}"
-        return null
+  # Little bundle of logic that we can call later if no data has been provided
+  # to see if the template specified any example data.
+  getExampleDataPath: (templatePath)->
+    definition = @getTemplateDefinition templatePath
+    if definition['nota']?['exampleData']?
+      exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
+      if @isData exampleDataPath then return exampleDataPath
+      else @logWarning? "Example data path declaration found in template
+      definition, but file doesn't exist."
 
-    # Try to get the data if path is provided
-    if dataPath?
-      data = JSON.parse(fs.readFileSync(dataPath, encoding: 'utf8'))
-    # Else we see if there is example data available
-    else if (_data = exampleData())?
-      @logWarning? "No data provided. Serving example data as found in template definition."
-      data = _data
-    # TODO: serving empty data is probably a bad idea API wise?
-    else
-      @logWarning? "No data provided or found. Serving empty object."
-      data = {}
+  # Inspect the template HTML and see if it contains JavaScript, if it
+  # contains none, we assume it's a static template. If it does contain any
+  # JavaScript, all bets are off and we assume it to be a dynamic template
+  # (even if the JavaScript might not actually modify the DOM). Often a
+  # dynamic template will load within the timeout, but it might take
+  # considerable time, so we allow it to interface with the client API to tell
+  # Nota when it's ready for capture. Also, it might need data to be injected
+  # to render.
+  getTemplateType: (templatePath)->
+    html = fs.readFileSync Path.join(templatePath, 'template.html'), encoding: 'utf8'
+    $ = cheerio.load html
+    type = if $('script').length is 0 then 'static' else 'dynamic'
 
   findTemplatePath: ( options ) ->
     { templatePath, templatesPath } = options
@@ -128,19 +125,53 @@ class NotaHelper
 
   findDataPath: ( options ) ->
     { dataPath, templatePath } = options
-    return null unless dataPath?
-
-    # Find the correct data path
-    unless @isData(dataPath)
-
-      if @isData(_dataPath = "#{process.cwd()}/#{dataPath}")
+    if dataPath?
+      if @isData(dataPath)
+        dataPath
+      else if @isData(_dataPath = "#{process.cwd()}/#{dataPath}")
         dataPath = _dataPath
-
       else if @isData(_dataPath = "#{templatePath}/#{dataPath}")
         dataPath = _dataPath
-
       else throw new Error("Failed to find data '#{dataPath}'.")
-
+    else if _dataPath = @getExampleDataPath templatePath
+      @logWarning? "No data provided. Using example data as found in template definition."
+      dataPath = _dataPath
+    else
+      throw new Error("Please provide data with --data=<file path>")
     dataPath
 
-module.exports = NotaHelper
+
+  # options =
+  #   path:     captureOptions.outputPath
+  #   meta:     meta
+  #   default:  @options.defaultFilename
+  findOutputPath: (options)->
+    { outputPath, meta, defaultFilename, preserve } = options
+    # If the explicitly defined output path is merely an output directory,
+    # then it still leaves open the question of the actual filename, which
+    # in this case we'll check with the meta data provided by the template,
+    # if there is any suggestion from it's side. If so, then we use that
+    # one. If the output path is not defined at atl, we just give it the
+    # default filename.
+    if outputPath?
+      if @isDirectory(outputPath)
+        if meta?.filesystemName?
+          outputPath = Path.join(outputPath, meta.filesystemName)
+        else
+          # Else we have no suggestion from the template, and we resort to the
+          # default filename as provided in the config, which isn't a very
+          # meaningful or unique one :(
+          outputPath = Path.join(outputPath, defaultFilename)
+
+      # Now that we have an output path and filename, do a check if it's
+      # already occupied.
+      if @isFile(outputPath) and not preserve
+        @logWarning? "Overwriting with current render: #{outputPath}"
+
+    else
+      if meta?.filesystemName?
+        outputPath = meta.filesystemName
+      else
+        outputPath = defaultFilename
+
+    outputPath

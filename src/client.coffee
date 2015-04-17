@@ -40,9 +40,9 @@ define ['backbone', 'json'], ->
     #   filesystemName: 'Invoice_2014.0044-Client_Name.pdf'
     # }
     documentMeta:
-      data: {}
-      fn: ->
-      context: {}
+      data:     null
+      fn:       null
+      context:  null
 
     constructor: ->
       _.extend(@, Backbone.Events)

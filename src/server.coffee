@@ -1,19 +1,25 @@
-_        = require('underscore')._
-_.str    = require('underscore.string')
-http     = require('http')
-express  = require('express')
-phantom  = require('phantom')
-fs       = require('fs')
-open     = require("open")
-Backbone = require('backbone')
+_             = require('underscore')._
+_.str         = require('underscore.string')
+http          = require('http')
+express       = require('express')
+phantom       = require('phantom')
+fs            = require('fs')
+Q             = require('q')
+open          = require("open")
+Backbone      = require('backbone')
 
-Document = require('./document')
+Document      = require('./document')
+TemplateUtils = require('./template_utils')
+JobQueue      = require('./queue')
 
-class NotaServer
+module.exports = class NotaServer
 
-  constructor: ( @options ) ->
+  constructor: ( @options, logging ) ->
     _.extend(@, Backbone.Events)
-    { @serverAddress, @serverPort, @templatePath, @data } = @options
+    @helper = new TemplateUtils()
+    { @logEvent, @logError, @logWarning } = logging
+    { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
+    _.extend @options.document, templateType: @helper.getTemplateType(@templatePath)
 
   start: ->
     @trigger "server:init"
@@ -36,7 +42,7 @@ class NotaServer
     @app.use '/nota.js',  express.static("#{__dirname}/client.js")
 
     @app.get '/data', ( req, res ) =>
-      res.send JSON.stringify(@data)
+      res.send fs.readFileSync(@dataPath, encoding: 'utf8')
 
     @server.listen(@serverPort)
     @trigger "server:running"
@@ -47,39 +53,89 @@ class NotaServer
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
 
-  serve: ( data ) ->
-    @data = data
+  serve: ( @dataPath )->
 
-  render: ( jobs, options ) ->
-    # TODO: use q here, because code kinda marches faster to the right than down
-    rendered = 0
-    meta = []
-    for job in jobs
-      do (job, options) =>
-        # TODO: kinda indecisive about whether to inject data or set the data
-        # here and "notify" the template to get the new data. The latter is
-        # more HTTP-ish, but way more convoluted/complex than injecting it. So
-        # for now we'll just use that, and set the data as well, in case you
-        # want to monitor the job rendering progress with your browser. By
-        # refreshing the page you can get the data of the current job being
-        # rendered in your browser.
-        @data = job.data
-        @document.injectData(job.data)
-        @document.once "page:ready", =>
-          options.outputPath = job.outputPath
-          @document.capture options
+  queue: ( jobs, options ) ->
+    @queue = new JobQueue(jobs, options)
+    switch @queue.options.type
+      when 'static'
+        @document.once "page:rendered", =>
+          @renderStatic(@queue)
+      when 'dynamic'
+        # Wait till the page finished opening
+        @document.once 'page:opened', =>
+          @renderDynamic(@queue)
+          
+  renderStatic: (queue)->
+    while job = queue.nextJob()
+      do (job) =>
+        @document.capture job
+        @document.once 'render:done', @queue.completeJob, @queue
 
-    @document.on 'render:done', (renderMeta)->
-      rendered += 1
-      meta[rendered] = renderMeta
-      if rendered is jobs.length
-        options.callback?(meta)
+  renderDynamic: (queue)->
+    # Dequeue the next job
+    currentJob = queue.nextJob()
+
+    offerData = (job)=>
+      deferred = Q.defer()
+
+      # TODO: kinda indecisive about whether to inject data or set the data
+      # here and "notify" the template to get the new data. The latter is
+      # more HTTP-ish, but way more convoluted/complex than injecting it. So
+      # for now we'll just use that, and set the data as well, in case you
+      # want to monitor the job rendering progress with your browser. By
+      # refreshing the page you can get the data of the current job being
+      # rendered in your browser.
+      # @serve job.dataPath
+      data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
+
+      console.log @document.state
+      if @document.state is 'client:template:loaded'
+        @document.injectData data
+        deferred.resolve 'data-injected'
+        
+      else
+        @document.once 'client:template:loaded', =>
+          @document.injectData data
+          deferred.resolve 'data-injected'
+
+        @document.once 'page:loaded', =>
+          if @document.state is 'page:loaded'
+            deferred.resolve @document.state
+          else if @document.state is 'client:init'
+            deferred.reject 'client-loading'
+          else if @document.state is 'client:loaded'
+            deferred.reject 'template-unregistered'
+          else if @document.state is 'client:template:init'
+            deferred.reject 'template-loading'
+
+      deferred.promise
+
+    # Define render job as a promise
+    renderJob = (job)=>
+      deferred = Q.defer()
+      @document.once 'page:rendered', => @document.capture job
+      @document.once 'render:done', deferred.resolve
+      deferred.promise
+
+    # Call the promise and wait for it to finish, then do some post-render
+    # administration of render meta data and see if we're done or can continue
+    # with the rest of the job queue.
+    offerData(currentJob)
+    .then (clst)->
+      renderJob(currentJob)
+    .then (meta)=>
+      queue.completeJob(meta)
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished()
+        @renderDynamic queue
+    .catch (err)->
+      @logError "Page loaded but still in state: #{clst}"
 
   close: ->
     @trigger 'server:closing'
     @document.close()
     @server.close()
     process.exit()
-
-module.exports = NotaServer
 

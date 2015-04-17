@@ -1,14 +1,15 @@
-nomnom   = require('nomnom')
-fs       = require('fs')
-Path     = require('path')
-_        = require('underscore')._
-_.str    = require('underscore.string')
-open     = require('open')
-chalk    = require('chalk')
-notifier = require('node-notifier')
+nomnom        = require('nomnom')
+fs            = require('fs')
+Path          = require('path')
+_             = require('underscore')._
+_.str         = require('underscore.string')
+open          = require('open')
+chalk         = require('chalk')
+notifier      = require('node-notifier')
 
-NotaServer = require('./server')
-NotaHelper = require('./helper')
+NotaServer    = require('./server')
+JobQueue      = require('./queue')
+TemplateUtils = require('./template_utils')
 
 class Nota
 
@@ -20,7 +21,7 @@ class Nota
   meta: require '../package.json'
 
   constructor: ( ) ->
-    @helper = new NotaHelper(@logWarning)
+    @helper = new TemplateUtils(@logWarning)
 
     nomnom.options
       template:
@@ -66,10 +67,12 @@ class Nota
       @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
       return
 
-    @options.data = @helper.getInitData(@options)
-
     # Start the server
-    @server = new NotaServer(@options)
+    @server = new NotaServer @options, {
+      logEvent:   @logEvent
+      logWarning: @logWarning
+      logError:   @logError
+    }
     @server.on 'all', @logEvent, @
     @server.start()
     @server.document.on('all', @logEvent, @) unless @options.preview
@@ -77,23 +80,30 @@ class Nota
     # If we want a preview, open the web page
     if @options.preview then open(@server.url())
     # Else, perform the render job and close the server
-    else @server.document.on 'client:template:loaded', => @render(@options)
+    else @render(@options)
 
+  # TODO: refactor this wrapper away. Right now it's an ugly extractor that
+  # creates a single job and calls the server queue API, but this should
+  # become more general with job arrays in the future.
   render: ( options )->
     jobs = [{
-      data: options.data
+      dataPath:   options.dataPath
       outputPath: options.outputPath
+      preserve:   options.preserve
     }]
-    @server.render jobs,
-      preserve: options.preserve
+    jobOptions = {
+      type:     @options.document.templateType
       callback: (meta) =>
+        console.log meta
         if options.logging.notify
           # Would be nice if you could click on the notification
           notifier.on 'click', -> open meta[1].outputPath
           @notify
-            title: "Nota: render job finished"
-            message: "#{jobs.length} document captured to .PDF"
+            title: "Nota: render jobs finished"
+            message: "#{jobs.length} document(s) captured to .PDF"
         @server.close()
+    }
+    @server.queue jobs, jobOptions
 
   # Settling options from parsed CLI arguments over defaults
   settleOptions: ( args, defaults ) ->
@@ -112,6 +122,9 @@ class Nota
     
     options.templatePath =  @helper.findTemplatePath(options)
     options.dataPath =      @helper.findDataPath(options)
+    try
+      _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota
+    catch e then @logWarning e
     return options
 
 
@@ -150,7 +163,7 @@ class Nota
   logError: ( errorMsg )->
     console.warn "nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg
 
-  logEvent: ( event )->
+  logEvent: ( event )=>
     # To prevent the output being spammed full of resource log events we allow supressing it
     if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
     

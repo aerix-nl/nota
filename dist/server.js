@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, NotaServer, express, fs, http, open, phantom, _,
+  var Backbone, Document, JobQueue, NotaServer, Q, TemplateUtils, express, fs, http, open, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
@@ -14,19 +14,30 @@
 
   fs = require('fs');
 
+  Q = require('q');
+
   open = require("open");
 
   Backbone = require('backbone');
 
   Document = require('./document');
 
-  NotaServer = (function() {
-    function NotaServer(options) {
+  TemplateUtils = require('./template_utils');
+
+  JobQueue = require('./queue');
+
+  module.exports = NotaServer = (function() {
+    function NotaServer(options, logging) {
       var _ref;
       this.options = options;
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
-      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.data = _ref.data;
+      this.helper = new TemplateUtils();
+      this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
+      _.extend(this.options.document, {
+        templateType: this.helper.getTemplateType(this.templatePath)
+      });
     }
 
     NotaServer.prototype.start = function() {
@@ -42,7 +53,9 @@
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
-          return res.send(JSON.stringify(_this.data));
+          return res.send(fs.readFileSync(_this.dataPath, {
+            encoding: 'utf8'
+          }));
         };
       })(this));
       this.server.listen(this.serverPort);
@@ -57,34 +70,98 @@
       return "http://" + this.serverAddress + ":" + this.serverPort + "/";
     };
 
-    NotaServer.prototype.serve = function(data) {
-      return this.data = data;
+    NotaServer.prototype.serve = function(dataPath) {
+      this.dataPath = dataPath;
     };
 
-    NotaServer.prototype.render = function(jobs, options) {
-      var job, meta, rendered, _fn, _i, _len;
-      rendered = 0;
-      meta = [];
-      _fn = (function(_this) {
-        return function(job, options) {
-          _this.data = job.data;
-          _this.document.injectData(job.data);
-          return _this.document.once("page:ready", function() {
-            options.outputPath = job.outputPath;
-            return _this.document.capture(options);
-          });
+    NotaServer.prototype.queue = function(jobs, options) {
+      this.queue = new JobQueue(jobs, options);
+      switch (this.queue.options.type) {
+        case 'static':
+          return this.document.once("page:rendered", (function(_this) {
+            return function() {
+              return _this.renderStatic(_this.queue);
+            };
+          })(this));
+        case 'dynamic':
+          return this.document.once('page:opened', (function(_this) {
+            return function() {
+              return _this.renderDynamic(_this.queue);
+            };
+          })(this));
+      }
+    };
+
+    NotaServer.prototype.renderStatic = function(queue) {
+      var job, _results;
+      _results = [];
+      while (job = queue.nextJob()) {
+        _results.push((function(_this) {
+          return function(job) {
+            _this.document.capture(job);
+            return _this.document.once('render:done', _this.queue.completeJob, _this.queue);
+          };
+        })(this)(job));
+      }
+      return _results;
+    };
+
+    NotaServer.prototype.renderDynamic = function(queue) {
+      var currentJob, offerData, renderJob;
+      currentJob = queue.nextJob();
+      offerData = (function(_this) {
+        return function(job) {
+          var data, deferred;
+          deferred = Q.defer();
+          data = JSON.parse(fs.readFileSync(job.dataPath, {
+            encoding: 'utf8'
+          }));
+          console.log(_this.document.state);
+          if (_this.document.state === 'client:template:loaded') {
+            _this.document.injectData(data);
+            deferred.resolve('data-injected');
+          } else {
+            _this.document.once('client:template:loaded', function() {
+              _this.document.injectData(data);
+              return deferred.resolve('data-injected');
+            });
+            _this.document.once('page:loaded', function() {
+              if (_this.document.state === 'page:loaded') {
+                return deferred.resolve(_this.document.state);
+              } else if (_this.document.state === 'client:init') {
+                return deferred.reject('client-loading');
+              } else if (_this.document.state === 'client:loaded') {
+                return deferred.reject('template-unregistered');
+              } else if (_this.document.state === 'client:template:init') {
+                return deferred.reject('template-loading');
+              }
+            });
+          }
+          return deferred.promise;
         };
       })(this);
-      for (_i = 0, _len = jobs.length; _i < _len; _i++) {
-        job = jobs[_i];
-        _fn(job, options);
-      }
-      return this.document.on('render:done', function(renderMeta) {
-        rendered += 1;
-        meta[rendered] = renderMeta;
-        if (rendered === jobs.length) {
-          return typeof options.callback === "function" ? options.callback(meta) : void 0;
-        }
+      renderJob = (function(_this) {
+        return function(job) {
+          var deferred;
+          deferred = Q.defer();
+          _this.document.once('page:rendered', function() {
+            return _this.document.capture(job);
+          });
+          _this.document.once('render:done', deferred.resolve);
+          return deferred.promise;
+        };
+      })(this);
+      return offerData(currentJob).then(function(clst) {
+        return renderJob(currentJob);
+      }).then((function(_this) {
+        return function(meta) {
+          queue.completeJob(meta);
+          if (!queue.isFinished()) {
+            return _this.renderDynamic(queue);
+          }
+        };
+      })(this))["catch"](function(err) {
+        return this.logError("Page loaded but still in state: " + clst);
       });
     };
 
@@ -98,7 +175,5 @@
     return NotaServer;
 
   })();
-
-  module.exports = NotaServer;
 
 }).call(this);
