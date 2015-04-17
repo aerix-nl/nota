@@ -61,10 +61,10 @@ module.exports = class NotaServer
       when 'static'
         @document.once "page:rendered", =>
           @renderStatic(@queue)
-      when 'dynamic'
+      when 'scripted'
         # Wait till the page finished opening
         @document.once 'page:opened', =>
-          @renderDynamic(@queue)
+          @renderscripted(@queue)
           
   renderStatic: (queue)->
     while job = queue.nextJob()
@@ -72,7 +72,7 @@ module.exports = class NotaServer
         @document.capture job
         @document.once 'render:done', @queue.completeJob, @queue
 
-  renderDynamic: (queue)->
+  renderscripted: (queue)->
     # Dequeue the next job
     currentJob = queue.nextJob()
 
@@ -92,12 +92,12 @@ module.exports = class NotaServer
       console.log @document.state
       if @document.state is 'client:template:loaded'
         @document.injectData data
-        deferred.resolve 'data-injected'
-        
+        deferred.resolve job
+
       else
         @document.once 'client:template:loaded', =>
           @document.injectData data
-          deferred.resolve 'data-injected'
+          deferred.resolve job
 
         @document.once 'page:loaded', =>
           if @document.state is 'page:loaded'
@@ -118,18 +118,19 @@ module.exports = class NotaServer
       @document.once 'render:done', deferred.resolve
       deferred.promise
 
-    # Call the promise and wait for it to finish, then do some post-render
-    # administration of render meta data and see if we're done or can continue
-    # with the rest of the job queue.
-    offerData(currentJob)
-    .then (clst)->
-      renderJob(currentJob)
-    .then (meta)=>
+    postRender = (meta)=>
       queue.completeJob(meta)
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished()
-        @renderDynamic queue
+        @renderscripted queue
+
+    # Call the promise and wait for it to finish, then do some post-render
+    # administration of render meta data and see if we're done or can continue
+    # with the rest of the job queue.
+    offerData(currentJob)
+    .then renderJob
+    .then postRender
     .catch (err)->
       @logError "Page loaded but still in state: #{clst}"
 

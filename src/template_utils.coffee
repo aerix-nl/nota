@@ -88,16 +88,16 @@ module.exports = class TemplateUtils
 
   # Inspect the template HTML and see if it contains JavaScript, if it
   # contains none, we assume it's a static template. If it does contain any
-  # JavaScript, all bets are off and we assume it to be a dynamic template
+  # JavaScript, all bets are off and we assume it to be a scripted template
   # (even if the JavaScript might not actually modify the DOM). Often a
-  # dynamic template will load within the timeout, but it might take
+  # scripted template will load within the timeout, but it might take
   # considerable time, so we allow it to interface with the client API to tell
   # Nota when it's ready for capture. Also, it might need data to be injected
   # to render.
   getTemplateType: (templatePath)->
     html = fs.readFileSync Path.join(templatePath, 'template.html'), encoding: 'utf8'
     $ = cheerio.load html
-    type = if $('script').length is 0 then 'static' else 'dynamic'
+    type = if $('script').length is 0 then 'static' else 'scripted'
 
   findTemplatePath: ( options ) ->
     { templatePath, templatesPath } = options

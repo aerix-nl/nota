@@ -118,7 +118,7 @@
         encoding: 'utf8'
       });
       $ = cheerio.load(html);
-      return type = $('script').length === 0 ? 'static' : 'dynamic';
+      return type = $('script').length === 0 ? 'static' : 'scripted';
     };
 
     TemplateUtils.prototype.findTemplatePath = function(options) {

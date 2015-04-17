@@ -52,9 +52,9 @@ module.exports = class Document
               # If static, then after loading HTML+CSS+images etc we're done
               @trigger 'page:rendered' if @options.templateType is 'static'
             @on 'client:template:render:done', =>
-              # If dynamic, we also need to then wait till the template webapp
+              # If scripted, we also need to then wait till the template webapp
               # has finished rendering the page.
-              @trigger "page:rendered" if @options.templateType is 'dynamic'
+              @trigger "page:rendered" if @options.templateType is 'scripted'
 
           else
             throw new Error "Unable to load page: #{status}"

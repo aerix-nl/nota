@@ -9,7 +9,7 @@ module.exports = class JobQueue extends Array
   # }]
 
   # options = {
-  #   type: 'static' or 'dynamic'
+  #   type: 'static' or 'scripted'
   #   callback: -> stuff
   # }
   constructor: (@jobs, @options) ->

@@ -83,10 +83,10 @@
               return _this.renderStatic(_this.queue);
             };
           })(this));
-        case 'dynamic':
+        case 'scripted':
           return this.document.once('page:opened', (function(_this) {
             return function() {
-              return _this.renderDynamic(_this.queue);
+              return _this.renderscripted(_this.queue);
             };
           })(this));
       }
@@ -106,8 +106,8 @@
       return _results;
     };
 
-    NotaServer.prototype.renderDynamic = function(queue) {
-      var currentJob, offerData, renderJob;
+    NotaServer.prototype.renderscripted = function(queue) {
+      var currentJob, offerData, postRender, renderJob;
       currentJob = queue.nextJob();
       offerData = (function(_this) {
         return function(job) {
@@ -119,11 +119,11 @@
           console.log(_this.document.state);
           if (_this.document.state === 'client:template:loaded') {
             _this.document.injectData(data);
-            deferred.resolve('data-injected');
+            deferred.resolve(job);
           } else {
             _this.document.once('client:template:loaded', function() {
               _this.document.injectData(data);
-              return deferred.resolve('data-injected');
+              return deferred.resolve(job);
             });
             _this.document.once('page:loaded', function() {
               if (_this.document.state === 'page:loaded') {
@@ -151,16 +151,15 @@
           return deferred.promise;
         };
       })(this);
-      return offerData(currentJob).then(function(clst) {
-        return renderJob(currentJob);
-      }).then((function(_this) {
+      postRender = (function(_this) {
         return function(meta) {
           queue.completeJob(meta);
           if (!queue.isFinished()) {
-            return _this.renderDynamic(queue);
+            return _this.renderscripted(queue);
           }
         };
-      })(this))["catch"](function(err) {
+      })(this);
+      return offerData(currentJob).then(renderJob).then(postRender)["catch"](function(err) {
         return this.logError("Page loaded but still in state: " + clst);
       });
     };

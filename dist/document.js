@@ -54,7 +54,7 @@
                   }
                 });
                 return _this.on('client:template:render:done', function() {
-                  if (_this.options.templateType === 'dynamic') {
+                  if (_this.options.templateType === 'scripted') {
                     return _this.trigger("page:rendered");
                   }
                 });
