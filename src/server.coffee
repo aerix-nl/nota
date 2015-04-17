@@ -64,17 +64,33 @@ module.exports = class NotaServer
       when 'scripted'
         # Wait till the page finished opening
         @document.once 'page:opened', =>
-          @renderscripted(@queue)
+          @renderScripted(@queue)
           
   renderStatic: (queue)->
     while job = queue.nextJob()
       do (job) =>
         @document.capture job
-        @document.once 'render:done', @queue.completeJob, @queue
+        @document.once 'render:done', queue.completeJob, queue
 
-  renderscripted: (queue)->
+  renderScripted: (queue)->
     # Dequeue the next job
     currentJob = queue.nextJob()
+
+    queueJob = (job)=>
+      deferred = Q.defer()
+      # If we're in an N+1 iteration and the template has already loaded
+      if @document.state is 'client:template:loaded'
+        deferred.resolve job
+      else
+        # Else we way for that
+        @document.once 'client:template:loaded', =>
+          deferred.resolve job
+        # Or unless the template doesn't decide to use our API, just wait till
+        # the page has loaded and the timeout fired. Assume that enough time
+        # for the template to get it's stuff in order.
+        @document.once 'page:loaded', =>
+          deferred.resolve job
+      deferred.promise
 
     offerData = (job)=>
       deferred = Q.defer()
@@ -89,7 +105,6 @@ module.exports = class NotaServer
       # @serve job.dataPath
       data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
 
-      console.log @document.state
       if @document.state is 'client:template:loaded'
         @document.injectData data
         deferred.resolve job
@@ -101,14 +116,13 @@ module.exports = class NotaServer
 
         @document.once 'page:loaded', =>
           if @document.state is 'page:loaded'
-            deferred.resolve @document.state
+            deferred.resolve job
           else if @document.state is 'client:init'
             deferred.reject 'client-loading'
           else if @document.state is 'client:loaded'
             deferred.reject 'template-unregistered'
           else if @document.state is 'client:template:init'
             deferred.reject 'template-loading'
-
       deferred.promise
 
     # Define render job as a promise
@@ -122,17 +136,26 @@ module.exports = class NotaServer
       queue.completeJob(meta)
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
-      unless queue.isFinished()
-        @renderscripted queue
+      unless queue.isFinished() then @renderScripted queue
+
+    error = (err)->
+      @logError "Page loaded but still in state: #{clst} (if it's a loading
+          state, consider increasing the timeout in default-config.json)"
 
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    offerData(currentJob)
-    .then renderJob
-    .then postRender
-    .catch (err)->
-      @logError "Page loaded but still in state: #{clst}"
+    if currentJob.dataPath?
+      queueJob(currentJob)
+      .then offerData
+      .then renderJob
+      .then postRender
+      .catch error
+    else
+      queueJob(currentJob)
+      .then renderJob
+      .then postRender
+      .catch error
 
   close: ->
     @trigger 'server:closing'

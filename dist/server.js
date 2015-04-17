@@ -86,7 +86,7 @@
         case 'scripted':
           return this.document.once('page:opened', (function(_this) {
             return function() {
-              return _this.renderscripted(_this.queue);
+              return _this.renderScripted(_this.queue);
             };
           })(this));
       }
@@ -99,16 +99,33 @@
         _results.push((function(_this) {
           return function(job) {
             _this.document.capture(job);
-            return _this.document.once('render:done', _this.queue.completeJob, _this.queue);
+            return _this.document.once('render:done', queue.completeJob, queue);
           };
         })(this)(job));
       }
       return _results;
     };
 
-    NotaServer.prototype.renderscripted = function(queue) {
-      var currentJob, offerData, postRender, renderJob;
+    NotaServer.prototype.renderScripted = function(queue) {
+      var currentJob, error, offerData, postRender, queueJob, renderJob;
       currentJob = queue.nextJob();
+      queueJob = (function(_this) {
+        return function(job) {
+          var deferred;
+          deferred = Q.defer();
+          if (_this.document.state === 'client:template:loaded') {
+            deferred.resolve(job);
+          } else {
+            _this.document.once('client:template:loaded', function() {
+              return deferred.resolve(job);
+            });
+            _this.document.once('page:loaded', function() {
+              return deferred.resolve(job);
+            });
+          }
+          return deferred.promise;
+        };
+      })(this);
       offerData = (function(_this) {
         return function(job) {
           var data, deferred;
@@ -116,7 +133,6 @@
           data = JSON.parse(fs.readFileSync(job.dataPath, {
             encoding: 'utf8'
           }));
-          console.log(_this.document.state);
           if (_this.document.state === 'client:template:loaded') {
             _this.document.injectData(data);
             deferred.resolve(job);
@@ -127,7 +143,7 @@
             });
             _this.document.once('page:loaded', function() {
               if (_this.document.state === 'page:loaded') {
-                return deferred.resolve(_this.document.state);
+                return deferred.resolve(job);
               } else if (_this.document.state === 'client:init') {
                 return deferred.reject('client-loading');
               } else if (_this.document.state === 'client:loaded') {
@@ -155,13 +171,18 @@
         return function(meta) {
           queue.completeJob(meta);
           if (!queue.isFinished()) {
-            return _this.renderscripted(queue);
+            return _this.renderScripted(queue);
           }
         };
       })(this);
-      return offerData(currentJob).then(renderJob).then(postRender)["catch"](function(err) {
-        return this.logError("Page loaded but still in state: " + clst);
-      });
+      error = function(err) {
+        return this.logError("Page loaded but still in state: " + clst + " (if it's a loading state, consider increasing the timeout in default-config.json)");
+      };
+      if (currentJob.dataPath != null) {
+        return queueJob(currentJob).then(offerData).then(renderJob).then(postRender)["catch"](error);
+      } else {
+        return queueJob(currentJob).then(renderJob).then(postRender)["catch"](error);
+      }
     };
 
     NotaServer.prototype.close = function() {
