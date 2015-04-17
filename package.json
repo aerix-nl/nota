@@ -1,6 +1,6 @@
 {
   "name": "nota",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents.",
   "homepage": "https://github.com/FelixAkk/nota",
   "license": "MIT",
