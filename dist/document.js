@@ -1,12 +1,10 @@
 (function() {
-  var Backbone, Document, NotaHelper, Q, fs, path, phantom, _,
+  var Backbone, Document, Path, Q, TemplateUtils, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  fs = require('fs');
 
   Q = require('q');
 
-  path = require('path');
+  Path = require('path');
 
   phantom = require('phantom');
 
@@ -14,15 +12,19 @@
 
   Backbone = require('backbone');
 
-  NotaHelper = require('./helper');
+  TemplateUtils = require('./template_utils');
 
-  Document = (function() {
+  module.exports = Document = (function() {
+    Document.prototype.pagePhases = ['page:opened', 'page:loaded', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded'];
+
     function Document(server, options) {
       this.server = server;
       this.options = options;
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       _.extend(this, Backbone.Events);
+      this.helper = new TemplateUtils();
+      this.on('all', this.setState, this);
       phantom.create((function(_this) {
         return function(phantomInstance) {
           _this.phantomInstance = phantomInstance;
@@ -46,7 +48,16 @@
             return _this.page.open(_this.server.url(), function(status) {
               if (status === 'success') {
                 _this.trigger('page:opened');
-                return _this.on('client:template:render:done', _this.onDataRendered, _this);
+                _this.on('page:loaded', function() {
+                  if (_this.options.templateType === 'static') {
+                    return _this.trigger('page:rendered');
+                  }
+                });
+                return _this.on('client:template:render:done', function() {
+                  if (_this.options.templateType === 'dynamic') {
+                    return _this.trigger("page:rendered");
+                  }
+                });
               } else {
                 throw new Error("Unable to load page: " + status);
                 _this.trigger('page:fail');
@@ -58,60 +69,46 @@
       })(this));
     }
 
-    Document.prototype.getMeta = function(callback) {
-      var getFn;
-      getFn = function() {
-        return Nota.getDocumentMeta();
+    Document.prototype.getMeta = function() {
+      var deferred, metaRequest;
+      deferred = Q.defer();
+      metaRequest = function() {
+        return typeof Nota !== "undefined" && Nota !== null ? Nota.getDocumentMeta() : void 0;
       };
-      return this.page.evaluate(getFn, (function(_this) {
-        return function(meta) {
-          if (meta == null) {
-            meta = {};
-          }
-          if (meta === {}) {
-            _this.trigger('page:no-meta');
-          } else {
-            _this.trigger('page:meta-fetched', meta);
-          }
-          return callback(meta);
-        };
-      })(this));
+      this.page.evaluate(metaRequest, deferred.resolve);
+      return deferred.promise;
     };
 
     Document.prototype.capture = function(captureOptions) {
-      var outputPath;
+      var metaPromise;
       if (captureOptions == null) {
         captureOptions = {};
       }
-      this.trigger('render:init');
-      outputPath = captureOptions.outputPath;
       this.page.evaluate(function() {
-        return $('a').each(function(idx, a) {
-          return $(a).replaceWith($('<span class="hyperlink">' + $(a).text() + '</span>')[0]);
-        });
+        if (typeof $ !== "undefined" && $ !== null) {
+          return $('a').each(function(idx, a) {
+            return $(a).replaceWith($('<span class="hyperlink">' + $(a).text() + '</span>')[0]);
+          });
+        }
       });
-      return this.getMeta((function(_this) {
+      metaPromise = this.getMeta();
+      return metaPromise.then((function(_this) {
         return function(meta) {
-          if (outputPath != null) {
-            if (NotaHelper.isDirectory(outputPath)) {
-              if (meta.filesystemName != null) {
-                outputPath = path.join(outputPath, meta.filesystemName);
-              } else {
-                outputPath = path.join(outputPath, _this.options.defaultFilename);
-              }
-            }
-            if (NotaHelper.isFile(outputPath) && !captureOptions.preserve) {
-              _this.trigger('render:overwrite', outputPath);
-            }
+          var outputPath;
+          if (meta != null) {
+            _this.trigger('page:meta-fetched', meta);
           } else {
-            if (meta.filesystemName != null) {
-              outputPath = meta.filesystemName;
-            } else {
-              outputPath = _this.options.defaultFilename;
-            }
+            _this.trigger('page:no-meta');
           }
+          outputPath = _this.helper.findOutputPath({
+            path: captureOptions.outputPath,
+            meta: meta,
+            preserve: captureOptions.preserve,
+            defaultFilename: _this.options.defaultFilename
+          });
           captureOptions.outputPath = outputPath;
-          _.extend(meta, captureOptions);
+          meta = _.extend({}, meta, captureOptions);
+          _this.trigger('render:init');
           return _this.page.render(outputPath, function() {
             return _this.trigger('render:done', meta);
           });
@@ -120,7 +117,7 @@
     };
 
     Document.prototype.onResourceRequested = function(request) {
-      this.trigger("page:resource:requested");
+      this.trigger('page:resource:requested');
       if (this.counter.indexOf(request.id) === -1) {
         this.counter.push(request.id);
         return clearTimeout(this.timer);
@@ -129,7 +126,7 @@
 
     Document.prototype.onResourceReceived = function(resource) {
       var i;
-      this.trigger("page:resource:received");
+      this.trigger('page:resource:received');
       if (resource.stage !== "end" && (resource.redirectURL == null)) {
         return;
       }
@@ -140,24 +137,26 @@
       if (this.counter.length === 0) {
         return this.timer = setTimeout((function(_this) {
           return function() {
-            return _this.trigger("page:loaded");
+            return _this.trigger('page:loaded');
           };
-        })(this), this.options.timeout);
+        })(this), this.options.resourceTimeout);
       }
     };
 
     Document.prototype.injectData = function(data) {
-      var inject;
-      this.rendered = false;
+      var deferred, inject;
+      deferred = Q.defer();
       inject = function(data) {
         return Nota.injectData(data);
       };
-      return this.page.evaluate(inject, null, data);
+      this.page.evaluate(inject, deferred.resolve, data);
+      return deferred.promise;
     };
 
-    Document.prototype.onDataRendered = function() {
-      this.rendered = true;
-      return this.trigger('page:ready');
+    Document.prototype.setState = function(event) {
+      if (_(this.pagePhases).contains(event)) {
+        return this.state = event;
+      }
     };
 
     Document.prototype.close = function() {
@@ -168,7 +167,5 @@
     return Document;
 
   })();
-
-  module.exports = Document;
 
 }).call(this);

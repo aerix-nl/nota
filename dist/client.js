@@ -17,9 +17,9 @@
       NotaClient.prototype.phantomRuntime = window._phantom != null;
 
       NotaClient.prototype.documentMeta = {
-        data: {},
-        fn: function() {},
-        context: {}
+        data: null,
+        fn: null,
+        context: null
       };
 
       function NotaClient() {

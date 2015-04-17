@@ -10,7 +10,7 @@
   },
 
   "document": {
-    "timeout":            1500,
+    "resourceTimeout":    1500,
     "defaultFilename":    "output.pdf",
     "paperSize": {
       "format":           "A4",

@@ -95,7 +95,44 @@ called `output.pdf`. When this is not want you want, simply add
 `--output=x.pdf` (which will save the file in the Nota root folder) or
 `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
+## Creating templates
 
+### Template types
+
+Nota can work with 2 template types.
+
+* Stand alone
+* Data driven
+
+### Stand alone templates
+They are either static HTML documents or webpages/apps that can get all their dependencies and data self-sufficiently. This can be declared in the template `bower.json` with:
+
+```
+"nota": { "templateType": "stand-alone" }
+```
+
+Nota will scan the `template.html` for any `<script>` tag, and if there are none, it automatically assume it's stand-alone. This will make it wait for all page resources to have finished loading and then perform the capture automatically.
+
+If there are script tags found Nota will also wait for all resources to finish loading, and then listen if the template calls the Nota API. If no `Nota.trigger 'template:init'` client API call has been made after 
+
+ It will do this by waiting for a timeout to any API call as defined in `config-default.json` to see if the template called the Nota client API with  to know if it has
+
+### Data driven templates
+These 
+If Nota finds there are 
+
+. Otherwise, it will wait an API 
+
+* Static HTML
+* Dynamic through selfsufficient JavaScript: 
+* Dynamic, driven by required data model(s) which Nota provides
+
+Here's the internal keyword Nota uses to designate each, and the role Nota takes with each:
+
+* `static`: Makes Nota a luxury equivalent of [rasterize.js](sdsdf).
+* `dynamic-stand-alone`: Makes Nota like a photographer that waits untill the page has loaded and pose for the picture
+
+takes a slightly different role for each
 ## Known problems
 
 Nota is young, experimental, and built on a still developing tech stack. There

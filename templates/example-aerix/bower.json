@@ -21,7 +21,7 @@
   },
   "nota": {
     "exampleData": "json/preview.json",
-    "defaultFilename": "output.pdf",
+    "defaultFilename": "invoice.pdf",
     "paperSize": {
       "format": "A4",
       "orientation": "portrait",

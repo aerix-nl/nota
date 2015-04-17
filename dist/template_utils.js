@@ -13,7 +13,7 @@
 
   cheerio = require('cheerio');
 
-  TemplateUtils = (function() {
+  module.exports = TemplateUtils = (function() {
     function TemplateUtils(logWarning) {
       this.logWarning = logWarning;
       _.extend(this, Backbone.Events);
@@ -167,10 +167,34 @@
       return dataPath;
     };
 
+    TemplateUtils.prototype.findOutputPath = function(options) {
+      var defaultFilename, meta, outputPath, preserve;
+      outputPath = options.outputPath, meta = options.meta, defaultFilename = options.defaultFilename, preserve = options.preserve;
+      if (outputPath != null) {
+        if (this.isDirectory(outputPath)) {
+          if ((meta != null ? meta.filesystemName : void 0) != null) {
+            outputPath = Path.join(outputPath, meta.filesystemName);
+          } else {
+            outputPath = Path.join(outputPath, defaultFilename);
+          }
+        }
+        if (this.isFile(outputPath) && !preserve) {
+          if (typeof this.logWarning === "function") {
+            this.logWarning("Overwriting with current render: " + outputPath);
+          }
+        }
+      } else {
+        if ((meta != null ? meta.filesystemName : void 0) != null) {
+          outputPath = meta.filesystemName;
+        } else {
+          outputPath = defaultFilename;
+        }
+      }
+      return outputPath;
+    };
+
     return TemplateUtils;
 
   })();
-
-  module.exports = NotaHelper;
 
 }).call(this);

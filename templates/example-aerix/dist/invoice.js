@@ -26,6 +26,7 @@
         this.fullID = bind(this.fullID, this);
         this.companyFull = bind(this.companyFull, this);
         this.isInternational = bind(this.isInternational, this);
+        this.language = bind(this.language, this);
         return Invoice.__super__.constructor.apply(this, arguments);
       }
 
