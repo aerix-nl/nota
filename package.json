@@ -1,7 +1,7 @@
 {
   "name": "nota",
   "version": "1.2.0",
-  "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents.",
+  "description": "Programmable PDF generator for static, scripted and model driven documents",
   "homepage": "https://github.com/FelixAkk/nota",
   "license": "MIT",
   "keywords": [
