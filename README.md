@@ -139,9 +139,9 @@ Nota is young, experimental, and built on a still developing tech stack. There
 are still quite some shortcomings and bugs (none that aren't likely to be
 fixed in the near future). That said, we've been able to use Nota in
 production environments already. If you take care to test your setup, verify
-the results and can live with some flaws, you should be fine. Consider the
-current version a showcase of the potential of this tech stack and the future
-of Nota. Here's some things to take into account:
+the results and can live with some workarounds, you should be fine. Consider
+the current version a showcase of the potential of this tech stack and the
+future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
 Even though WebKit supports this, due to a
@@ -163,14 +163,14 @@ PhantomJS, the loading of webfonts (even if they're locally hosted) seems
 broken. For now you'll have to install the fonts on the system itself, and
 then they'll load as expected. Needs checking if solved in PhantomJS 2.
 
-### Color definitions revert to black
+#### Color definitions revert to black
 It looks like all use of color in the CSS (for text/borders/backgrounds etc.)
-is lost and returned to black upon rendering. This can be worked around for
-the while by adding the `!important` keyword after the color declaration, e.g.
-like this `h1 { color: red !important }`. More research needed on why and
+is lost and reverted to black upon rendering. This can be worked around for
+the while by adding the `!important` keyword after all the color declaration,
+e.g. like this `h1 { color: red !important }`. More research needed on why and
 other solutions.
 
-### Paper size and zoom factor
+#### Paper size and zoom factor
 It looks like when rendering the page receives a zoom factor of about 1.068 is
 applied, causing the content flow to run longer than what is seen when
 rendered in the web browser. This is likely to be fixed, or at least allow for
@@ -188,7 +188,7 @@ proved insufficient in the flexibility and easy of producing neatly designed
 documents through a programmable interfaces.
 
 Shortly after [inventid](https://www.inventid.nl) joined in on development
-after it adopted Nota for automating the production of event tickets.
+after it adopted Nota for automating the generation of event tickets.
 
 Both Aerix and inventid are two young Dutch internetbureaus who are
 passionate about making shiny apps and contributing to open source innovation.
