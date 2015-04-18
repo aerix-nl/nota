@@ -92,7 +92,6 @@ class Nota
       preserve:   options.preserve
     }]
     jobOptions = {
-      type:     @options.document.templateType
       callback: (meta) =>
         console.log meta
         if options.logging.notify

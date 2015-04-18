@@ -114,7 +114,6 @@
         }
       ];
       jobOptions = {
-        type: this.options.document.templateType,
         callback: (function(_this) {
           return function(meta) {
             console.log(meta);

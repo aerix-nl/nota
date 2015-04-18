@@ -143,6 +143,10 @@
       }
     };
 
+    Document.prototype.isReady = function() {
+      return this.document.state === 'client:template:loaded' || this.document.state === 'page:loaded';
+    };
+
     Document.prototype.injectData = function(data) {
       var deferred, inject;
       deferred = Q.defer();

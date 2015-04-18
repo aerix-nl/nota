@@ -105,18 +105,16 @@ module.exports = class NotaServer
       # @serve job.dataPath
       data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
 
-      if @document.state is 'client:template:loaded'
-        @document.injectData data
-        deferred.resolve job
+      if @document.isReady()
+        @document.injectData(data).then -> deferred.resolve job
 
-      else
+      else # Wait till it's ready
         @document.once 'client:template:loaded', =>
-          @document.injectData data
-          deferred.resolve job
+          @document.injectData(data).then -> deferred.resolve job
 
         @document.once 'page:loaded', =>
           if @document.state is 'page:loaded'
-            deferred.resolve job
+            @document.injectData(data).then -> deferred.resolve job
           else if @document.state is 'client:init'
             deferred.reject 'client-loading'
           else if @document.state is 'client:loaded'

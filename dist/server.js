@@ -133,17 +133,21 @@
           data = JSON.parse(fs.readFileSync(job.dataPath, {
             encoding: 'utf8'
           }));
-          if (_this.document.state === 'client:template:loaded') {
-            _this.document.injectData(data);
-            deferred.resolve(job);
+          if (_this.document.isReady()) {
+            _this.document.injectData(data).then(function() {
+              return deferred.resolve(job);
+            });
           } else {
             _this.document.once('client:template:loaded', function() {
-              _this.document.injectData(data);
-              return deferred.resolve(job);
+              return _this.document.injectData(data).then(function() {
+                return deferred.resolve(job);
+              });
             });
             _this.document.once('page:loaded', function() {
               if (_this.document.state === 'page:loaded') {
-                return deferred.resolve(job);
+                return _this.document.injectData(data).then(function() {
+                  return deferred.resolve(job);
+                });
               } else if (_this.document.state === 'client:init') {
                 return deferred.reject('client-loading');
               } else if (_this.document.state === 'client:loaded') {

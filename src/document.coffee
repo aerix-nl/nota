@@ -29,8 +29,8 @@ module.exports = class Document
         @counter = []
         @timer = null
 
-        # TODO: Get this stuff from the template definition (extend bower.json?)
         @page.set 'paperSize', @options.paperSize
+
         # TODO: Find for a fix that makes the zoomFactor work again, and after
         # find a real fix for this workaround to counter a strange zoom factor.
         # @page.zoomFactor = 0.9360
@@ -117,6 +117,9 @@ module.exports = class Document
         @trigger 'page:loaded'
       , @options.resourceTimeout
 
+  isReady: ->
+    @document.state is 'client:template:loaded' or @document.state is 'page:loaded'
+    
   injectData: (data)->
     deferred = Q.defer()
     inject = (data)->
