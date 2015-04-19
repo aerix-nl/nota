@@ -112,6 +112,7 @@ module.exports = class NotaServer
         @document.once 'client:template:loaded', =>
           @document.injectData(data).then -> deferred.resolve job
 
+        # Or else if the template doesn't interface with the Nota API
         @document.once 'page:loaded', =>
           if @document.state is 'page:loaded'
             @document.injectData(data).then -> deferred.resolve job

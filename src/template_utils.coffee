@@ -36,7 +36,7 @@ module.exports = class TemplateUtils
     index = {}
 
     for dir in templateDirs
-      definition = @getTemplateDefinition Path.join(basePath, dir)
+      definition = @getTemplateDefinition Path.join(basePath, dir), logWarnings
       if definition.meta is 'not template'
         warningMsg = "Template #{chalk.magenta(dir)} has no mandatory
         template.html file #{chalk.gray '(omitting template)'}"
@@ -116,7 +116,7 @@ module.exports = class TemplateUtils
         "#{templatesPath}/#{templatePath}")
         templatePath = _templatePath
 
-      else if (match = _(@getTemplatesIndex(templatesPath)).findWhere {name: templatePath})?
+      else if (match = _(@getTemplatesIndex(templatesPath, false)).findWhere {name: templatePath})?
         throw new Error("No template at '#{templatePath}'. But we did find a
         template which declares it's name as such. It's path is '#{match.dir}'")
 

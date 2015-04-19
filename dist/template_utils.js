@@ -52,7 +52,7 @@
       index = {};
       for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
         dir = templateDirs[_i];
-        definition = this.getTemplateDefinition(Path.join(basePath, dir));
+        definition = this.getTemplateDefinition(Path.join(basePath, dir), logWarnings);
         if (definition.meta === 'not template') {
           warningMsg = "Template " + (chalk.magenta(dir)) + " has no mandatory template.html file " + (chalk.gray('(omitting template)'));
           if (logWarnings) {
@@ -132,7 +132,7 @@
           templatePath = _templatePath;
         } else if (this.isTemplate(_templatePath = "" + templatesPath + "/" + templatePath)) {
           templatePath = _templatePath;
-        } else if ((match = _(this.getTemplatesIndex(templatesPath)).findWhere({
+        } else if ((match = _(this.getTemplatesIndex(templatesPath, false)).findWhere({
           name: templatePath
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
