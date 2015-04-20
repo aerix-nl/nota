@@ -13,5 +13,6 @@
     "requirejs-text": "2.0.13",
     "requirejs-plugins": "1.0.3",
     "underscore.string": "2.3.3"
-  }
+  },
+  "main": "dist/client.js"
 }

@@ -99,10 +99,7 @@ called `output.pdf`. When this is not want you want, simply add
 `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
 ## Creating templates
-
-### Template types
-
-Right now we recommend copying either one of the following example templates:
+Right now we recommend copying and adapting either one of the following example templates:
 
 * Static template example: `example-doc`
 * Model driven scripted template example: `example-invoice`

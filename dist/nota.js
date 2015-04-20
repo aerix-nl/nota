@@ -1,5 +1,5 @@
 (function() {
-  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, _,
+  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -10,7 +10,7 @@
 
   _ = require('underscore')._;
 
-  _.str = require('underscore.string');
+  s = require('underscore.string');
 
   open = require('open');
 
@@ -84,7 +84,7 @@
       }
       definition = this.helper.getTemplateDefinition(this.options.templatePath);
       if (definition.meta === "not template") {
-        this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
+        this.logError("Template " + (chalk.cyan(definition.name)) + " has no mandatory " + (chalk.cyan('template.html')) + " file");
         return;
       }
       this.server = new NotaServer(this.options, {
@@ -184,18 +184,18 @@
           dirName: _.reduce(_.keys(index), fold, headerDir.length),
           name: _.reduce(_(_(index).values()).pluck('name'), fold, headerName.length)
         };
-        headerDir = _.str.pad(headerDir, lengths.dirName, ' ', 'right');
-        headerName = _.str.pad(headerName, lengths.name + 8, ' ', 'left');
+        headerDir = s.pad(headerDir, lengths.dirName, ' ', 'right');
+        headerName = s.pad(headerName, lengths.name + 8, ' ', 'left');
         console.log("nota " + chalk.gray(headerDir + headerName + ' ' + headerVersion));
         templates = (function() {
           var _results;
           _results = [];
           for (dir in index) {
             definition = index[dir];
-            dir = _.str.pad(definition.dir, lengths.dirName, ' ', 'right');
-            name = _.str.pad(definition.name, lengths.name + 8, ' ', 'left');
+            dir = s.pad(definition.dir, lengths.dirName, ' ', 'right');
+            name = s.pad(definition.name, lengths.name + 8, ' ', 'left');
             version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(console.log("nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
+            _results.push(console.log("nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
           }
           return _results;
         })();
@@ -212,7 +212,7 @@
     };
 
     Nota.prototype.logEvent = function(event) {
-      if (_.str.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
+      if (s.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
         return;
       }
       return console.warn("nota " + chalk.bgBlue.black('EVENT') + ' ' + event);

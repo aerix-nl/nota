@@ -1,10 +1,10 @@
 (function() {
-  var Backbone, Document, JobQueue, NotaServer, Q, TemplateUtils, express, fs, http, open, phantom, _,
+  var Backbone, Document, JobQueue, NotaServer, Q, TemplateUtils, express, fs, http, open, phantom, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
 
-  _.str = require('underscore.string');
+  s = require('underscore.string');
 
   http = require('http');
 
@@ -139,11 +139,13 @@
             });
           } else {
             _this.document.once('client:template:loaded', function() {
+              _this.document.off('page:loaded');
               return _this.document.injectData(data).then(function() {
                 return deferred.resolve(job);
               });
             });
             _this.document.once('page:loaded', function() {
+              _this.document.off('client:template:loaded');
               if (_this.document.state === 'page:loaded') {
                 return _this.document.injectData(data).then(function() {
                   return deferred.resolve(job);

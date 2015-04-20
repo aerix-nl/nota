@@ -2,7 +2,7 @@ nomnom        = require('nomnom')
 fs            = require('fs')
 Path          = require('path')
 _             = require('underscore')._
-_.str         = require('underscore.string')
+s             = require('underscore.string')
 open          = require('open')
 chalk         = require('chalk')
 notifier      = require('node-notifier')
@@ -64,7 +64,7 @@ class Nota
 
     definition = @helper.getTemplateDefinition @options.templatePath
     if definition.meta is "not template"
-      @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
+      @logError "Template #{chalk.cyan(definition.name)} has no mandatory #{chalk.cyan 'template.html'} file"
       return
 
     # Start the server
@@ -144,16 +144,16 @@ class Nota
         dirName: _.reduce _.keys(index), fold, headerDir.length
         name:    _.reduce _(_(index).values()).pluck('name'), fold, headerName.length
 
-      headerDir     = _.str.pad headerDir,  lengths.dirName, ' ', 'right'
-      headerName    = _.str.pad headerName, lengths.name + 8, ' ', 'left'
+      headerDir     = s.pad headerDir,  lengths.dirName, ' ', 'right'
+      headerName    = s.pad headerName, lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
       console.log "nota "+ chalk.gray(headerDir + headerName + ' ' + headerVersion)
       templates = for dir, definition of index
-        dir     = _.str.pad definition.dir,  lengths.dirName, ' ', 'right'
-        name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
+        dir     = s.pad definition.dir,  lengths.dirName, ' ', 'right'
+        name    = s.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
-        console.log "nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)
+        console.log "nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make execution stop here with --list
 
   logWarning: ( warningMsg )->
@@ -164,7 +164,7 @@ class Nota
 
   logEvent: ( event )=>
     # To prevent the output being spammed full of resource log events we allow supressing it
-    if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
+    if s.startsWith(event, "page:resource") and not @options.logging.pageResources then return
     
     console.warn "nota " + chalk.bgBlue.black('EVENT') + ' ' + event
 

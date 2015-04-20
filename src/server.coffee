@@ -1,5 +1,5 @@
 _             = require('underscore')._
-_.str         = require('underscore.string')
+s             = require('underscore.string')
 http          = require('http')
 express       = require('express')
 phantom       = require('phantom')
@@ -110,10 +110,13 @@ module.exports = class NotaServer
 
       else # Wait till it's ready
         @document.once 'client:template:loaded', =>
+          @document.off 'page:loaded'
           @document.injectData(data).then -> deferred.resolve job
 
         # Or else if the template doesn't interface with the Nota API
         @document.once 'page:loaded', =>
+          @document.off 'client:template:loaded'
+          
           if @document.state is 'page:loaded'
             @document.injectData(data).then -> deferred.resolve job
           else if @document.state is 'client:init'
