@@ -134,7 +134,7 @@
     };
 
     Nota.prototype.settleOptions = function(args, defaults) {
-      var e, options;
+      var dataRequired, e, options;
       options = _.extend({}, defaults);
       options = _.extend(options, {
         templatePath: args.template,
@@ -157,13 +157,14 @@
         options.preserve = args.preserve;
       }
       options.templatePath = this.helper.findTemplatePath(options);
-      options.dataPath = this.helper.findDataPath(options);
       try {
         _.extend(options.document, this.helper.getTemplateDefinition(options.templatePath).nota);
       } catch (_error) {
         e = _error;
         this.logWarning(e);
       }
+      dataRequired = options.document.modelDriven ? true : false;
+      options.dataPath = this.helper.findDataPath(options, dataRequired);
       return options;
     };
 

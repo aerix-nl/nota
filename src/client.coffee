@@ -21,7 +21,7 @@ define ['backbone', 'json'], ->
   # we want to allow to be written as if require wasn't configured
   # before, so the template author doesn't have to worry about
   # unexpected side effects from the config Nota set earlier.
-  require.config({})
+  requirejs.config({})
 
   class NotaClient
     # window._phatom is defined it we're running in PhantomJS

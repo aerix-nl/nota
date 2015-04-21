@@ -166,9 +166,13 @@
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          _this.document.once('page:rendered', function() {
-            return _this.document.capture(job);
-          });
+          if (_this.document.state === 'page:loaded') {
+            _this.document.capture(job);
+          } else {
+            _this.document.once('page:rendered', function() {
+              return _this.document.capture(job);
+            });
+          }
           _this.document.once('render:done', deferred.resolve);
           return deferred.promise;
         };

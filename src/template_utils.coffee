@@ -134,7 +134,7 @@ module.exports = class TemplateUtils
     { templatePath, templatesPath } = options
     # Exit unless the --template and --data are passed
     unless templatePath?
-      throw new Error("Please provide a template with --template=<directory>")
+      throw new Error("Please provide a template with #{chalk.cyan '--template=<directory>'}")
         
     # Find the correct template path
     unless @isTemplate(templatePath)
@@ -151,10 +151,10 @@ module.exports = class TemplateUtils
         throw new Error("No template at '#{templatePath}'. But we did find a
         template which declares it's name as such. It's path is '#{match.dir}'")
 
-      else throw new Error("Failed to find template '#{templatePath}'.")
+      else throw new Error("Failed to find template #{chalk.cyan templatePath}.")
     templatePath
 
-  findDataPath: ( options ) ->
+  findDataPath: ( options, required ) ->
     { dataPath, templatePath } = options
     if dataPath?
       if @isData(dataPath)
@@ -168,7 +168,10 @@ module.exports = class TemplateUtils
       @logWarning? "No data provided. Using example data as found in template definition."
       dataPath = _dataPath
     else
-      throw new Error("Please provide data with --data=<file path>")
+      if required then throw new Error("Please provide data with #{chalk.cyan '--data=<file path>'}")
+      else @logWarning? "No data has been provided or example data found. If
+      your template is model driven and requires data, please provide data
+      with #{chalk.cyan '--data=<file path>'}"
     dataPath
 
 

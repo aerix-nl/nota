@@ -12,7 +12,7 @@
 
   define(['backbone', 'json'], function() {
     var NotaClient;
-    require.config({});
+    requirejs.config({});
     NotaClient = (function() {
       NotaClient.prototype.phantomRuntime = window._phantom != null;
 

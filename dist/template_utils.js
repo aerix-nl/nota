@@ -157,7 +157,7 @@
       var match, templatePath, templatesPath, _templatePath;
       templatePath = options.templatePath, templatesPath = options.templatesPath;
       if (templatePath == null) {
-        throw new Error("Please provide a template with --template=<directory>");
+        throw new Error("Please provide a template with " + (chalk.cyan('--template=<directory>')));
       }
       if (!this.isTemplate(templatePath)) {
         if (this.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
@@ -169,13 +169,13 @@
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
-          throw new Error("Failed to find template '" + templatePath + "'.");
+          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ".");
         }
       }
       return templatePath;
     };
 
-    TemplateUtils.prototype.findDataPath = function(options) {
+    TemplateUtils.prototype.findDataPath = function(options, required) {
       var dataPath, templatePath, _dataPath;
       dataPath = options.dataPath, templatePath = options.templatePath;
       if (dataPath != null) {
@@ -194,7 +194,13 @@
         }
         dataPath = _dataPath;
       } else {
-        throw new Error("Please provide data with --data=<file path>");
+        if (required) {
+          throw new Error("Please provide data with " + (chalk.cyan('--data=<file path>')));
+        } else {
+          if (typeof this.logWarning === "function") {
+            this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
+          }
+        }
       }
       return dataPath;
     };

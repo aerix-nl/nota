@@ -130,7 +130,8 @@ module.exports = class NotaServer
     # Define render job as a promise
     renderJob = (job)=>
       deferred = Q.defer()
-      @document.once 'page:rendered', => @document.capture job
+      if @document.state is 'page:loaded' then @document.capture job
+      else @document.once 'page:rendered', => @document.capture job
       @document.once 'render:done', deferred.resolve
       deferred.promise
 

@@ -120,10 +120,11 @@ class Nota
     options.preserve = args.preserve               if args.preserve?
     
     options.templatePath =  @helper.findTemplatePath(options)
-    options.dataPath =      @helper.findDataPath(options)
     try
       _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota
     catch e then @logWarning e
+    dataRequired = if options.document.modelDriven then true else false
+    options.dataPath =      @helper.findDataPath(options, dataRequired)
     return options
 
 

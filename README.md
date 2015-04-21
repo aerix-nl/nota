@@ -28,9 +28,10 @@ server.render jobs
 ```
 
 ## Setup
-Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems)) in the depencencies that are still being
-worked out, Nota is a bit picky on it's environment and dependencies. We
-recommend running Nota in a virtual environment, and this is easy with
+Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-
+problems)) in the depencencies that are still being worked out, Nota is a bit
+picky on it's environment and dependencies. We recommend running Nota in a
+virtual environment, and this is easy with
 [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and
 isolates conflict. So for your convenience, we have included a Vagrant machine
 specification, but you can also install is as usual directly on your machine.
@@ -98,35 +99,67 @@ called `output.pdf`. When this is not want you want, simply add
 `--output=x.pdf` (which will save the file in the Nota root folder) or
 `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
+
 ## Creating templates
-Right now we recommend copying and adapting either one of the following example templates:
+Right now we recommend copying and adapting either one of the following
+example templates:
 
 * Static template example: `example-doc`
 * Model driven scripted template example: `example-invoice`
 
-### Difference between static, dynamic and model driven
-Nota will scan the `template.html` for any `<script>` tag, and if there are none, it automatically assume it's stand-alone: `static`. This will make it wait for all page resources to have finished loading and then perform the capture automatically. This makes Nota a luxury equivalent of [rasterize.js](https://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
+#### About static templates
+Nota will scan the `template.html` for any `<script>` tag, and if there are
+none, it automatically assume it's stand-alone: `static`. This will make it
+wait for all page resources to have finished loading and then perform the
+capture automatically. This makes Nota a luxury equivalent of [rasterize.js](h
+ttps://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-If there are script tags found Nota will also wait for all resources to finish loading, and then check if listen if the template calls the Nota API. If no `Nota.trigger 'template:init'` client API call has been made after 
+#### About dynamic templates 
+If there are script tags found Nota will also wait for all resources to finish
+loading before injecting data and capturing. After the resources have been
+loading it allows for some time for the template and other things to set up
+and initialize. This timeout is defined in `default-config.json`. After that
+timeout `page:loaded` is triggered internally, and if data has been provided
+for the job, the data is made available and your template can query it from
+`/data.json`. Nota will wait the same timeout again so the template and other
+stuffs have time to render the data, after that the capture is performed.
 
- It will do this by waiting for a timeout to any API call as defined in `config-default.json` to see if the template called the Nota client API with  to know if it has
+#### About Nota client API for dynamic templates
+If twice this timeout is way more than you need, you can skip this wait by
+talking to the Nota client API. Require the Nota client from the address
+`/nota.js`, which will expose the `Nota` client object which exposes
+`Nota.trigger` to send events over as strings.
 
-### Data driven templates
-These 
-If Nota finds there are 
+By triggering `'template:loaded'` you can signal the template has finished
+setup and initialization, and skip the remainder of the timeout.
 
-. Otherwise, it will wait an API 
+If your tempalte needs more time to load then you can cancel this timeout by
+triggering `'template:init'` at the start of your template initialisation.
 
-* Static HTML
-* Dynamic through selfsufficient JavaScript: 
-* Dynamic, driven by required data model(s) which Nota provides
+If you've provided data for a job, you can then wait for it's injection by
+listening to `Nota.on 'data:injected'` with a callback that will receive the
+data. During preview you can use `Nota.getData(callback)` to fetch the data. A
+little abstraction for AJAX'ing `/data.json`.
 
-Here's the internal keyword Nota uses to designate each, and the role Nota takes with each:
+When your template is finished rendering you can skip the remainder of timeout
+again by triggering `'template:render:done'` after which the capture is
+performed.
 
-* `static`: 
-* `dynamic-stand-alone`: Makes Nota like a photographer that waits untill the page has loaded and pose for the picture
+If instead you need more time, you can cancel the timeout by triggering
+`'template:render:start'`.
 
-takes a slightly different role for each
+Per job you can provide Nota with meta data about the current document
+capture. This also provides a way. Just before capture Nota 'asks' for the
+meta data. You can also use this to let your template suggest a file name.
+
+Use `Nota.setDocumentMeta` to set a object (or function that yields such an
+object) like:
+```
+meta = {
+  id: '44'
+  documentName: 'Invoice 2013.0044'
+  filesystemName: 'Invoice_2014.0044-Client_Name.pdf'
+````
 
 ## Known problems
 
