@@ -90,9 +90,10 @@ module.exports = class TemplateUtils
       deps    = args[2].dependencies?    and _.keys(args[2].dependencies).length > 0
       devDeps = args[2].devDependencies? and _.keys(args[2].devDependencies).length > 0
       if (deps or devDeps) and not @isDirectory depsDir
+        mng = if args[0] is 'node' then 'npm' else args[0]
         @logWarning? "Template #{chalk.cyan templateDir} has #{defType}
         definition with dependencies, but no #{defType} #{args[1]} have
-        been installed yet. Forgot #{chalk.cyan args[0]+' install'}?"
+        been installed yet. Forgot #{chalk.cyan mng+' install'}?"
 
     bowerPath = Path.join templateDir, "bower.json"
     if not bower? and @isFile bowerPath

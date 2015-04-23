@@ -51,6 +51,7 @@ bower install --allow-root > /dev/null 2>&1
 
 echo " - Installing example templates"
 git submodule update --init --recursive > /dev/null 2>&1
+for dir in $(ls templates); do `cd "templates/$dir"; npm install; bower install`; done
 
 echo " "
 echo "Provisioning finished."

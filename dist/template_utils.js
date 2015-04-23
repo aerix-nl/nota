@@ -106,7 +106,7 @@
       var bowerPath, checknwarn, nodePath;
       checknwarn = (function(_this) {
         return function(args) {
-          var defType, deps, depsDir, devDeps;
+          var defType, deps, depsDir, devDeps, mng;
           if (args[2] == null) {
             return;
           }
@@ -115,7 +115,8 @@
           deps = (args[2].dependencies != null) && _.keys(args[2].dependencies).length > 0;
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
-            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " have been installed yet. Forgot " + (chalk.cyan(args[0] + ' install')) + "?") : void 0;
+            mng = args[0] === 'node' ? 'npm' : args[0];
+            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " have been installed yet. Forgot " + (chalk.cyan(mng + ' install')) + "?") : void 0;
           }
         };
       })(this);
