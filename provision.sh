@@ -1,21 +1,33 @@
 #!/bin/bash
-if [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-  PCKMNGR = "apt-get"
-elif [ "$(uname)" == "Darwin" ]; then
-  PCKMNGR = "brew"
-elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
-  PCKMNGR = "choco"
+
+# Require sudo for package manager commands
+if [[ $UID != 0 ]]; then
+    echo "Please run this script with sudo:"
+    echo "sudo $0 $*"
+    exit 1
 fi
 
+
+# Select the right package manager
+if [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+  PCKMNGR="apt-get"
+elif [ "$(uname)" == "Darwin" ]; then
+  PCKMNGR="brew"
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
+  PCKMNGR="choco"
+fi
+
+
+# Start provisioning
 echo "Installing Nota dependencies (needs root permission)"
 echo " - Updating package manager index"
-`$PCKMNGR` update > /dev/null 2>&1
+$PCKMNGR update > /dev/null 2>&1
 
 echo " - Upgrading all current packages"
-`$PCKMNGR` upgrade -y > /dev/null 2>&1
+$PCKMNGR upgrade -y > /dev/null 2>&1
 
 echo " - Installing new packages"
-`$PCKMNGR` install git curl unzip npm nodejs phantomjs -y > /dev/null 2>&1
+$PCKMNGR install git curl unzip npm nodejs phantomjs -y > /dev/null 2>&1
 [ -f /usr/bin/node ] || ln -s /usr/bin/nodejs /usr/bin/node
 
 echo " - Installing SASS"
