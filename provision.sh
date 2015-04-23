@@ -18,24 +18,22 @@ echo " - Installing NPM"
 npm install -g npm > /dev/null 2>&1
 
 echo " - Installing Bower"
-# Required to make npm shut up about statistic sending
+# Required to make npm and bower shut up about statistic sending
 export CI=true
 npm install -g sass bower grunt grunt-cli > /dev/null 2>&1
 
 echo " - Installing NPM dependencies ('npm install')"
-# sudo chown username:username ~/.config/configstore/bower-github.yml
 npm install > /dev/null 2>&1
 
 echo " - Installing Bower dependencies ('bower install')"
 # sudo chown username:username ~/.config/configstore/bower-github.yml
 bower install --allow-root > /dev/null 2>&1
 
+echo " - Installing example templates"
+git submodule update --init --recursive > /dev/null 2>&1
+
 echo " "
 echo "Provisioning finished."
 echo " " 
 echo "Good luck with Nota!"
 echo "And remember: always enjoy open source ;)"
-
-# echo "run 'vagrant ssh' to enter the machine, then 'cd /vagrant'"
-# echo "and run one of the examples with 'node dist/nota.js --template=/vagrant/examples/hello_world --data=/vagrant/examples/hello_world/data.json'"
-
