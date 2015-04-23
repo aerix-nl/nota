@@ -62,7 +62,7 @@ class Nota
       @logError e
       return
 
-    definition = @helper.getTemplateDefinition @options.templatePath
+    definition = @helper.getTemplateDefinition @options.templatePath, false
     if definition.meta is "not template"
       @logError "Template #{chalk.cyan(definition.name)} has no mandatory #{chalk.cyan 'template.html'} file"
       return

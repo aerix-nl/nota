@@ -133,7 +133,7 @@
 
     TemplateUtils.prototype.getExampleDataPath = function(templatePath) {
       var definition, exampleDataPath, _ref;
-      definition = this.getTemplateDefinition(templatePath);
+      definition = this.getTemplateDefinition(templatePath, false);
       if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
         exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
         if (this.isData(exampleDataPath)) {

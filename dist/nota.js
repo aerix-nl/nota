@@ -82,7 +82,7 @@
         this.logError(e);
         return;
       }
-      definition = this.helper.getTemplateDefinition(this.options.templatePath);
+      definition = this.helper.getTemplateDefinition(this.options.templatePath, false);
       if (definition.meta === "not template") {
         this.logError("Template " + (chalk.cyan(definition.name)) + " has no mandatory " + (chalk.cyan('template.html')) + " file");
         return;

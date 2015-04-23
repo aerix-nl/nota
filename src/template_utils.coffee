@@ -109,7 +109,7 @@ module.exports = class TemplateUtils
   # Little bundle of logic that we can call later if no data has been provided
   # to see if the template specified any example data.
   getExampleDataPath: (templatePath)->
-    definition = @getTemplateDefinition templatePath
+    definition = @getTemplateDefinition templatePath, false
     if definition['nota']?['exampleData']?
       exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
       if @isData exampleDataPath then return exampleDataPath

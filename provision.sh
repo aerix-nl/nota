@@ -28,7 +28,7 @@ npm install > /dev/null 2>&1
 
 echo " - Installing Bower dependencies ('bower install')"
 # sudo chown username:username ~/.config/configstore/bower-github.yml
-bower install > /dev/null 2>&1
+bower install --allow-root > /dev/null 2>&1
 
 echo " "
 echo "Provisioning finished."
