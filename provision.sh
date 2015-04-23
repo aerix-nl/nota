@@ -9,22 +9,26 @@ apt-get upgrade -y > /dev/null 2>&1
 echo " - Installing new packages"
 apt-get install git curl unzip npm nodejs phantomjs -y > /dev/null 2>&1
 [ -f /usr/bin/node ] || ln -s /usr/bin/nodejs /usr/bin/node
+
+echo " - Installing SASS"
+\curl -sSL https://get.rvm.io | bash -s stable --ruby > /dev/null 2>&1
 gem install sass > /dev/null 2>&1
 
-echo " - Installing npm"
-# cd /vagrant
-# HOME=/home/vagrant # Apparently this can be set with the -H option in sudo but that did not work for me for some reason
+echo " - Installing NPM"  
 npm install -g npm > /dev/null 2>&1
-npm install > /dev/null 2>&1
 
-# Required to make npm shut up about statistic sending 
-echo " - Installing bower"
+echo " - Installing Bower"
+# Required to make npm shut up about statistic sending
 export CI=true
 npm install -g sass bower grunt grunt-cli > /dev/null 2>&1
 
-echo " - Running 'bower install'"
+echo " - Installing NPM dependencies ('npm install')"
+# sudo chown username:username ~/.config/configstore/bower-github.yml
+npm install > /dev/null 2>&1
+
+echo " - Installing Bower dependencies ('bower install')"
+# sudo chown username:username ~/.config/configstore/bower-github.yml
 bower install > /dev/null 2>&1
-# sudo -u vagrant bower install > /dev/null 2>&1
 
 echo " "
 echo "Provisioning finished."

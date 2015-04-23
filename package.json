@@ -51,8 +51,5 @@
     "node-inspector": "0.9.1",
     "require": "0.5.0"
   },
-  "main": "./dist/nota.js",
-  "scripts": {
-    "postinstall": "node ./node_modules/bower/bin/bower install"
-  }
+  "main": "./dist/nota.js"
 }
