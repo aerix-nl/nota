@@ -68,7 +68,7 @@ module.exports = class NotaServer
   #       outputPath: options.outputPath
   #       preserve:   options.preserve
   #     }]
-  # 
+  #
   #   options = {
   #     callback: ->
   #   }
@@ -145,7 +145,7 @@ module.exports = class NotaServer
 
       queue.completeJob(meta)
       @log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
-      
+
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderScripted queue

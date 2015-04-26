@@ -29,9 +29,12 @@
 
     Nota.prototype.meta = require('../package.json');
 
-    function Nota() {
+    function Nota(logging) {
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var definition, e, logging;
+      var definition, e;
+      if (logging != null) {
+        this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      }
       this.helper = new TemplateUtils(this.logWarning);
       nomnom.options({
         template: {
@@ -108,21 +111,21 @@
         outputPath: options.outputPath,
         preserve: options.preserve
       };
-      return this.server.queue([job]).then((function(_this) {
+      return this.server.queue([job, job]).then((function(_this) {
         return function(meta) {
           if (options.logging.notify) {
             notifier.on('click', function() {
-              if (meta.length = 1) {
+              if (meta.length === 1) {
                 return open(meta[0].outputPath);
               } else if (meta.length > 1) {
-                return open(Path.dirname(meta[0].outputPath));
+                return open(Path.dirname(Path.resolve(meta[0].outputPath)));
               } else {
 
               }
             });
             notifier.notify({
               title: "Nota: render jobs finished",
-              message: "" + jobs.length + " document(s) captured to .PDF",
+              message: "" + meta.length + " document(s) captured to .PDF",
               icon: Path.join(__dirname, '../assets/images/icon.png'),
               wait: true
             });
