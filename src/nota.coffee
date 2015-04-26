@@ -47,7 +47,7 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: -> @meta.version 
+        callback: -> @meta.version
 
       resources:
         flag: true
@@ -102,7 +102,7 @@ class Nota
           else # meta = []
 
         # Send notification
-        notifier.notify 
+        notifier.notify
           title:    "Nota: render jobs finished"
           message:  "#{jobs.length} document(s) captured to .PDF"
           icon:     Path.join(__dirname, '../assets/images/icon.png')
