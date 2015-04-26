@@ -1,7 +1,0 @@
-{
-"version": 3,
-"mappings": "AAEA,IAAK;EACH,gBAAgB,EAAE,SAAS;;AAG7B,IAAK;EACH,gBAAgB,EAAE,KAAK;EACvB,KAAK,EAAE,KAAK;EAEZ,UAAU,EAAE,KAAK;ECkVjB,eAAwC,ECnT/B,6BAAkD;EDmT3D,kBAAwC,ECnT/B,6BAAkD;EDmT3D,UAAwC,ECnT/B,6BAAkD;EDmT3D,eAAwC,EE1U5B,UAAmB;EF0U/B,kBAAwC,EE1U5B,UAAmB;EF0U/B,UAAwC,EE1U5B,UAAmB;EHL/B,QAAQ,EAAE,QAAQ;EAClB,MAAM,EAAE,SAAS",
-"sources": ["preview.scss","../../../../../.rvm/gems/ruby-2.1.1/gems/compass-core-1.0.1/stylesheets/compass/_support.scss","../../../../../.rvm/gems/ruby-2.1.1/gems/compass-core-1.0.1/stylesheets/compass/css3/_box-shadow.scss","../../../../../.rvm/gems/ruby-2.1.1/gems/compass-core-1.0.1/stylesheets/compass/css3/_box-sizing.scss"],
-"names": [],
-"file": "preview.css"
-}

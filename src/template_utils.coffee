@@ -1,5 +1,6 @@
 fs            = require('fs')
 _             = require('underscore')._
+s             = require('underscore.string')
 Backbone      = require('backbone')
 Path          = require('path')
 chalk         = require('chalk')
@@ -36,10 +37,10 @@ module.exports = class TemplateUtils
     index = {}
 
     for dir in templateDirs
-      definition = @getTemplateDefinition Path.join(basePath, dir)
+      definition = @getTemplateDefinition Path.join(basePath, dir), logWarnings
       if definition.meta is 'not template'
-        warningMsg = "Template #{chalk.magenta(dir)} has no mandatory
-        template.html file #{chalk.gray '(omitting template)'}"
+        warningMsg = "Template #{chalk.cyan(dir)} has no mandatory
+        #{chalk.cyan 'template.html'} file #{chalk.gray '(omitting template)'}"
         @logWarning? warningMsg if logWarnings
         continue
       # Save the definition in the index with it's name as the key
@@ -50,10 +51,10 @@ module.exports = class TemplateUtils
   getTemplateDefinition: ( dir, logWarnings = true ) ->
     unless @isDirectory dir then throw new Error "Template '#{dir}' not found"
     # Get the template definition
-    isDefined = @isFile( dir+"/bower.json")
+    isDefined = @isFile( Path.join dir, "bower.json" )
 
     if not isDefined
-      warningMsg = "Template #{chalk.magenta(dir)} has no 'bower.json' definition
+      warningMsg = "Template #{chalk.cyan(dir)} has no #{chalk.cyan 'bower.json'} definition
       #{chalk.gray '(optional, but recommended)'}"
       @logWarning? warningMsg if logWarnings
       templateDefinition =
@@ -62,48 +63,79 @@ module.exports = class TemplateUtils
         name: Path.basename(dir)
         meta: 'not found'
     else
-      definitionPath = dir+"/bower.json"
+      definitionPath = Path.join dir, "bower.json"
       templateDefinition = JSON.parse fs.readFileSync definitionPath
       templateDefinition.meta = 'read'
+
+      # Not essential, but try to give the user a heads up about uninstalled dependencies
+      if logWarnings then @checkDependencies(dir)
+
       # TODO: check template definition against scheme for reuiqre properties
       # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
 
     # Check requirements for template
-    if not fs.existsSync(dir+"/template.html")
+    if not fs.existsSync( Path.join dir, "template.html" )
       templateDefinition.meta = 'not template'
 
     # Supplement the definition with some meta data that is now available
     templateDefinition.dir = Path.basename(dir)
     return templateDefinition
 
+  # Logging some warnings about uninstalled dependencies when needed
+  checkDependencies: (templateDir)->
+    checknwarn = (args)=>
+      return unless args[2]?
+      depsDir = Path.join templateDir, args[0]+'_'+args[1] # e.g 'node_modules'
+      defType = s.capitalize args[0] # e.g. 'Bower', 'Node'
+      deps    = args[2].dependencies?    and _.keys(args[2].dependencies).length > 0
+      devDeps = args[2].devDependencies? and _.keys(args[2].devDependencies).length > 0
+      if (deps or devDeps) and not @isDirectory depsDir
+        mngr = if args[0] is 'node' then 'npm' else args[0]
+        @logWarning? "Template #{chalk.cyan templateDir}
+        has #{defType} definition with dependencies, but no #{defType}
+        #{args[1]} seem installed yet. Forgot #{chalk.cyan mngr+' install'}?"
+
+    bowerPath = Path.join templateDir, "bower.json"
+    if @isFile bowerPath
+      bower = JSON.parse fs.readFileSync bowerPath
+    
+    checknwarn ['bower', 'components', bower]
+
+    nodePath = Path.join templateDir, "package.json"
+    if @isFile nodePath
+      node = JSON.parse fs.readFileSync nodePath
+    
+    checknwarn ['node', 'modules', node]
+
   # Little bundle of logic that we can call later if no data has been provided
   # to see if the template specified any example data.
   getExampleDataPath: (templatePath)->
-    definition = @getTemplateDefinition templatePath
+    definition = @getTemplateDefinition templatePath, false
     if definition['nota']?['exampleData']?
       exampleDataPath = Path.join templatePath, definition['nota']['exampleData']
       if @isData exampleDataPath then return exampleDataPath
-      else @logWarning? "Example data path declaration found in template
-      definition, but file doesn't exist."
+      else if logWarnings
+        @logWarning? "Example data path declaration found in template
+        definition, but file doesn't exist."
 
   # Inspect the template HTML and see if it contains JavaScript, if it
   # contains none, we assume it's a static template. If it does contain any
-  # JavaScript, all bets are off and we assume it to be a dynamic template
+  # JavaScript, all bets are off and we assume it to be a scripted template
   # (even if the JavaScript might not actually modify the DOM). Often a
-  # dynamic template will load within the timeout, but it might take
+  # scripted template will load within the timeout, but it might take
   # considerable time, so we allow it to interface with the client API to tell
   # Nota when it's ready for capture. Also, it might need data to be injected
   # to render.
   getTemplateType: (templatePath)->
     html = fs.readFileSync Path.join(templatePath, 'template.html'), encoding: 'utf8'
     $ = cheerio.load html
-    type = if $('script').length is 0 then 'static' else 'dynamic'
+    type = if $('script').length is 0 then 'static' else 'scripted'
 
   findTemplatePath: ( options ) ->
     { templatePath, templatesPath } = options
     # Exit unless the --template and --data are passed
     unless templatePath?
-      throw new Error("Please provide a template with --template=<directory>")
+      throw new Error("Please provide a template with #{chalk.cyan '--template=<directory>'}")
         
     # Find the correct template path
     unless @isTemplate(templatePath)
@@ -116,15 +148,17 @@ module.exports = class TemplateUtils
         "#{templatesPath}/#{templatePath}")
         templatePath = _templatePath
 
-      else if (match = _(@getTemplatesIndex(templatesPath)).findWhere {name: templatePath})?
+      else if (match = _(@getTemplatesIndex(templatesPath, false)).findWhere {name: templatePath})?
         throw new Error("No template at '#{templatePath}'. But we did find a
         template which declares it's name as such. It's path is '#{match.dir}'")
 
-      else throw new Error("Failed to find template '#{templatePath}'.")
+      else throw new Error("Failed to find template #{chalk.cyan templatePath}.")
     templatePath
 
   findDataPath: ( options ) ->
     { dataPath, templatePath } = options
+    required = options.document?.modelDriven
+
     if dataPath?
       if @isData(dataPath)
         dataPath
@@ -134,10 +168,15 @@ module.exports = class TemplateUtils
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
     else if _dataPath = @getExampleDataPath templatePath
-      @logWarning? "No data provided. Using example data as found in template definition."
+      @logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
       dataPath = _dataPath
     else
-      throw new Error("Please provide data with --data=<file path>")
+      if required is true
+        throw new Error("Please provide data with #{chalk.cyan '--data=<file path>'}")
+      else if not required?
+        @logWarning? "No data has been provided or example data found. If your
+        template is model driven and requires data, please provide data with
+        #{chalk.cyan '--data=<file path>'}"
     dataPath
 
 

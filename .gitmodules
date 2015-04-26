@@ -1,3 +1,3 @@
-[submodule "templates/ticket/qrcode.js"]
-	path = templates/ticket/qrcode.js
-	url = https://github.com/davidshimjs/qrcodejs.git
+[submodule "templates/example-invoice"]
+	path = templates/example-invoice
+	url = https://FelixAkk@github.com/aerix-nl/nota-invoice-template.git

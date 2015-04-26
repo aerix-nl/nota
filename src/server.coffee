@@ -1,5 +1,5 @@
 _             = require('underscore')._
-_.str         = require('underscore.string')
+s             = require('underscore.string')
 http          = require('http')
 express       = require('express')
 phantom       = require('phantom')
@@ -16,12 +16,15 @@ module.exports = class NotaServer
 
   constructor: ( @options, logging ) ->
     _.extend(@, Backbone.Events)
-    @helper = new TemplateUtils()
-    { @logEvent, @logError, @logWarning } = logging
+    { @log, @logEvent, @logError, @logWarning } = logging
     { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
+
+    @helper = new TemplateUtils(@logWarning)
     _.extend @options.document, templateType: @helper.getTemplateType(@templatePath)
 
+
   start: ->
+    @on 'all', @logEvent, @
     @trigger "server:init"
 
     # Start express server to serve dependencies from a unified namespaces
@@ -31,10 +34,9 @@ module.exports = class NotaServer
     # Open the server with servering the template path as root
     @app.use express.static(@templatePath)
 
+    # Serve 'template.html' by default (instead of index.html default behaviour)
     # TODO: Why does this line not work instead:
     # @app.get '/', express.static("#{@templatePath}/template.html")
-
-    # Serve 'template.html' by default (instead of index.html default behaviour)
     @app.get '/',         (req, res)-> res.redirect("/template.html")
     # Expose some extras at the first specified subpaths
     @app.use '/lib/',     express.static("#{__dirname}/")
@@ -48,33 +50,68 @@ module.exports = class NotaServer
     @trigger "server:running"
 
     return @ if @options.preview
+
     @document = new Document(@, @options.document)
+    @document.on 'all', @logEvent
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
 
   serve: ( @dataPath )->
 
-  queue: ( jobs, options ) ->
-    @queue = new JobQueue(jobs, options)
-    switch @queue.options.type
-      when 'static'
-        @document.once "page:rendered", =>
-          @renderStatic(@queue)
-      when 'dynamic'
-        # Wait till the page finished opening
-        @document.once 'page:opened', =>
-          @renderDynamic(@queue)
+  # Call with either a JobQueue instance or
+  # with (jobs , options) where
+  #
+  #   jobs = [
+  #     {
+  #       dataPath:   options.dataPath
+  #       outputPath: options.outputPath
+  #       preserve:   options.preserve
+  #     }]
+  # 
+  #   options = {
+  #     callback: ->
+  #   }
+  queue: ( ) ->
+    deferred = Q.defer()
+
+    if arguments[0] instanceof JobQueue
+      @queue = arguments[0]
+    else
+      jobs    = arguments[0]
+      options = arguments[1] or {}
+      _.extend options, {
+        deferFinish: deferred
+        templateType: @document.options.templateType
+      }
+      @queue = new JobQueue(jobs, options)
+
+    switch @queue.options.templateType
+      when 'static'   then @document.once 'page:rendered', => @renderStatic(@queue)
+      when 'scripted' then @document.once 'page:ready', =>  @renderScripted(@queue)
+
+    deferred.promise
           
   renderStatic: (queue)->
-    while job = queue.nextJob()
-      do (job) =>
-        @document.capture job
-        @document.once 'render:done', @queue.completeJob, @queue
-
-  renderDynamic: (queue)->
     # Dequeue the next job
-    currentJob = queue.nextJob()
+    job = queue.nextJob()
+    start = new Date()
+
+    @document.capture(job).then (meta)=>
+      finished = new Date()
+      meta.duration = finished-start
+
+      # Mark this one as completed.
+      queue.completeJob(meta)
+
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished() then @renderStatic queue
+
+  renderScripted: (queue)->
+    # Dequeue the next job
+    job = queue.nextJob()
+    start = new Date()
 
     offerData = (job)=>
       deferred = Q.defer()
@@ -88,54 +125,50 @@ module.exports = class NotaServer
       # rendered in your browser.
       # @serve job.dataPath
       data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
-
-      console.log @document.state
-      if @document.state is 'client:template:loaded'
-        @document.injectData data
-        deferred.resolve 'data-injected'
-        
-      else
-        @document.once 'client:template:loaded', =>
-          @document.injectData data
-          deferred.resolve 'data-injected'
-
-        @document.once 'page:loaded', =>
-          if @document.state is 'page:loaded'
-            deferred.resolve @document.state
-          else if @document.state is 'client:init'
-            deferred.reject 'client-loading'
-          else if @document.state is 'client:loaded'
-            deferred.reject 'template-unregistered'
-          else if @document.state is 'client:template:init'
-            deferred.reject 'template-loading'
+      @document.injectData(data).then -> deferred.resolve job
 
       deferred.promise
 
     # Define render job as a promise
     renderJob = (job)=>
       deferred = Q.defer()
-      @document.once 'page:rendered', => @document.capture job
+
+      if @document.state is 'page:rendered' then @document.capture job
+      else @document.once 'page:rendered', => @document.capture job
       @document.once 'render:done', deferred.resolve
+
       deferred.promise
+
+    postRender = (meta)=>
+      finished = new Date()
+      meta.duration = finished-start
+
+      queue.completeJob(meta)
+      @log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
+      
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished() then @renderScripted queue
+
+    error = (err)->
+      @logError err
 
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    offerData(currentJob)
-    .then (clst)->
-      renderJob(currentJob)
-    .then (meta)=>
-      queue.completeJob(meta)
-      # Recursively continue rendering what's left of the job queue untill
-      # it's empty, then we're finished.
-      unless queue.isFinished()
-        @renderDynamic queue
-    .catch (err)->
-      @logError "Page loaded but still in state: #{clst}"
+    if job.dataPath?
+      offerData(job)
+      .then renderJob
+      .then postRender
+      .catch error
+    else
+      renderJob(job)
+      .then postRender
+      .catch error
 
   close: ->
     @trigger 'server:closing'
     @document.close()
     @server.close()
-    process.exit()
+    @server.off 'all', @logEvent, @
 

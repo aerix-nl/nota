@@ -1,9 +1,11 @@
 (function() {
-  var Backbone, Path, TemplateUtils, chalk, cheerio, fs, _;
+  var Backbone, Path, TemplateUtils, chalk, cheerio, fs, s, _;
 
   fs = require('fs');
 
   _ = require('underscore')._;
+
+  s = require('underscore.string');
 
   Backbone = require('backbone');
 
@@ -52,9 +54,9 @@
       index = {};
       for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
         dir = templateDirs[_i];
-        definition = this.getTemplateDefinition(Path.join(basePath, dir));
+        definition = this.getTemplateDefinition(Path.join(basePath, dir), logWarnings);
         if (definition.meta === 'not template') {
-          warningMsg = "Template " + (chalk.magenta(dir)) + " has no mandatory template.html file " + (chalk.gray('(omitting template)'));
+          warningMsg = "Template " + (chalk.cyan(dir)) + " has no mandatory " + (chalk.cyan('template.html')) + " file " + (chalk.gray('(omitting template)'));
           if (logWarnings) {
             if (typeof this.logWarning === "function") {
               this.logWarning(warningMsg);
@@ -75,9 +77,9 @@
       if (!this.isDirectory(dir)) {
         throw new Error("Template '" + dir + "' not found");
       }
-      isDefined = this.isFile(dir + "/bower.json");
+      isDefined = this.isFile(Path.join(dir, "bower.json"));
       if (!isDefined) {
-        warningMsg = "Template " + (chalk.magenta(dir)) + " has no 'bower.json' definition " + (chalk.gray('(optional, but recommended)'));
+        warningMsg = "Template " + (chalk.cyan(dir)) + " has no " + (chalk.cyan('bower.json')) + " definition " + (chalk.gray('(optional, but recommended)'));
         if (logWarnings) {
           if (typeof this.logWarning === "function") {
             this.logWarning(warningMsg);
@@ -88,25 +90,58 @@
           meta: 'not found'
         };
       } else {
-        definitionPath = dir + "/bower.json";
+        definitionPath = Path.join(dir, "bower.json");
         templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
         templateDefinition.meta = 'read';
+        if (logWarnings) {
+          this.checkDependencies(dir);
+        }
       }
-      if (!fs.existsSync(dir + "/template.html")) {
+      if (!fs.existsSync(Path.join(dir, "template.html"))) {
         templateDefinition.meta = 'not template';
       }
       templateDefinition.dir = Path.basename(dir);
       return templateDefinition;
     };
 
+    TemplateUtils.prototype.checkDependencies = function(templateDir) {
+      var bower, bowerPath, checknwarn, node, nodePath;
+      checknwarn = (function(_this) {
+        return function(args) {
+          var defType, deps, depsDir, devDeps, mngr;
+          if (args[2] == null) {
+            return;
+          }
+          depsDir = Path.join(templateDir, args[0] + '_' + args[1]);
+          defType = s.capitalize(args[0]);
+          deps = (args[2].dependencies != null) && _.keys(args[2].dependencies).length > 0;
+          devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
+          if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
+            mngr = args[0] === 'node' ? 'npm' : args[0];
+            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mngr + ' install')) + "?") : void 0;
+          }
+        };
+      })(this);
+      bowerPath = Path.join(templateDir, "bower.json");
+      if (this.isFile(bowerPath)) {
+        bower = JSON.parse(fs.readFileSync(bowerPath));
+      }
+      checknwarn(['bower', 'components', bower]);
+      nodePath = Path.join(templateDir, "package.json");
+      if (this.isFile(nodePath)) {
+        node = JSON.parse(fs.readFileSync(nodePath));
+      }
+      return checknwarn(['node', 'modules', node]);
+    };
+
     TemplateUtils.prototype.getExampleDataPath = function(templatePath) {
       var definition, exampleDataPath, _ref;
-      definition = this.getTemplateDefinition(templatePath);
+      definition = this.getTemplateDefinition(templatePath, false);
       if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
         exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
         if (this.isData(exampleDataPath)) {
           return exampleDataPath;
-        } else {
+        } else if (logWarnings) {
           return typeof this.logWarning === "function" ? this.logWarning("Example data path declaration found in template definition, but file doesn't exist.") : void 0;
         }
       }
@@ -118,34 +153,35 @@
         encoding: 'utf8'
       });
       $ = cheerio.load(html);
-      return type = $('script').length === 0 ? 'static' : 'dynamic';
+      return type = $('script').length === 0 ? 'static' : 'scripted';
     };
 
     TemplateUtils.prototype.findTemplatePath = function(options) {
       var match, templatePath, templatesPath, _templatePath;
       templatePath = options.templatePath, templatesPath = options.templatesPath;
       if (templatePath == null) {
-        throw new Error("Please provide a template with --template=<directory>");
+        throw new Error("Please provide a template with " + (chalk.cyan('--template=<directory>')));
       }
       if (!this.isTemplate(templatePath)) {
         if (this.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
         } else if (this.isTemplate(_templatePath = "" + templatesPath + "/" + templatePath)) {
           templatePath = _templatePath;
-        } else if ((match = _(this.getTemplatesIndex(templatesPath)).findWhere({
+        } else if ((match = _(this.getTemplatesIndex(templatesPath, false)).findWhere({
           name: templatePath
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
-          throw new Error("Failed to find template '" + templatePath + "'.");
+          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ".");
         }
       }
       return templatePath;
     };
 
     TemplateUtils.prototype.findDataPath = function(options) {
-      var dataPath, templatePath, _dataPath;
+      var dataPath, required, templatePath, _dataPath, _ref;
       dataPath = options.dataPath, templatePath = options.templatePath;
+      required = (_ref = options.document) != null ? _ref.modelDriven : void 0;
       if (dataPath != null) {
         if (this.isData(dataPath)) {
           dataPath;
@@ -158,11 +194,17 @@
         }
       } else if (_dataPath = this.getExampleDataPath(templatePath)) {
         if (typeof this.logWarning === "function") {
-          this.logWarning("No data provided. Using example data as found in template definition.");
+          this.logWarning("No data provided. Using example data at " + (chalk.cyan(_dataPath)) + " as found in template definition.");
         }
         dataPath = _dataPath;
       } else {
-        throw new Error("Please provide data with --data=<file path>");
+        if (required === true) {
+          throw new Error("Please provide data with " + (chalk.cyan('--data=<file path>')));
+        } else if (required == null) {
+          if (typeof this.logWarning === "function") {
+            this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
+          }
+        }
       }
       return dataPath;
     };

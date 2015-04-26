@@ -1,14 +1,14 @@
 {
   "name": "nota",
-  "version": "1.2.0",
-  "description": "Nota eats your JSON + HTML template and excretes pretty PDF documents.",
-  "homepage": "https://github.com/FelixAkk/nota",
+  "version": "1.2.1",
+  "description": "Programmable PDF generator for static, scripted and model driven documents",
+  "homepage": "https://github.com/aerix-nl/nota",
   "license": "MIT",
   "keywords": [
     "PDF",
     "HTML",
     "generator",
-    "autoamtion",
+    "automation",
     "script",
     "document",
     "writing",
@@ -17,10 +17,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/FelixAkk/nota.git"
+    "url": "http://github.com/aerix-nl/nota.git"
   },
   "bugs": {
-    "url": "https://github.com/FelixAkk/nota/issues",
+    "url": "https://github.com/aerix-nl/nota/issues",
     "email": "felix@aerix.nl"
   },
   "authors": [
@@ -51,8 +51,5 @@
     "node-inspector": "0.9.1",
     "require": "0.5.0"
   },
-  "main": "./dist/nota.js",
-  "scripts": {
-    "postinstall": "node ./node_modules/bower/bin/bower install"
-  }
+  "main": "./dist/server.js"
 }

@@ -2,7 +2,7 @@ nomnom        = require('nomnom')
 fs            = require('fs')
 Path          = require('path')
 _             = require('underscore')._
-_.str         = require('underscore.string')
+s             = require('underscore.string')
 open          = require('open')
 chalk         = require('chalk')
 notifier      = require('node-notifier')
@@ -47,7 +47,7 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: -> @meta.version
+        callback: -> @meta.version 
 
       resources:
         flag: true
@@ -62,20 +62,20 @@ class Nota
       @logError e
       return
 
-    definition = @helper.getTemplateDefinition @options.templatePath
+    definition = @helper.getTemplateDefinition @options.templatePath, false
     if definition.meta is "not template"
-      @logError "Template #{chalk.magenta(definition.name)} has no mandatory template.html file"
+      @logError "Template #{chalk.cyan(definition.name)} has no mandatory #{chalk.cyan 'template.html'} file"
       return
 
-    # Start the server
-    @server = new NotaServer @options, {
+    logging = {
+      log:        @log
       logEvent:   @logEvent
       logWarning: @logWarning
       logError:   @logError
     }
-    @server.on 'all', @logEvent, @
+    # Start the server
+    @server = new NotaServer @options, logging
     @server.start()
-    @server.document.on('all', @logEvent, @) unless @options.preview
     
     # If we want a preview, open the web page
     if @options.preview then open(@server.url())
@@ -86,24 +86,30 @@ class Nota
   # creates a single job and calls the server queue API, but this should
   # become more general with job arrays in the future.
   render: ( options )->
-    jobs = [{
+    job = {
       dataPath:   options.dataPath
       outputPath: options.outputPath
       preserve:   options.preserve
-    }]
-    jobOptions = {
-      type:     @options.document.templateType
-      callback: (meta) =>
-        console.log meta
-        if options.logging.notify
-          # Would be nice if you could click on the notification
-          notifier.on 'click', -> open meta[1].outputPath
-          @notify
-            title: "Nota: render jobs finished"
-            message: "#{jobs.length} document(s) captured to .PDF"
-        @server.close()
     }
-    @server.queue jobs, jobOptions
+    @server.queue [job]
+    .then (meta) =>
+
+      if options.logging.notify
+        # Would be nice if you could click on the notification
+        notifier.on 'click', ->
+          if meta.length = 1 then open meta[0].outputPath
+          else if meta.length > 1 then open Path.dirname meta[0].outputPath
+          else # meta = []
+
+        # Send notification
+        notifier.notify 
+          title:    "Nota: render jobs finished"
+          message:  "#{jobs.length} document(s) captured to .PDF"
+          icon:     Path.join(__dirname, '../assets/images/icon.png')
+          wait:     true
+
+      @server.close()
+      process.exit()
 
   # Settling options from parsed CLI arguments over defaults
   settleOptions: ( args, defaults ) ->
@@ -120,11 +126,14 @@ class Nota
     options.logging.pageResources = args.resources if args.resources?
     options.preserve = args.preserve               if args.preserve?
     
-    options.templatePath =  @helper.findTemplatePath(options)
-    options.dataPath =      @helper.findDataPath(options)
-    try
-      _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota
+    # Template
+    options.templatePath =          @helper.findTemplatePath(options)
+    # Template config
+    try _.extend options.document,  @helper.getTemplateDefinition(options.templatePath).nota
     catch e then @logWarning e
+    # Data
+    options.dataPath =              @helper.findDataPath(options)
+
     return options
 
 
@@ -133,7 +142,7 @@ class Nota
     index = @helper.getTemplatesIndex(@defaults.templatesPath)
 
     if _.size(index) is 0
-      throw new Error("No (valid) templates found in templates directory.")
+      @logError "No (valid) templates found in templates directory."
     else
       headerDir     = 'Directory'
       headerName    = 'Template name'
@@ -145,34 +154,28 @@ class Nota
         dirName: _.reduce _.keys(index), fold, headerDir.length
         name:    _.reduce _(_(index).values()).pluck('name'), fold, headerName.length
 
-      headerDir     = _.str.pad headerDir,  lengths.dirName, ' ', 'right'
-      headerName    = _.str.pad headerName, lengths.name + 8, ' ', 'left'
+      headerDir     = s.pad headerDir,  lengths.dirName, ' ', 'right'
+      headerName    = s.pad headerName, lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
       console.log "nota "+ chalk.gray(headerDir + headerName + ' ' + headerVersion)
       templates = for dir, definition of index
-        dir     = _.str.pad definition.dir,  lengths.dirName, ' ', 'right'
-        name    = _.str.pad definition.name, lengths.name + 8, ' ', 'left'
+        dir     = s.pad definition.dir,  lengths.dirName, ' ', 'right'
+        name    = s.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
-        console.log "nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)
+        console.log "nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make execution stop here with --list
 
+  log: ( msg )->
+    console.log  'nota ' + msg
+
   logWarning: ( warningMsg )->
-    console.warn "nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
+    console.warn 'nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
 
   logError: ( errorMsg )->
-    console.warn "nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg
+    console.error 'nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg
 
-  logEvent: ( event )=>
-    # To prevent the output being spammed full of resource log events we allow supressing it
-    if _.str.startsWith(event, "page:resource") and not @options.logging.pageResources then return
-    
-    console.warn "nota " + chalk.bgBlue.black('EVENT') + ' ' + event
-
-  notify: ( message )->
-    base =
-      title:    'Nota event'
-      icon:     Path.join(__dirname, '../assets/images/icon.png')
-    notifier.notify _.extend base, message
+  logEvent: ( event )->
+    console.info 'nota ' + chalk.bgBlue.black('EVENT') + ' ' + event
 
 Nota = new Nota()

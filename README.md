@@ -1,11 +1,12 @@
 # Nota
 <img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
 
-Nota eats your template (HTML5+CSS3+JS) + your data (JSON) and excretes pretty
-(PDF) documents. Perfect for things like automating invoice or ticket
-generation, but of course not limited to. Nota can be used for any kind of
-document typesetting, layout and markup jobs, especially those that require
-automation and custom processing/presentation of data.
+Nota eats your template (HTML5+CSS3+optionally JS) + optionally your data
+(JSON) and excretes pretty PDF documents. Perfect for things like automating
+invoice or ticket generation, but also simply compiling a static document to
+PDF. Nota can be used for any kind of document typesetting, layout and markup
+jobs, especially those that require automation and custom
+processing/presentation of data.
 
 Develop and debug while feeling right at home in your favorite browser, with a
 1:1 preview of what Nota turns into a .PDF for you. Nota makes designing and
@@ -27,9 +28,10 @@ server.render jobs
 ```
 
 ## Setup
-Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems)) in the depencencies that are still being
-worked out, Nota is a bit picky on it's environment and dependencies. We
-recommend running Nota in a virtual environment, and this is easy with
+Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-
+problems)) in the depencencies that are still being worked out, Nota is a bit
+picky on it's environment and dependencies. We recommend running Nota in a
+virtual environment, and this is easy with
 [Vagrant](http://www.vagrantup.com). This also prevents machine pollution and
 isolates conflict. So for your convenience, we have included a Vagrant machine
 specification, but you can also install is as usual directly on your machine.
@@ -63,7 +65,7 @@ Old skool setup on the bare metal:
 
 Technically this primarily consists out of a pipeline of
 [PhantomJS](http://phantomjs.org/) (headless WebKit browser for rendering HTML
-and capturing PDF) with the [phantomjs- node](https://github.com/sgentle
+and capturing PDF) with the [phantomjs-node](https://github.com/sgentle
 /phantomjs-node) bindings for interfacing using
 [Node.js](https://nodejs.org/). So all the credits really go out to them. This
 package is mostly some frameworking and task automation around the
@@ -71,77 +73,103 @@ beforementioned, to make the job of crafting and rendering templates easier.
 
 ## Usage
 
-To get a feel of Nota, run  the following line:
+To get a feel of Nota, run the following line in the package root:
 ````
-node dist/nota.js --template=example-aerix --data=json/example.json
+./nota --template=example-aerix
 ````
 
 When finished Nota has rendered a simple PDF page, consisting of some custom
-rendering of data. Change the company logo image and try modifing the example
-data to see how easy it is to customise your own invoice.
+rendering of preview data as declared in the template `bower.json`. Change the
+company logo image and try modifing the example data to see how easy it is to
+customise it and create your own invoice.
 
-Try some of the simpler static "Hello World" templates and customize them with
-any inline CSS, linked stylesheets or JavaScript. Any of the assets like
-images you use should be available in the template directory. You can also write in SASS and CoffeeScript and have it automagically compiled by running `grunt` in de Nota root.
+Try `./nota --list` for a list of example templates. Some of the simpler
+static "Hello World" templates can be extended with any inline CSS, linked
+stylesheets or JavaScript. You can also write in SASS and CoffeeScript and
+have it automagically compiled by running `grunt` in the template root.
 
 Add the switch `--template=<dir>` to select a template by directory. Add the
-switch `--data=<path>` with a path from the Nota root directory to the JSON
-that should be rendered. Add the switch `--port=<port>` with a port (larger
-than 1024) to select which port to use. This is useful for situations in which
-you are rendering lots of PDFs simultaneously.
+switch `--data=<path>` with a path if any JSON should rendered. Add the switch
+`--port=<port>` with a port (larger than 1024) to select which port to use.
+This is useful for situations in which you are working on lots of PDFs
+simultaneously.
 
 By default Nota will output the PDF in the root rolder of itself, in a file
 called `output.pdf`. When this is not want you want, simply add
 `--output=x.pdf` (which will save the file in the Nota root folder) or
 `--output=/tmp/x.pdf` (which saves the file on the absolute path).
 
+
 ## Creating templates
+Right now we recommend copying and adapting either one of the following
+example templates:
 
-### Template types
+* Static template example: `example-doc`
+* Model driven scripted template example: `example-invoice`
 
-Nota can work with 2 template types.
+#### About static templates
+Nota will scan the `template.html` for any `<script>` tag, and if there are
+none, it automatically assume it's stand-alone: `static`. This will make it
+wait for all page resources to have finished loading and then perform the
+capture automatically. This makes Nota a luxury equivalent of [rasterize.js](h
+ttps://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-* Stand alone
-* Data driven
+#### About dynamic templates 
+If there are script tags found Nota will also wait for all resources to finish
+loading before injecting data and capturing. After the resources have been
+loading it allows for some time for the template and other things to set up
+and initialize. This timeout is defined in `default-config.json`. After that
+timeout `page:loaded` is triggered internally, and if data has been provided
+for the job, the data is made available and your template can query it from
+`/data.json`. Nota will wait the same timeout again so the template and other
+stuffs have time to render the data, after that the capture is performed.
 
-### Stand alone templates
-They are either static HTML documents or webpages/apps that can get all their dependencies and data self-sufficiently. This can be declared in the template `bower.json` with:
+#### About Nota client API for dynamic templates
+If twice this timeout is way more than you need, you can skip this wait by
+talking to the Nota client API. Require the Nota client from the address
+`/nota.js`, which will expose the `Nota` client object which exposes
+`Nota.trigger` to send events over as strings.
 
+By triggering `'template:loaded'` you can signal the template has finished
+setup and initialization, and skip the remainder of the timeout.
+
+If your tempalte needs more time to load then you can cancel this timeout by
+triggering `'template:init'` at the start of your template initialisation.
+
+If you've provided data for a job, you can then wait for it's injection by
+listening to `Nota.on 'data:injected'` with a callback that will receive the
+data. During preview you can use `Nota.getData(callback)` to fetch the data. A
+little abstraction for AJAX'ing `/data.json`.
+
+When your template is finished rendering you can skip the remainder of timeout
+again by triggering `'template:render:done'` after which the capture is
+performed.
+
+If instead you need more time, you can cancel the timeout by triggering
+`'template:render:start'`.
+
+Per job you can provide Nota with meta data about the current document
+capture. This also provides a way. Just before capture Nota 'asks' for the
+meta data. You can also use this to let your template suggest a file name.
+
+Use `Nota.setDocumentMeta` to set a object (or function that yields such an
+object) like:
 ```
-"nota": { "templateType": "stand-alone" }
-```
+meta = {
+  id: '44'
+  documentName: 'Invoice 2013.0044'
+  filesystemName: 'Invoice_2014.0044-Client_Name.pdf'
+````
 
-Nota will scan the `template.html` for any `<script>` tag, and if there are none, it automatically assume it's stand-alone. This will make it wait for all page resources to have finished loading and then perform the capture automatically.
-
-If there are script tags found Nota will also wait for all resources to finish loading, and then listen if the template calls the Nota API. If no `Nota.trigger 'template:init'` client API call has been made after 
-
- It will do this by waiting for a timeout to any API call as defined in `config-default.json` to see if the template called the Nota client API with  to know if it has
-
-### Data driven templates
-These 
-If Nota finds there are 
-
-. Otherwise, it will wait an API 
-
-* Static HTML
-* Dynamic through selfsufficient JavaScript: 
-* Dynamic, driven by required data model(s) which Nota provides
-
-Here's the internal keyword Nota uses to designate each, and the role Nota takes with each:
-
-* `static`: Makes Nota a luxury equivalent of [rasterize.js](sdsdf).
-* `dynamic-stand-alone`: Makes Nota like a photographer that waits untill the page has loaded and pose for the picture
-
-takes a slightly different role for each
 ## Known problems
 
 Nota is young, experimental, and built on a still developing tech stack. There
 are still quite some shortcomings and bugs (none that aren't likely to be
 fixed in the near future). That said, we've been able to use Nota in
 production environments already. If you take care to test your setup, verify
-the results and can live with some flaws, you should be fine. Consider the
-current version a showcase of the potential of this tech stack and the future
-of Nota. Here's some things to take into account:
+the results and can live with some workarounds, you should be fine. Consider
+the current version a showcase of the potential of this tech stack and the
+future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
 Even though WebKit supports this, due to a
@@ -163,14 +191,14 @@ PhantomJS, the loading of webfonts (even if they're locally hosted) seems
 broken. For now you'll have to install the fonts on the system itself, and
 then they'll load as expected. Needs checking if solved in PhantomJS 2.
 
-### Color definitions revert to black
+#### Color definitions revert to black
 It looks like all use of color in the CSS (for text/borders/backgrounds etc.)
-is lost and returned to black upon rendering. This can be worked around for
-the while by adding the `!important` keyword after the color declaration, e.g.
-like this `h1 { color: red !important }`. More research needed on why and
+is lost and reverted to black upon rendering. This can be worked around for
+the while by adding the `!important` keyword after all the color declaration,
+e.g. like this `h1 { color: red !important }`. More research needed on why and
 other solutions.
 
-### Paper size and zoom factor
+#### Paper size and zoom factor
 It looks like when rendering the page receives a zoom factor of about 1.068 is
 applied, causing the content flow to run longer than what is seen when
 rendered in the web browser. This is likely to be fixed, or at least allow for
@@ -188,7 +216,7 @@ proved insufficient in the flexibility and easy of producing neatly designed
 documents through a programmable interfaces.
 
 Shortly after [inventid](https://www.inventid.nl) joined in on development
-after it adopted Nota for automating the production of event tickets.
+after it adopted Nota for automating the generation of event tickets.
 
 Both Aerix and inventid are two young Dutch internetbureaus who are
 passionate about making shiny apps and contributing to open source innovation.

@@ -1,5 +1,5 @@
 (function() {
-  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, _,
+  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -10,7 +10,7 @@
 
   _ = require('underscore')._;
 
-  _.str = require('underscore.string');
+  s = require('underscore.string');
 
   open = require('open');
 
@@ -30,9 +30,8 @@
     Nota.prototype.meta = require('../package.json');
 
     function Nota() {
-      this.logEvent = __bind(this.logEvent, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var definition, e;
+      var definition, e, logging;
       this.helper = new TemplateUtils(this.logWarning);
       nomnom.options({
         template: {
@@ -82,21 +81,19 @@
         this.logError(e);
         return;
       }
-      definition = this.helper.getTemplateDefinition(this.options.templatePath);
+      definition = this.helper.getTemplateDefinition(this.options.templatePath, false);
       if (definition.meta === "not template") {
-        this.logError("Template " + (chalk.magenta(definition.name)) + " has no mandatory template.html file");
+        this.logError("Template " + (chalk.cyan(definition.name)) + " has no mandatory " + (chalk.cyan('template.html')) + " file");
         return;
       }
-      this.server = new NotaServer(this.options, {
+      logging = {
+        log: this.log,
         logEvent: this.logEvent,
         logWarning: this.logWarning,
         logError: this.logError
-      });
-      this.server.on('all', this.logEvent, this);
+      };
+      this.server = new NotaServer(this.options, logging);
       this.server.start();
-      if (!this.options.preview) {
-        this.server.document.on('all', this.logEvent, this);
-      }
       if (this.options.preview) {
         open(this.server.url());
       } else {
@@ -105,33 +102,35 @@
     }
 
     Nota.prototype.render = function(options) {
-      var jobOptions, jobs;
-      jobs = [
-        {
-          dataPath: options.dataPath,
-          outputPath: options.outputPath,
-          preserve: options.preserve
-        }
-      ];
-      jobOptions = {
-        type: this.options.document.templateType,
-        callback: (function(_this) {
-          return function(meta) {
-            console.log(meta);
-            if (options.logging.notify) {
-              notifier.on('click', function() {
-                return open(meta[1].outputPath);
-              });
-              _this.notify({
-                title: "Nota: render jobs finished",
-                message: "" + jobs.length + " document(s) captured to .PDF"
-              });
-            }
-            return _this.server.close();
-          };
-        })(this)
+      var job;
+      job = {
+        dataPath: options.dataPath,
+        outputPath: options.outputPath,
+        preserve: options.preserve
       };
-      return this.server.queue(jobs, jobOptions);
+      return this.server.queue([job]).then((function(_this) {
+        return function(meta) {
+          if (options.logging.notify) {
+            notifier.on('click', function() {
+              if (meta.length = 1) {
+                return open(meta[0].outputPath);
+              } else if (meta.length > 1) {
+                return open(Path.dirname(meta[0].outputPath));
+              } else {
+
+              }
+            });
+            notifier.notify({
+              title: "Nota: render jobs finished",
+              message: "" + jobs.length + " document(s) captured to .PDF",
+              icon: Path.join(__dirname, '../assets/images/icon.png'),
+              wait: true
+            });
+          }
+          _this.server.close();
+          return process.exit();
+        };
+      })(this));
     };
 
     Nota.prototype.settleOptions = function(args, defaults) {
@@ -158,13 +157,13 @@
         options.preserve = args.preserve;
       }
       options.templatePath = this.helper.findTemplatePath(options);
-      options.dataPath = this.helper.findDataPath(options);
       try {
         _.extend(options.document, this.helper.getTemplateDefinition(options.templatePath).nota);
       } catch (_error) {
         e = _error;
         this.logWarning(e);
       }
+      options.dataPath = this.helper.findDataPath(options);
       return options;
     };
 
@@ -173,7 +172,7 @@
       templates = [];
       index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
-        throw new Error("No (valid) templates found in templates directory.");
+        this.logError("No (valid) templates found in templates directory.");
       } else {
         headerDir = 'Directory';
         headerName = 'Template name';
@@ -185,18 +184,18 @@
           dirName: _.reduce(_.keys(index), fold, headerDir.length),
           name: _.reduce(_(_(index).values()).pluck('name'), fold, headerName.length)
         };
-        headerDir = _.str.pad(headerDir, lengths.dirName, ' ', 'right');
-        headerName = _.str.pad(headerName, lengths.name + 8, ' ', 'left');
+        headerDir = s.pad(headerDir, lengths.dirName, ' ', 'right');
+        headerName = s.pad(headerName, lengths.name + 8, ' ', 'left');
         console.log("nota " + chalk.gray(headerDir + headerName + ' ' + headerVersion));
         templates = (function() {
           var _results;
           _results = [];
           for (dir in index) {
             definition = index[dir];
-            dir = _.str.pad(definition.dir, lengths.dirName, ' ', 'right');
-            name = _.str.pad(definition.name, lengths.name + 8, ' ', 'left');
+            dir = s.pad(definition.dir, lengths.dirName, ' ', 'right');
+            name = s.pad(definition.name, lengths.name + 8, ' ', 'left');
             version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(console.log("nota " + chalk.magenta(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
+            _results.push(console.log("nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
           }
           return _results;
         })();
@@ -204,28 +203,20 @@
       return '';
     };
 
+    Nota.prototype.log = function(msg) {
+      return console.log('nota ' + msg);
+    };
+
     Nota.prototype.logWarning = function(warningMsg) {
-      return console.warn("nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
+      return console.warn('nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
     };
 
     Nota.prototype.logError = function(errorMsg) {
-      return console.warn("nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
+      return console.error('nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
     };
 
     Nota.prototype.logEvent = function(event) {
-      if (_.str.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
-        return;
-      }
-      return console.warn("nota " + chalk.bgBlue.black('EVENT') + ' ' + event);
-    };
-
-    Nota.prototype.notify = function(message) {
-      var base;
-      base = {
-        title: 'Nota event',
-        icon: Path.join(__dirname, '../assets/images/icon.png')
-      };
-      return notifier.notify(_.extend(base, message));
+      return console.info('nota ' + chalk.bgBlue.black('EVENT') + ' ' + event);
     };
 
     return Nota;

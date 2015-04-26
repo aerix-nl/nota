@@ -1,7 +1,7 @@
 {
   "name": "nota",
-  "version": "1.2.0",
-  "descriptions": "Though the package.json declares the actual Nota package, this bower.json is needed to declare the frontend aspects of Nota.",
+  "version": "1.2.1",
+  "descriptions": "Programmable PDF generator for static, scripted and model driven documents",
   "license": "MIT",
   "authors": [
     "Felix Akkermans <felix.akkermans@gmail.com>",
@@ -13,5 +13,6 @@
     "requirejs-text": "2.0.13",
     "requirejs-plugins": "1.0.3",
     "underscore.string": "2.3.3"
-  }
+  },
+  "main": "dist/client.js"
 }

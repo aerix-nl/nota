@@ -1,10 +1,10 @@
 (function() {
-  var Backbone, Document, JobQueue, NotaServer, Q, TemplateUtils, express, fs, http, open, phantom, _,
+  var Backbone, Document, JobQueue, NotaServer, Q, TemplateUtils, express, fs, http, open, phantom, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
 
-  _.str = require('underscore.string');
+  s = require('underscore.string');
 
   http = require('http');
 
@@ -32,15 +32,16 @@
       this.options = options;
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
-      this.helper = new TemplateUtils();
-      this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
       _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
+      this.helper = new TemplateUtils(this.logWarning);
       _.extend(this.options.document, {
         templateType: this.helper.getTemplateType(this.templatePath)
       });
     }
 
     NotaServer.prototype.start = function() {
+      this.on('all', this.logEvent, this);
       this.trigger("server:init");
       this.app = express();
       this.server = http.createServer(this.app);
@@ -63,7 +64,8 @@
       if (this.options.preview) {
         return this;
       }
-      return this.document = new Document(this, this.options.document);
+      this.document = new Document(this, this.options.document);
+      return this.document.on('all', this.logEvent);
     };
 
     NotaServer.prototype.url = function() {
@@ -74,41 +76,59 @@
       this.dataPath = dataPath;
     };
 
-    NotaServer.prototype.queue = function(jobs, options) {
-      this.queue = new JobQueue(jobs, options);
-      switch (this.queue.options.type) {
+    NotaServer.prototype.queue = function() {
+      var deferred, jobs, options;
+      deferred = Q.defer();
+      if (arguments[0] instanceof JobQueue) {
+        this.queue = arguments[0];
+      } else {
+        jobs = arguments[0];
+        options = arguments[1] || {};
+        _.extend(options, {
+          deferFinish: deferred,
+          templateType: this.document.options.templateType
+        });
+        this.queue = new JobQueue(jobs, options);
+      }
+      switch (this.queue.options.templateType) {
         case 'static':
-          return this.document.once("page:rendered", (function(_this) {
+          this.document.once('page:rendered', (function(_this) {
             return function() {
               return _this.renderStatic(_this.queue);
             };
           })(this));
-        case 'dynamic':
-          return this.document.once('page:opened', (function(_this) {
+          break;
+        case 'scripted':
+          this.document.once('page:ready', (function(_this) {
             return function() {
-              return _this.renderDynamic(_this.queue);
+              return _this.renderScripted(_this.queue);
             };
           })(this));
       }
+      return deferred.promise;
     };
 
     NotaServer.prototype.renderStatic = function(queue) {
-      var job, _results;
-      _results = [];
-      while (job = queue.nextJob()) {
-        _results.push((function(_this) {
-          return function(job) {
-            _this.document.capture(job);
-            return _this.document.once('render:done', _this.queue.completeJob, _this.queue);
-          };
-        })(this)(job));
-      }
-      return _results;
+      var job, start;
+      job = queue.nextJob();
+      start = new Date();
+      return this.document.capture(job).then((function(_this) {
+        return function(meta) {
+          var finished;
+          finished = new Date();
+          meta.duration = finished - start;
+          queue.completeJob(meta);
+          if (!queue.isFinished()) {
+            return _this.renderStatic(queue);
+          }
+        };
+      })(this));
     };
 
-    NotaServer.prototype.renderDynamic = function(queue) {
-      var currentJob, offerData, renderJob;
-      currentJob = queue.nextJob();
+    NotaServer.prototype.renderScripted = function(queue) {
+      var error, job, offerData, postRender, renderJob, start;
+      job = queue.nextJob();
+      start = new Date();
       offerData = (function(_this) {
         return function(job) {
           var data, deferred;
@@ -116,27 +136,9 @@
           data = JSON.parse(fs.readFileSync(job.dataPath, {
             encoding: 'utf8'
           }));
-          console.log(_this.document.state);
-          if (_this.document.state === 'client:template:loaded') {
-            _this.document.injectData(data);
-            deferred.resolve('data-injected');
-          } else {
-            _this.document.once('client:template:loaded', function() {
-              _this.document.injectData(data);
-              return deferred.resolve('data-injected');
-            });
-            _this.document.once('page:loaded', function() {
-              if (_this.document.state === 'page:loaded') {
-                return deferred.resolve(_this.document.state);
-              } else if (_this.document.state === 'client:init') {
-                return deferred.reject('client-loading');
-              } else if (_this.document.state === 'client:loaded') {
-                return deferred.reject('template-unregistered');
-              } else if (_this.document.state === 'client:template:init') {
-                return deferred.reject('template-loading');
-              }
-            });
-          }
+          _this.document.injectData(data).then(function() {
+            return deferred.resolve(job);
+          });
           return deferred.promise;
         };
       })(this);
@@ -144,32 +146,46 @@
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          _this.document.once('page:rendered', function() {
-            return _this.document.capture(job);
-          });
+          if (_this.document.state === 'page:rendered') {
+            _this.document.capture(job);
+          } else {
+            _this.document.once('page:rendered', function() {
+              return _this.document.capture(job);
+            });
+          }
           _this.document.once('render:done', deferred.resolve);
           return deferred.promise;
         };
       })(this);
-      return offerData(currentJob).then(function(clst) {
-        return renderJob(currentJob);
-      }).then((function(_this) {
+      postRender = (function(_this) {
         return function(meta) {
+          var finished;
+          finished = new Date();
+          meta.duration = finished - start;
           queue.completeJob(meta);
+          if (typeof _this.log === "function") {
+            _this.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
+          }
           if (!queue.isFinished()) {
-            return _this.renderDynamic(queue);
+            return _this.renderScripted(queue);
           }
         };
-      })(this))["catch"](function(err) {
-        return this.logError("Page loaded but still in state: " + clst);
-      });
+      })(this);
+      error = function(err) {
+        return this.logError(err);
+      };
+      if (job.dataPath != null) {
+        return offerData(job).then(renderJob).then(postRender)["catch"](error);
+      } else {
+        return renderJob(job).then(postRender)["catch"](error);
+      }
     };
 
     NotaServer.prototype.close = function() {
       this.trigger('server:closing');
       this.document.close();
       this.server.close();
-      return process.exit();
+      return this.server.off('all', this.logEvent, this);
     };
 
     return NotaServer;
