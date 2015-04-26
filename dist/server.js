@@ -32,15 +32,14 @@
       this.options = options;
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
-      this.helper = new TemplateUtils();
       this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
       _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
-      _.extend(this.options.document, {
-        templateType: this.helper.getTemplateType(this.templatePath)
-      });
+      this.helper = new TemplateUtils(this.logWarning);
     }
 
     NotaServer.prototype.start = function() {
+      var logging;
+      this.on('all', this.logEvent, this);
       this.trigger("server:init");
       this.app = express();
       this.server = http.createServer(this.app);
@@ -63,6 +62,11 @@
       if (this.options.preview) {
         return this;
       }
+      logging = {
+        logEvent: this.logEvent,
+        logWarning: this.logWarning,
+        logError: this.logError
+      };
       return this.document = new Document(this, this.options.document);
     };
 
@@ -75,7 +79,12 @@
     };
 
     NotaServer.prototype.queue = function(jobs, options) {
+      _.extend(options, {
+        templateType: this.helper.getTemplateType(this.templatePath)
+      });
       this.queue = new JobQueue(jobs, options);
+      console.log(this.queue.options.type);
+      console.log(this.document.state);
       switch (this.queue.options.type) {
         case 'static':
           return this.document.once("page:rendered", (function(_this) {
@@ -84,7 +93,7 @@
             };
           })(this));
         case 'scripted':
-          return this.document.once('page:opened', (function(_this) {
+          return this.document.once('page:ready', (function(_this) {
             return function() {
               return _this.renderScripted(_this.queue);
             };
@@ -113,13 +122,10 @@
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          if (_this.document.state === 'client:template:loaded') {
+          if (_this.document.state === 'page:ready') {
             deferred.resolve(job);
           } else {
-            _this.document.once('client:template:loaded', function() {
-              return deferred.resolve(job);
-            });
-            _this.document.once('page:loaded', function() {
+            _this.document.once('page:ready', function() {
               return deferred.resolve(job);
             });
           }
@@ -130,35 +136,13 @@
         return function(job) {
           var data, deferred;
           deferred = Q.defer();
+          console.log(44);
           data = JSON.parse(fs.readFileSync(job.dataPath, {
             encoding: 'utf8'
           }));
-          if (_this.document.isReady()) {
-            _this.document.injectData(data).then(function() {
-              return deferred.resolve(job);
-            });
-          } else {
-            _this.document.once('client:template:loaded', function() {
-              _this.document.off('page:loaded');
-              return _this.document.injectData(data).then(function() {
-                return deferred.resolve(job);
-              });
-            });
-            _this.document.once('page:loaded', function() {
-              _this.document.off('client:template:loaded');
-              if (_this.document.state === 'page:loaded') {
-                return _this.document.injectData(data).then(function() {
-                  return deferred.resolve(job);
-                });
-              } else if (_this.document.state === 'client:init') {
-                return deferred.reject('client-loading');
-              } else if (_this.document.state === 'client:loaded') {
-                return deferred.reject('template-unregistered');
-              } else if (_this.document.state === 'client:template:init') {
-                return deferred.reject('template-loading');
-              }
-            });
-          }
+          _this.document.injectData(data).then(function() {
+            return deferred.resolve(job);
+          });
           return deferred.promise;
         };
       })(this);
@@ -166,7 +150,7 @@
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          if (_this.document.state === 'page:loaded') {
+          if (_this.document.state === 'page:rendered') {
             _this.document.capture(job);
           } else {
             _this.document.once('page:rendered', function() {
@@ -199,6 +183,7 @@
       this.trigger('server:closing');
       this.document.close();
       this.server.close();
+      this.server.off('all', this.logEvent, this);
       return process.exit();
     };
 

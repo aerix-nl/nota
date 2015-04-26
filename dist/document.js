@@ -15,7 +15,7 @@
   TemplateUtils = require('./template_utils');
 
   module.exports = Document = (function() {
-    Document.prototype.pagePhases = ['page:opened', 'page:loaded', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded'];
+    Document.prototype.pagePhases = ['page:init', 'page:opened', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded', 'page:ready', 'client:template:render:init', 'client:template:render:done', 'page:rendered'];
 
     function Document(server, options) {
       this.server = server;
@@ -30,8 +30,13 @@
           _this.phantomInstance = phantomInstance;
           return phantomInstance.createPage(function(page) {
             _this.page = page;
-            _this.counter = [];
-            _this.timer = null;
+            _this.loadingResources = [];
+            _this.timers = {
+              'resource': null,
+              'template': null,
+              'render': null,
+              'extrender': null
+            };
             _this.page.set('paperSize', _this.options.paperSize);
             _this.page.onConsoleMessage(function(msg) {
               return console.log(msg);
@@ -44,20 +49,12 @@
             });
             _this.page.set('onResourceRequested', _this.onResourceRequested);
             _this.page.set('onResourceReceived', _this.onResourceReceived);
+            _this.page.set('onTemplateInit', _this.onTemplateInit);
             _this.trigger('page:init');
             return _this.page.open(_this.server.url(), function(status) {
               if (status === 'success') {
                 _this.trigger('page:opened');
-                _this.on('page:loaded', function() {
-                  if (_this.options.templateType === 'static') {
-                    return _this.trigger('page:rendered');
-                  }
-                });
-                return _this.on('client:template:render:done', function() {
-                  if (_this.options.templateType === 'scripted') {
-                    return _this.trigger("page:rendered");
-                  }
-                });
+                return _this.listen();
               } else {
                 throw new Error("Unable to load page: " + status);
                 _this.trigger('page:fail');
@@ -68,6 +65,50 @@
         };
       })(this));
     }
+
+    Document.prototype.listen = function() {
+      if (this.options.templateType === 'static') {
+        this.on('page:ready', (function(_this) {
+          return function() {
+            return _this.trigger('page:rendered');
+          };
+        })(this));
+      }
+      this.on('client:template:init', (function(_this) {
+        return function() {
+          clearTimeout(_this.timers.resource);
+          return _this.timers['template'] = setTimeout(function() {
+            var _base;
+            return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+          }, _this.options.templateTimeout);
+        };
+      })(this));
+      this.on('client:template:loaded', (function(_this) {
+        return function() {
+          clearTimeout(_this.timers.resource);
+          clearTimeout(_this.timers.template);
+          return _this.trigger('page:ready');
+        };
+      })(this));
+      if (this.options.templateType === 'scripted') {
+        return this.on('page:ready', (function(_this) {
+          return function() {
+            _this.on('client:template:render:init', function() {
+              clearTimeout(_this.timers.render);
+              return _this.timers['extrender'] = setTimeout(function() {
+                var _base;
+                return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+              }, _this.options.extRenderTimeout);
+            });
+            return _this.on('client:template:render:done', function() {
+              clearTimeout(_this.timers.render);
+              clearTimeout(_this.timers.extrender);
+              return _this.trigger('page:rendered');
+            });
+          };
+        })(this));
+      }
+    };
 
     Document.prototype.getMeta = function() {
       var deferred, metaRequest;
@@ -101,10 +142,10 @@
             _this.trigger('page:no-meta');
           }
           outputPath = _this.helper.findOutputPath({
-            path: captureOptions.outputPath,
-            meta: meta,
+            defaultFilename: _this.options.defaultFilename,
             preserve: captureOptions.preserve,
-            defaultFilename: _this.options.defaultFilename
+            path: captureOptions.outputPath,
+            meta: meta
           });
           captureOptions.outputPath = outputPath;
           meta = _.extend({}, meta, captureOptions);
@@ -118,9 +159,9 @@
 
     Document.prototype.onResourceRequested = function(request) {
       this.trigger('page:resource:requested');
-      if (this.counter.indexOf(request.id) === -1) {
-        this.counter.push(request.id);
-        return clearTimeout(this.timer);
+      if (this.loadingResources.indexOf(request.id) === -1) {
+        this.loadingResources.push(request.id);
+        return clearTimeout(this.timers.resource);
       }
     };
 
@@ -130,21 +171,22 @@
       if (resource.stage !== "end" && (resource.redirectURL == null)) {
         return;
       }
-      if ((i = this.counter.indexOf(resource.id)) === -1) {
+      if ((i = this.loadingResources.indexOf(resource.id)) === -1) {
         return;
       }
-      this.counter.splice(i, 1);
-      if (this.counter.length === 0) {
-        return this.timer = setTimeout((function(_this) {
+      this.loadingResources.splice(i, 1);
+      if (this.loadingResources.length === 0) {
+        clearTimeout(this.timers.resource);
+        return this.timers['resource'] = setTimeout((function(_this) {
           return function() {
-            return _this.trigger('page:loaded');
+            return _this.trigger('page:ready');
           };
         })(this), this.options.resourceTimeout);
       }
     };
 
     Document.prototype.isReady = function() {
-      return this.document.state === 'client:template:loaded' || this.document.state === 'page:loaded';
+      return this.document.state === 'page:ready';
     };
 
     Document.prototype.injectData = function(data) {
@@ -158,7 +200,7 @@
     };
 
     Document.prototype.setState = function(event) {
-      if (_(this.pagePhases).contains(event)) {
+      if (this.pagePhases.indexOf(event) > this.pagePhases.indexOf(this.state)) {
         return this.state = event;
       }
     };

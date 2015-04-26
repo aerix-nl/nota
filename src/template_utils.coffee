@@ -68,7 +68,7 @@ module.exports = class TemplateUtils
       templateDefinition.meta = 'read'
 
       # Not essential, but try to give the user a heads up about uninstalled dependencies
-      @checkDependencies(dir)
+      if logWarnings then @checkDependencies(dir)
 
       # TODO: check template definition against scheme for reuiqre properties
       # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
@@ -82,7 +82,7 @@ module.exports = class TemplateUtils
     return templateDefinition
 
   # Logging some warnings about uninstalled dependencies when needed
-  checkDependencies: (templateDir, bower, node)->
+  checkDependencies: (templateDir)->
     checknwarn = (args)=>
       return unless args[2]?
       depsDir = Path.join templateDir, args[0]+'_'+args[1] # e.g 'node_modules'
@@ -91,18 +91,18 @@ module.exports = class TemplateUtils
       devDeps = args[2].devDependencies? and _.keys(args[2].devDependencies).length > 0
       if (deps or devDeps) and not @isDirectory depsDir
         mng = if args[0] is 'node' then 'npm' else args[0]
-        @logWarning? "Template #{chalk.cyan templateDir} has #{defType}
-        definition with dependencies, but no #{defType} #{args[1]} have
-        been installed yet. Forgot #{chalk.cyan mng+' install'}?"
+        @logWarning? "Template #{chalk.cyan templateDir}
+        has #{defType} definition with dependencies, but no #{defType}
+        #{args[1]} seem installed yet. Forgot #{chalk.cyan mng+' install'}?"
 
     bowerPath = Path.join templateDir, "bower.json"
-    if not bower? and @isFile bowerPath
+    if @isFile bowerPath
       bower = JSON.parse fs.readFileSync bowerPath
     
     checknwarn ['bower', 'components', bower]
 
     nodePath = Path.join templateDir, "package.json"
-    if not node? and @isFile nodePath
+    if @isFile nodePath
       node = JSON.parse fs.readFileSync nodePath
     
     checknwarn ['node', 'modules', node]
@@ -166,7 +166,7 @@ module.exports = class TemplateUtils
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
     else if _dataPath = @getExampleDataPath templatePath
-      @logWarning? "No data provided. Using example data as found in template definition."
+      @logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
       dataPath = _dataPath
     else
       if required then throw new Error("Please provide data with #{chalk.cyan '--data=<file path>'}")

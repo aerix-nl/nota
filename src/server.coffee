@@ -16,12 +16,14 @@ module.exports = class NotaServer
 
   constructor: ( @options, logging ) ->
     _.extend(@, Backbone.Events)
-    @helper = new TemplateUtils()
     { @logEvent, @logError, @logWarning } = logging
     { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
-    _.extend @options.document, templateType: @helper.getTemplateType(@templatePath)
+
+    @helper = new TemplateUtils(@logWarning)
+
 
   start: ->
+    @on 'all', @logEvent, @
     @trigger "server:init"
 
     # Start express server to serve dependencies from a unified namespaces
@@ -31,10 +33,9 @@ module.exports = class NotaServer
     # Open the server with servering the template path as root
     @app.use express.static(@templatePath)
 
+    # Serve 'template.html' by default (instead of index.html default behaviour)
     # TODO: Why does this line not work instead:
     # @app.get '/', express.static("#{@templatePath}/template.html")
-
-    # Serve 'template.html' by default (instead of index.html default behaviour)
     @app.get '/',         (req, res)-> res.redirect("/template.html")
     # Expose some extras at the first specified subpaths
     @app.use '/lib/',     express.static("#{__dirname}/")
@@ -48,6 +49,12 @@ module.exports = class NotaServer
     @trigger "server:running"
 
     return @ if @options.preview
+
+    logging = {
+      logEvent:   @logEvent
+      logWarning: @logWarning
+      logError:   @logError
+    }
     @document = new Document(@, @options.document)
 
   url: =>
@@ -56,14 +63,18 @@ module.exports = class NotaServer
   serve: ( @dataPath )->
 
   queue: ( jobs, options ) ->
+    _.extend options, templateType: @helper.getTemplateType(@templatePath)
     @queue = new JobQueue(jobs, options)
+    console.log @queue.options.type
+    console.log @document.state
     switch @queue.options.type
       when 'static'
         @document.once "page:rendered", =>
           @renderStatic(@queue)
       when 'scripted'
+        
         # Wait till the page finished opening
-        @document.once 'page:opened', =>
+        @document.once 'page:ready', =>
           @renderScripted(@queue)
           
   renderStatic: (queue)->
@@ -75,26 +86,22 @@ module.exports = class NotaServer
   renderScripted: (queue)->
     # Dequeue the next job
     currentJob = queue.nextJob()
-
     queueJob = (job)=>
       deferred = Q.defer()
+
       # If we're in an N+1 iteration and the template has already loaded
-      if @document.state is 'client:template:loaded'
+      if @document.state is 'page:ready'
         deferred.resolve job
+      # Else we'll probably have to wait for the page (and possibly tempalte
+      # app) to load and get ready.
       else
-        # Else we way for that
-        @document.once 'client:template:loaded', =>
-          deferred.resolve job
-        # Or unless the template doesn't decide to use our API, just wait till
-        # the page has loaded and the timeout fired. Assume that enough time
-        # for the template to get it's stuff in order.
-        @document.once 'page:loaded', =>
-          deferred.resolve job
+        @document.once 'page:ready', => deferred.resolve job
+
       deferred.promise
 
     offerData = (job)=>
       deferred = Q.defer()
-
+      console.log 44
       # TODO: kinda indecisive about whether to inject data or set the data
       # here and "notify" the template to get the new data. The latter is
       # more HTTP-ish, but way more convoluted/complex than injecting it. So
@@ -105,34 +112,17 @@ module.exports = class NotaServer
       # @serve job.dataPath
       data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
 
-      if @document.isReady()
-        @document.injectData(data).then -> deferred.resolve job
+      @document.injectData(data).then -> deferred.resolve job
 
-      else # Wait till it's ready
-        @document.once 'client:template:loaded', =>
-          @document.off 'page:loaded'
-          @document.injectData(data).then -> deferred.resolve job
-
-        # Or else if the template doesn't interface with the Nota API
-        @document.once 'page:loaded', =>
-          @document.off 'client:template:loaded'
-          
-          if @document.state is 'page:loaded'
-            @document.injectData(data).then -> deferred.resolve job
-          else if @document.state is 'client:init'
-            deferred.reject 'client-loading'
-          else if @document.state is 'client:loaded'
-            deferred.reject 'template-unregistered'
-          else if @document.state is 'client:template:init'
-            deferred.reject 'template-loading'
       deferred.promise
 
     # Define render job as a promise
     renderJob = (job)=>
       deferred = Q.defer()
-      if @document.state is 'page:loaded' then @document.capture job
+      if @document.state is 'page:rendered' then @document.capture job
       else @document.once 'page:rendered', => @document.capture job
       @document.once 'render:done', deferred.resolve
+
       deferred.promise
 
     postRender = (meta)=>
@@ -164,5 +154,6 @@ module.exports = class NotaServer
     @trigger 'server:closing'
     @document.close()
     @server.close()
+    @server.off 'all', @logEvent, @
     process.exit()
 

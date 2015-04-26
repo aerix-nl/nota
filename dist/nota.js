@@ -32,7 +32,7 @@
     function Nota() {
       this.logEvent = __bind(this.logEvent, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var definition, e;
+      var definition, e, logging;
       this.helper = new TemplateUtils(this.logWarning);
       nomnom.options({
         template: {
@@ -87,16 +87,13 @@
         this.logError("Template " + (chalk.cyan(definition.name)) + " has no mandatory " + (chalk.cyan('template.html')) + " file");
         return;
       }
-      this.server = new NotaServer(this.options, {
+      logging = {
         logEvent: this.logEvent,
         logWarning: this.logWarning,
         logError: this.logError
-      });
-      this.server.on('all', this.logEvent, this);
+      };
+      this.server = new NotaServer(this.options, logging);
       this.server.start();
-      if (!this.options.preview) {
-        this.server.document.on('all', this.logEvent, this);
-      }
       if (this.options.preview) {
         open(this.server.url());
       } else {

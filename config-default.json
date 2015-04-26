@@ -11,6 +11,9 @@
 
   "document": {
     "resourceTimeout":    1500,
+    "templateTimeout":    8000,
+    "renderTimeout":      1500,
+    "extRenderTimeout":   8000,
     "defaultFilename":    "output.pdf",
     "paperSize": {
       "format":           "A4",

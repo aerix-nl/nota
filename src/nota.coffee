@@ -67,15 +67,14 @@ class Nota
       @logError "Template #{chalk.cyan(definition.name)} has no mandatory #{chalk.cyan 'template.html'} file"
       return
 
-    # Start the server
-    @server = new NotaServer @options, {
+    logging = {
       logEvent:   @logEvent
       logWarning: @logWarning
       logError:   @logError
     }
-    @server.on 'all', @logEvent, @
+    # Start the server
+    @server = new NotaServer @options, logging
     @server.start()
-    @server.document.on('all', @logEvent, @) unless @options.preview
     
     # If we want a preview, open the web page
     if @options.preview then open(@server.url())
@@ -121,7 +120,7 @@ class Nota
     
     options.templatePath =  @helper.findTemplatePath(options)
     try
-      _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota
+      _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota,
     catch e then @logWarning e
     dataRequired = if options.document.modelDriven then true else false
     options.dataPath =      @helper.findDataPath(options, dataRequired)

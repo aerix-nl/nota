@@ -93,7 +93,9 @@
         definitionPath = Path.join(dir, "bower.json");
         templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
         templateDefinition.meta = 'read';
-        this.checkDependencies(dir);
+        if (logWarnings) {
+          this.checkDependencies(dir);
+        }
       }
       if (!fs.existsSync(Path.join(dir, "template.html"))) {
         templateDefinition.meta = 'not template';
@@ -102,8 +104,8 @@
       return templateDefinition;
     };
 
-    TemplateUtils.prototype.checkDependencies = function(templateDir, bower, node) {
-      var bowerPath, checknwarn, nodePath;
+    TemplateUtils.prototype.checkDependencies = function(templateDir) {
+      var bower, bowerPath, checknwarn, node, nodePath;
       checknwarn = (function(_this) {
         return function(args) {
           var defType, deps, depsDir, devDeps, mng;
@@ -116,17 +118,17 @@
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
             mng = args[0] === 'node' ? 'npm' : args[0];
-            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " have been installed yet. Forgot " + (chalk.cyan(mng + ' install')) + "?") : void 0;
+            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mng + ' install')) + "?") : void 0;
           }
         };
       })(this);
       bowerPath = Path.join(templateDir, "bower.json");
-      if ((bower == null) && this.isFile(bowerPath)) {
+      if (this.isFile(bowerPath)) {
         bower = JSON.parse(fs.readFileSync(bowerPath));
       }
       checknwarn(['bower', 'components', bower]);
       nodePath = Path.join(templateDir, "package.json");
-      if ((node == null) && this.isFile(nodePath)) {
+      if (this.isFile(nodePath)) {
         node = JSON.parse(fs.readFileSync(nodePath));
       }
       return checknwarn(['node', 'modules', node]);
@@ -191,7 +193,7 @@
         }
       } else if (_dataPath = this.getExampleDataPath(templatePath)) {
         if (typeof this.logWarning === "function") {
-          this.logWarning("No data provided. Using example data as found in template definition.");
+          this.logWarning("No data provided. Using example data at " + (chalk.cyan(_dataPath)) + " as found in template definition.");
         }
         dataPath = _dataPath;
       } else {
