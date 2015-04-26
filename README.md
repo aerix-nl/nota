@@ -30,36 +30,12 @@ server.render jobs
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-
 problems)) in the depencencies that are still being worked out, Nota is a bit
-picky on it's environment and dependencies. We recommend running Nota in a
-virtual environment, and this is easy with
-[Vagrant](http://www.vagrantup.com). This also prevents machine pollution and
-isolates conflict. So for your convenience, we have included a Vagrant machine
-specification, but you can also install is as usual directly on your machine.
-
-Fancy virtual setup using Vagrant:
-
-1. Install Vagrant
-1. Move the the place where you cloned the repository
-1. Run `vagrant up`, this takes a few minutes.
-1. Once done, as separate Ubuntu 14.04 LTS box is installed.
-1. You can either SSH into the machine with `vagrant ssh` or simply run your
-   first generation with `vagrant ssh -c "cd /vagrant && node dist/nota.js
-   --template=/vagrant/examples/hello_world
-   --data=/vagrant/examples/hello_world/data.json"`
-1. The `output.pdf` file appears in the root of the repository.
-
-Old skool setup on the bare metal:
-
-1. Open the location you cloned the repository in the terminal.
-1. Install the following packages `git npm nodejs phantomjs`
-1. Ensure the `node` executable is in your path `[ -f /usr/bin/node ] || ln -s
-   /usr/bin/nodejs /usr/bin/node`
-1. Install the sass gem `gem install sass`
-1. Run npm `npm install`
-1. Install additional npm packages `npm install -g sass bower grunt grunt-cli`
-1. Run bower `bower install`
-1. Create your first PDF with the following command `node dist/nota.js
-   --template=examples/hello_world --data=examples/hello_world/data.json`
+picky on it's environment and dependencies. We recommend running Nota under
+Linux, and we've made a provisioning script that sets up all dependencies for
+Linux (and unverified support for Mac and Windows under cywin).
+```
+./provision.sh
+```
 
 ## Architecture
 
@@ -156,10 +132,11 @@ Use `Nota.setDocumentMeta` to set a object (or function that yields such an
 object) like:
 ```
 meta = {
-  id: '44'
-  documentName: 'Invoice 2013.0044'
-  filesystemName: 'Invoice_2014.0044-Client_Name.pdf'
+  id: '42'
+  documentName: 'Invoice 2013.0042'
+  filesystemName: 'Invoice_2014.0042-Client_Name.pdf'
 ````
+
 
 ## Known problems
 
@@ -199,13 +176,15 @@ e.g. like this `h1 { color: red !important }`. More research needed on why and
 other solutions.
 
 #### Paper size and zoom factor
-It looks like when rendering the page receives a zoom factor of about 1.068 is
-applied, causing the content flow to run longer than what is seen when
-rendered in the web browser. This is likely to be fixed, or at least allow for
-a compensating counter zoomfactor in PhantomJS 2 according to [this
-bug](https://github.com/ariya/phantomjs/issues/12685). For now we recommend
-creating extra space for content flow or making some seperate CSS declarations
-for print, like a smaller font size to counter this.
+It looks like when rendering with PhantomJS 1.9.x the page receives a zoom
+factor of about 1.068 is applied, causing the content flow to run longer than
+what is seen when rendered in the web browser. This is likely to be fixed, or
+at least allow for a compensating counter zoomfactor in PhantomJS 2 according
+to [this bug](https://github.com/ariya/phantomjs/issues/12685). But at the
+time of writing PhantomJS 2 has an even larger zoom factor, and a broken
+zoomfactor setter. For now we recommend either creating extra space for
+content flow or making some seperate CSS declarations for print, like a
+smaller font size to counter this.
 
 ## Meta
 

@@ -16,11 +16,14 @@ class Nota
   # Load the (default) configuration
   defaults: require '../config-default.json'
 
-  # Load the package definition so we have some meta data available such as
-  # version number.
+  # Load the package definition so we may know ourselves (version etc.)
   meta: require '../package.json'
 
-  constructor: ( ) ->
+  constructor: ( logging ) ->
+    # Allow redirecting of logging output through dependency injection
+    if logging? then { @log, @logEvent, @logError, @logWarning } = logging
+
+    # Instantiate our thrusty helping hand in template and job tasks
     @helper = new TemplateUtils(@logWarning)
 
     nomnom.options
@@ -47,7 +50,7 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: -> @meta.version 
+        callback: -> @meta.version
 
       resources:
         flag: true
@@ -91,20 +94,23 @@ class Nota
       outputPath: options.outputPath
       preserve:   options.preserve
     }
-    @server.queue [job]
+    @server.queue [job, job]
     .then (meta) =>
+      # We're done!
 
       if options.logging.notify
         # Would be nice if you could click on the notification
         notifier.on 'click', ->
-          if meta.length = 1 then open meta[0].outputPath
-          else if meta.length > 1 then open Path.dirname meta[0].outputPath
+          if meta.length is 1
+            open meta[0].outputPath
+          else if meta.length > 1
+            open Path.dirname Path.resolve meta[0].outputPath
           else # meta = []
 
         # Send notification
-        notifier.notify 
+        notifier.notify
           title:    "Nota: render jobs finished"
-          message:  "#{jobs.length} document(s) captured to .PDF"
+          message:  "#{meta.length} document(s) captured to .PDF"
           icon:     Path.join(__dirname, '../assets/images/icon.png')
           wait:     true
 
