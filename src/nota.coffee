@@ -94,7 +94,7 @@ class Nota
       outputPath: options.outputPath
       preserve:   options.preserve
     }
-    @server.queue [job, job]
+    @server.queue [job]
     .then (meta) =>
       # We're done!
 

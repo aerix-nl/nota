@@ -144,7 +144,7 @@
           outputPath = _this.helper.findOutputPath({
             defaultFilename: _this.options.defaultFilename,
             preserve: captureOptions.preserve,
-            path: captureOptions.outputPath,
+            outputPath: captureOptions.outputPath,
             meta: meta
           });
           captureOptions.outputPath = outputPath;

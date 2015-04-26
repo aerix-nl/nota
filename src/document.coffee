@@ -132,7 +132,7 @@ module.exports = class Document
       outputPath = @helper.findOutputPath
         defaultFilename:  @options.defaultFilename
         preserve:         captureOptions.preserve
-        path:             captureOptions.outputPath
+        outputPath:       captureOptions.outputPath
         meta:             meta
       
       # Update the meta data with the final output path and options passed to
@@ -149,7 +149,7 @@ module.exports = class Document
     @state = 'page:ready'
     deferred.promise
 
-  onResourceRequested: ( request ) =>    
+  onResourceRequested: ( request ) =>
     if @loadingResources.indexOf(request.id) is -1
       @loadingResources.push(request.id)
       clearTimeout(@timers.resource)

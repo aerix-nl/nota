@@ -111,7 +111,7 @@
         outputPath: options.outputPath,
         preserve: options.preserve
       };
-      return this.server.queue([job, job]).then((function(_this) {
+      return this.server.queue([job]).then((function(_this) {
         return function(meta) {
           if (options.logging.notify) {
             notifier.on('click', function() {

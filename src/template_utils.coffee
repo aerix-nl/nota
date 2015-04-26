@@ -181,9 +181,10 @@ module.exports = class TemplateUtils
 
 
   # options =
-  #   path:     captureOptions.outputPath
-  #   meta:     meta
-  #   default:  @options.defaultFilename
+  #   outputPath:       '/root/dir/subdir' | 'dir/force-filename.pdf'
+  #   meta:             { filesystemName: 'preferred-name.pdf' }
+  #   defaultFilename:  'default.pdf'
+  #   preserve:         true | false
   findOutputPath: (options)->
     { outputPath, meta, defaultFilename, preserve } = options
     # If the explicitly defined output path is merely an output directory,
