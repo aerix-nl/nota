@@ -108,7 +108,7 @@
       var bower, bowerPath, checknwarn, node, nodePath;
       checknwarn = (function(_this) {
         return function(args) {
-          var defType, deps, depsDir, devDeps, mng;
+          var defType, deps, depsDir, devDeps, mngr;
           if (args[2] == null) {
             return;
           }
@@ -117,8 +117,8 @@
           deps = (args[2].dependencies != null) && _.keys(args[2].dependencies).length > 0;
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
-            mng = args[0] === 'node' ? 'npm' : args[0];
-            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mng + ' install')) + "?") : void 0;
+            mngr = args[0] === 'node' ? 'npm' : args[0];
+            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mngr + ' install')) + "?") : void 0;
           }
         };
       })(this);
@@ -178,9 +178,10 @@
       return templatePath;
     };
 
-    TemplateUtils.prototype.findDataPath = function(options, required) {
-      var dataPath, templatePath, _dataPath;
+    TemplateUtils.prototype.findDataPath = function(options) {
+      var dataPath, required, templatePath, _dataPath, _ref;
       dataPath = options.dataPath, templatePath = options.templatePath;
+      required = (_ref = options.document) != null ? _ref.modelDriven : void 0;
       if (dataPath != null) {
         if (this.isData(dataPath)) {
           dataPath;
@@ -197,9 +198,9 @@
         }
         dataPath = _dataPath;
       } else {
-        if (required) {
+        if (required === true) {
           throw new Error("Please provide data with " + (chalk.cyan('--data=<file path>')));
-        } else {
+        } else if (required == null) {
           if (typeof this.logWarning === "function") {
             this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
           }

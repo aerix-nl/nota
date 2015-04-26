@@ -10,7 +10,7 @@ module.exports = class JobQueue extends Array
 
   # options = {
   #   type: 'static' or 'scripted'
-  #   callback: -> stuff
+  #   deferFinish: deferred that exposes .resolve(returnValue)
   # }
   constructor: (@jobs, @options) ->
     if @jobs.length is 0 then throw new Error "Creating empty job queue"
@@ -24,9 +24,10 @@ module.exports = class JobQueue extends Array
   completeJob: (jobMeta)->
     @meta[@rendered] = jobMeta
     @rendered += 1
-    # Automatically complete with callback if finished
+
+    # Automatically complete with resolving deferred when finished
     if @isFinished()
-      @options.callback?(@meta)
+      @options.deferFinish?.resolve @meta
 
   # Returns job if there is one more in the queue (mutates the queue) or
   # returns null if finished.

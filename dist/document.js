@@ -121,10 +121,11 @@
     };
 
     Document.prototype.capture = function(captureOptions) {
-      var metaPromise;
+      var deferred;
       if (captureOptions == null) {
         captureOptions = {};
       }
+      deferred = Q.defer();
       this.page.evaluate(function() {
         if (typeof $ !== "undefined" && $ !== null) {
           return $('a').each(function(idx, a) {
@@ -132,8 +133,7 @@
           });
         }
       });
-      metaPromise = this.getMeta();
-      return metaPromise.then((function(_this) {
+      this.getMeta().then((function(_this) {
         return function(meta) {
           var outputPath;
           if (meta != null) {
@@ -151,23 +151,28 @@
           meta = _.extend({}, meta, captureOptions);
           _this.trigger('render:init');
           return _this.page.render(outputPath, function() {
-            return _this.trigger('render:done', meta);
+            _this.trigger('render:done', meta);
+            return deferred.resolve(meta);
           });
         };
       })(this));
+      this.state = 'page:ready';
+      return deferred.promise;
     };
 
     Document.prototype.onResourceRequested = function(request) {
-      this.trigger('page:resource:requested');
+      var _ref;
       if (this.loadingResources.indexOf(request.id) === -1) {
         this.loadingResources.push(request.id);
-        return clearTimeout(this.timers.resource);
+        clearTimeout(this.timers.resource);
+      }
+      if ((_ref = this.server.options.logging) != null ? _ref.pageResources : void 0) {
+        return this.trigger('page:resource:requested');
       }
     };
 
     Document.prototype.onResourceReceived = function(resource) {
-      var i;
-      this.trigger('page:resource:received');
+      var i, _ref;
       if (resource.stage !== "end" && (resource.redirectURL == null)) {
         return;
       }
@@ -175,6 +180,9 @@
         return;
       }
       this.loadingResources.splice(i, 1);
+      if ((_ref = this.server.options.logging) != null ? _ref.pageResources : void 0) {
+        this.trigger('page:resource:received');
+      }
       if (this.loadingResources.length === 0) {
         clearTimeout(this.timers.resource);
         return this.timers['resource'] = setTimeout((function(_this) {
@@ -186,7 +194,7 @@
     };
 
     Document.prototype.isReady = function() {
-      return this.document.state === 'page:ready';
+      return this.state === 'page:ready';
     };
 
     Document.prototype.injectData = function(data) {

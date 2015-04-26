@@ -25,6 +25,7 @@ module.exports = class Document
   constructor: ( @server, @options ) ->
     _.extend(@, Backbone.Events)
     @helper = new TemplateUtils()
+
     @on 'all', @setState, @
 
     phantom.create ( @phantomInstance ) =>
@@ -115,14 +116,14 @@ module.exports = class Document
     deferred.promise
 
   capture: (captureOptions = {})->
+    deferred = Q.defer()
     # TODO: Remove this fix when hyperlinks are being rendered properly:
     # https://github.com/ariya/phantomjs/issues/10196
     @page.evaluate ->
       if $? then $('a').each (idx, a)->
         $(a).replaceWith $('<span class="hyperlink">'+$(a).text()+'</span>')[0]
 
-    metaPromise = @getMeta()
-    metaPromise.then (meta)=>
+    @getMeta().then (meta)=>
       if meta?
         @trigger 'page:meta-fetched', meta
       else
@@ -143,20 +144,28 @@ module.exports = class Document
       # This is where the real PDF making magic happens. Credits to PhantomJS
       @page.render outputPath, ( ) =>
         @trigger 'render:done', meta
+        deferred.resolve meta
 
-  onResourceRequested: ( request ) =>
-    @trigger 'page:resource:requested'
+    @state = 'page:ready'
+    deferred.promise
+
+  onResourceRequested: ( request ) =>    
     if @loadingResources.indexOf(request.id) is -1
       @loadingResources.push(request.id)
       clearTimeout(@timers.resource)
 
+    # To prevent the output being spammed full of resource log events we allow supressing it
+    @trigger 'page:resource:requested' if @server.options.logging?.pageResources
+
   onResourceReceived: ( resource ) =>
-    @trigger 'page:resource:received'
     return if resource.stage isnt "end" and not resource.redirectURL?
     # If it already got received earlier
     return if (i = @loadingResources.indexOf resource.id) is -1
 
     @loadingResources.splice(i, 1)
+
+    # To prevent the output being spammed full of resource log events we allow supressing it
+    @trigger 'page:resource:received' if @server.options.logging?.pageResources
 
     if @loadingResources.length is 0
       # We're done loading all resources. Set a new timer to wait if any new
@@ -172,7 +181,7 @@ module.exports = class Document
 
   isReady: ->
     # Which ever comes first
-    @document.state is 'page:ready'
+    @state is 'page:ready'
     
   injectData: (data)->
     deferred = Q.defer()

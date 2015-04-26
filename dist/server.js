@@ -32,13 +32,15 @@
       this.options = options;
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
-      this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
       _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
       this.helper = new TemplateUtils(this.logWarning);
+      _.extend(this.options.document, {
+        templateType: this.helper.getTemplateType(this.templatePath)
+      });
     }
 
     NotaServer.prototype.start = function() {
-      var logging;
       this.on('all', this.logEvent, this);
       this.trigger("server:init");
       this.app = express();
@@ -62,12 +64,8 @@
       if (this.options.preview) {
         return this;
       }
-      logging = {
-        logEvent: this.logEvent,
-        logWarning: this.logWarning,
-        logError: this.logError
-      };
-      return this.document = new Document(this, this.options.document);
+      this.document = new Document(this, this.options.document);
+      return this.document.on('all', this.logEvent);
     };
 
     NotaServer.prototype.url = function() {
@@ -78,65 +76,63 @@
       this.dataPath = dataPath;
     };
 
-    NotaServer.prototype.queue = function(jobs, options) {
-      _.extend(options, {
-        templateType: this.helper.getTemplateType(this.templatePath)
-      });
-      this.queue = new JobQueue(jobs, options);
-      console.log(this.queue.options.type);
-      console.log(this.document.state);
-      switch (this.queue.options.type) {
+    NotaServer.prototype.queue = function() {
+      var deferred, jobs, options;
+      deferred = Q.defer();
+      if (arguments[0] instanceof JobQueue) {
+        this.queue = arguments[0];
+      } else {
+        jobs = arguments[0];
+        options = arguments[1] || {};
+        _.extend(options, {
+          deferFinish: deferred,
+          templateType: this.document.options.templateType
+        });
+        this.queue = new JobQueue(jobs, options);
+      }
+      switch (this.queue.options.templateType) {
         case 'static':
-          return this.document.once("page:rendered", (function(_this) {
+          this.document.once('page:rendered', (function(_this) {
             return function() {
               return _this.renderStatic(_this.queue);
             };
           })(this));
+          break;
         case 'scripted':
-          return this.document.once('page:ready', (function(_this) {
+          this.document.once('page:ready', (function(_this) {
             return function() {
               return _this.renderScripted(_this.queue);
             };
           })(this));
       }
+      return deferred.promise;
     };
 
     NotaServer.prototype.renderStatic = function(queue) {
-      var job, _results;
-      _results = [];
-      while (job = queue.nextJob()) {
-        _results.push((function(_this) {
-          return function(job) {
-            _this.document.capture(job);
-            return _this.document.once('render:done', queue.completeJob, queue);
-          };
-        })(this)(job));
-      }
-      return _results;
+      var job, start;
+      job = queue.nextJob();
+      start = new Date();
+      return this.document.capture(job).then((function(_this) {
+        return function(meta) {
+          var finished;
+          finished = new Date();
+          meta.duration = finished - start;
+          queue.completeJob(meta);
+          if (!queue.isFinished()) {
+            return _this.renderStatic(queue);
+          }
+        };
+      })(this));
     };
 
     NotaServer.prototype.renderScripted = function(queue) {
-      var currentJob, error, offerData, postRender, queueJob, renderJob;
-      currentJob = queue.nextJob();
-      queueJob = (function(_this) {
-        return function(job) {
-          var deferred;
-          deferred = Q.defer();
-          if (_this.document.state === 'page:ready') {
-            deferred.resolve(job);
-          } else {
-            _this.document.once('page:ready', function() {
-              return deferred.resolve(job);
-            });
-          }
-          return deferred.promise;
-        };
-      })(this);
+      var error, job, offerData, postRender, renderJob, start;
+      job = queue.nextJob();
+      start = new Date();
       offerData = (function(_this) {
         return function(job) {
           var data, deferred;
           deferred = Q.defer();
-          console.log(44);
           data = JSON.parse(fs.readFileSync(job.dataPath, {
             encoding: 'utf8'
           }));
@@ -163,19 +159,25 @@
       })(this);
       postRender = (function(_this) {
         return function(meta) {
+          var finished;
+          finished = new Date();
+          meta.duration = finished - start;
           queue.completeJob(meta);
+          if (typeof _this.log === "function") {
+            _this.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
+          }
           if (!queue.isFinished()) {
             return _this.renderScripted(queue);
           }
         };
       })(this);
       error = function(err) {
-        return this.logError("Page loaded but still in state: " + clst + " (if it's a loading state, consider increasing the timeout in default-config.json)");
+        return this.logError(err);
       };
-      if (currentJob.dataPath != null) {
-        return queueJob(currentJob).then(offerData).then(renderJob).then(postRender)["catch"](error);
+      if (job.dataPath != null) {
+        return offerData(job).then(renderJob).then(postRender)["catch"](error);
       } else {
-        return queueJob(currentJob).then(renderJob).then(postRender)["catch"](error);
+        return renderJob(job).then(postRender)["catch"](error);
       }
     };
 
@@ -183,8 +185,7 @@
       this.trigger('server:closing');
       this.document.close();
       this.server.close();
-      this.server.off('all', this.logEvent, this);
-      return process.exit();
+      return this.server.off('all', this.logEvent, this);
     };
 
     return NotaServer;

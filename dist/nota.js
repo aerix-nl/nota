@@ -30,7 +30,6 @@
     Nota.prototype.meta = require('../package.json');
 
     function Nota() {
-      this.logEvent = __bind(this.logEvent, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
       var definition, e, logging;
       this.helper = new TemplateUtils(this.logWarning);
@@ -88,6 +87,7 @@
         return;
       }
       logging = {
+        log: this.log,
         logEvent: this.logEvent,
         logWarning: this.logWarning,
         logError: this.logError
@@ -102,36 +102,39 @@
     }
 
     Nota.prototype.render = function(options) {
-      var jobOptions, jobs;
-      jobs = [
-        {
-          dataPath: options.dataPath,
-          outputPath: options.outputPath,
-          preserve: options.preserve
-        }
-      ];
-      jobOptions = {
-        callback: (function(_this) {
-          return function(meta) {
-            console.log(meta);
-            if (options.logging.notify) {
-              notifier.on('click', function() {
-                return open(meta[1].outputPath);
-              });
-              _this.notify({
-                title: "Nota: render jobs finished",
-                message: "" + jobs.length + " document(s) captured to .PDF"
-              });
-            }
-            return _this.server.close();
-          };
-        })(this)
+      var job;
+      job = {
+        dataPath: options.dataPath,
+        outputPath: options.outputPath,
+        preserve: options.preserve
       };
-      return this.server.queue(jobs, jobOptions);
+      return this.server.queue([job]).then((function(_this) {
+        return function(meta) {
+          if (options.logging.notify) {
+            notifier.on('click', function() {
+              if (meta.length = 1) {
+                return open(meta[0].outputPath);
+              } else if (meta.length > 1) {
+                return open(Path.dirname(meta[0].outputPath));
+              } else {
+
+              }
+            });
+            notifier.notify({
+              title: "Nota: render jobs finished",
+              message: "" + jobs.length + " document(s) captured to .PDF",
+              icon: Path.join(__dirname, '../assets/images/icon.png'),
+              wait: true
+            });
+          }
+          _this.server.close();
+          return process.exit();
+        };
+      })(this));
     };
 
     Nota.prototype.settleOptions = function(args, defaults) {
-      var dataRequired, e, options;
+      var e, options;
       options = _.extend({}, defaults);
       options = _.extend(options, {
         templatePath: args.template,
@@ -160,8 +163,7 @@
         e = _error;
         this.logWarning(e);
       }
-      dataRequired = options.document.modelDriven ? true : false;
-      options.dataPath = this.helper.findDataPath(options, dataRequired);
+      options.dataPath = this.helper.findDataPath(options);
       return options;
     };
 
@@ -170,7 +172,7 @@
       templates = [];
       index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
-        throw new Error("No (valid) templates found in templates directory.");
+        this.logError("No (valid) templates found in templates directory.");
       } else {
         headerDir = 'Directory';
         headerName = 'Template name';
@@ -201,28 +203,20 @@
       return '';
     };
 
+    Nota.prototype.log = function(msg) {
+      return console.log('nota ' + msg);
+    };
+
     Nota.prototype.logWarning = function(warningMsg) {
-      return console.warn("nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
+      return console.warn('nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
     };
 
     Nota.prototype.logError = function(errorMsg) {
-      return console.warn("nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
+      return console.error('nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
     };
 
     Nota.prototype.logEvent = function(event) {
-      if (s.startsWith(event, "page:resource") && !this.options.logging.pageResources) {
-        return;
-      }
-      return console.warn("nota " + chalk.bgBlue.black('EVENT') + ' ' + event);
-    };
-
-    Nota.prototype.notify = function(message) {
-      var base;
-      base = {
-        title: 'Nota event',
-        icon: Path.join(__dirname, '../assets/images/icon.png')
-      };
-      return notifier.notify(_.extend(base, message));
+      return console.info('nota ' + chalk.bgBlue.black('EVENT') + ' ' + event);
     };
 
     return Nota;

@@ -90,10 +90,10 @@ module.exports = class TemplateUtils
       deps    = args[2].dependencies?    and _.keys(args[2].dependencies).length > 0
       devDeps = args[2].devDependencies? and _.keys(args[2].devDependencies).length > 0
       if (deps or devDeps) and not @isDirectory depsDir
-        mng = if args[0] is 'node' then 'npm' else args[0]
+        mngr = if args[0] is 'node' then 'npm' else args[0]
         @logWarning? "Template #{chalk.cyan templateDir}
         has #{defType} definition with dependencies, but no #{defType}
-        #{args[1]} seem installed yet. Forgot #{chalk.cyan mng+' install'}?"
+        #{args[1]} seem installed yet. Forgot #{chalk.cyan mngr+' install'}?"
 
     bowerPath = Path.join templateDir, "bower.json"
     if @isFile bowerPath
@@ -155,8 +155,10 @@ module.exports = class TemplateUtils
       else throw new Error("Failed to find template #{chalk.cyan templatePath}.")
     templatePath
 
-  findDataPath: ( options, required ) ->
+  findDataPath: ( options ) ->
     { dataPath, templatePath } = options
+    required = options.document?.modelDriven
+
     if dataPath?
       if @isData(dataPath)
         dataPath
@@ -169,10 +171,12 @@ module.exports = class TemplateUtils
       @logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
       dataPath = _dataPath
     else
-      if required then throw new Error("Please provide data with #{chalk.cyan '--data=<file path>'}")
-      else @logWarning? "No data has been provided or example data found. If
-      your template is model driven and requires data, please provide data
-      with #{chalk.cyan '--data=<file path>'}"
+      if required is true
+        throw new Error("Please provide data with #{chalk.cyan '--data=<file path>'}")
+      else if not required?
+        @logWarning? "No data has been provided or example data found. If your
+        template is model driven and requires data, please provide data with
+        #{chalk.cyan '--data=<file path>'}"
     dataPath
 
 

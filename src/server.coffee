@@ -16,10 +16,11 @@ module.exports = class NotaServer
 
   constructor: ( @options, logging ) ->
     _.extend(@, Backbone.Events)
-    { @logEvent, @logError, @logWarning } = logging
+    { @log, @logEvent, @logError, @logWarning } = logging
     { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
 
     @helper = new TemplateUtils(@logWarning)
+    _.extend @options.document, templateType: @helper.getTemplateType(@templatePath)
 
 
   start: ->
@@ -50,58 +51,71 @@ module.exports = class NotaServer
 
     return @ if @options.preview
 
-    logging = {
-      logEvent:   @logEvent
-      logWarning: @logWarning
-      logError:   @logError
-    }
     @document = new Document(@, @options.document)
+    @document.on 'all', @logEvent
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
 
   serve: ( @dataPath )->
 
-  queue: ( jobs, options ) ->
-    _.extend options, templateType: @helper.getTemplateType(@templatePath)
-    @queue = new JobQueue(jobs, options)
-    console.log @queue.options.type
-    console.log @document.state
-    switch @queue.options.type
-      when 'static'
-        @document.once "page:rendered", =>
-          @renderStatic(@queue)
-      when 'scripted'
-        
-        # Wait till the page finished opening
-        @document.once 'page:ready', =>
-          @renderScripted(@queue)
+  # Call with either a JobQueue instance or
+  # with (jobs , options) where
+  #
+  #   jobs = [
+  #     {
+  #       dataPath:   options.dataPath
+  #       outputPath: options.outputPath
+  #       preserve:   options.preserve
+  #     }]
+  # 
+  #   options = {
+  #     callback: ->
+  #   }
+  queue: ( ) ->
+    deferred = Q.defer()
+
+    if arguments[0] instanceof JobQueue
+      @queue = arguments[0]
+    else
+      jobs    = arguments[0]
+      options = arguments[1] or {}
+      _.extend options, {
+        deferFinish: deferred
+        templateType: @document.options.templateType
+      }
+      @queue = new JobQueue(jobs, options)
+
+    switch @queue.options.templateType
+      when 'static'   then @document.once 'page:rendered', => @renderStatic(@queue)
+      when 'scripted' then @document.once 'page:ready', =>  @renderScripted(@queue)
+
+    deferred.promise
           
   renderStatic: (queue)->
-    while job = queue.nextJob()
-      do (job) =>
-        @document.capture job
-        @document.once 'render:done', queue.completeJob, queue
+    # Dequeue the next job
+    job = queue.nextJob()
+    start = new Date()
+
+    @document.capture(job).then (meta)=>
+      finished = new Date()
+      meta.duration = finished-start
+
+      # Mark this one as completed.
+      queue.completeJob(meta)
+
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished() then @renderStatic queue
 
   renderScripted: (queue)->
     # Dequeue the next job
-    currentJob = queue.nextJob()
-    queueJob = (job)=>
-      deferred = Q.defer()
-
-      # If we're in an N+1 iteration and the template has already loaded
-      if @document.state is 'page:ready'
-        deferred.resolve job
-      # Else we'll probably have to wait for the page (and possibly tempalte
-      # app) to load and get ready.
-      else
-        @document.once 'page:ready', => deferred.resolve job
-
-      deferred.promise
+    job = queue.nextJob()
+    start = new Date()
 
     offerData = (job)=>
       deferred = Q.defer()
-      console.log 44
+
       # TODO: kinda indecisive about whether to inject data or set the data
       # here and "notify" the template to get the new data. The latter is
       # more HTTP-ish, but way more convoluted/complex than injecting it. So
@@ -111,7 +125,6 @@ module.exports = class NotaServer
       # rendered in your browser.
       # @serve job.dataPath
       data = JSON.parse fs.readFileSync(job.dataPath, encoding: 'utf8')
-
       @document.injectData(data).then -> deferred.resolve job
 
       deferred.promise
@@ -119,6 +132,7 @@ module.exports = class NotaServer
     # Define render job as a promise
     renderJob = (job)=>
       deferred = Q.defer()
+
       if @document.state is 'page:rendered' then @document.capture job
       else @document.once 'page:rendered', => @document.capture job
       @document.once 'render:done', deferred.resolve
@@ -126,27 +140,29 @@ module.exports = class NotaServer
       deferred.promise
 
     postRender = (meta)=>
+      finished = new Date()
+      meta.duration = finished-start
+
       queue.completeJob(meta)
+      @log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
+      
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderScripted queue
 
     error = (err)->
-      @logError "Page loaded but still in state: #{clst} (if it's a loading
-          state, consider increasing the timeout in default-config.json)"
+      @logError err
 
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    if currentJob.dataPath?
-      queueJob(currentJob)
-      .then offerData
+    if job.dataPath?
+      offerData(job)
       .then renderJob
       .then postRender
       .catch error
     else
-      queueJob(currentJob)
-      .then renderJob
+      renderJob(job)
       .then postRender
       .catch error
 
@@ -155,5 +171,4 @@ module.exports = class NotaServer
     @document.close()
     @server.close()
     @server.off 'all', @logEvent, @
-    process.exit()
 

@@ -29,11 +29,11 @@
     };
 
     JobQueue.prototype.completeJob = function(jobMeta) {
-      var _base;
+      var _ref;
       this.meta[this.rendered] = jobMeta;
       this.rendered += 1;
       if (this.isFinished()) {
-        return typeof (_base = this.options).callback === "function" ? _base.callback(this.meta) : void 0;
+        return (_ref = this.options.deferFinish) != null ? _ref.resolve(this.meta) : void 0;
       }
     };
 

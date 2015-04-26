@@ -47,7 +47,7 @@ class Nota
         abbr: 'v'
         flag: true
         help: 'Print version'
-        callback: -> @meta.version
+        callback: -> @meta.version 
 
       resources:
         flag: true
@@ -68,6 +68,7 @@ class Nota
       return
 
     logging = {
+      log:        @log
       logEvent:   @logEvent
       logWarning: @logWarning
       logError:   @logError
@@ -85,23 +86,30 @@ class Nota
   # creates a single job and calls the server queue API, but this should
   # become more general with job arrays in the future.
   render: ( options )->
-    jobs = [{
+    job = {
       dataPath:   options.dataPath
       outputPath: options.outputPath
       preserve:   options.preserve
-    }]
-    jobOptions = {
-      callback: (meta) =>
-        console.log meta
-        if options.logging.notify
-          # Would be nice if you could click on the notification
-          notifier.on 'click', -> open meta[1].outputPath
-          @notify
-            title: "Nota: render jobs finished"
-            message: "#{jobs.length} document(s) captured to .PDF"
-        @server.close()
     }
-    @server.queue jobs, jobOptions
+    @server.queue [job]
+    .then (meta) =>
+
+      if options.logging.notify
+        # Would be nice if you could click on the notification
+        notifier.on 'click', ->
+          if meta.length = 1 then open meta[0].outputPath
+          else if meta.length > 1 then open Path.dirname meta[0].outputPath
+          else # meta = []
+
+        # Send notification
+        notifier.notify 
+          title:    "Nota: render jobs finished"
+          message:  "#{jobs.length} document(s) captured to .PDF"
+          icon:     Path.join(__dirname, '../assets/images/icon.png')
+          wait:     true
+
+      @server.close()
+      process.exit()
 
   # Settling options from parsed CLI arguments over defaults
   settleOptions: ( args, defaults ) ->
@@ -118,12 +126,14 @@ class Nota
     options.logging.pageResources = args.resources if args.resources?
     options.preserve = args.preserve               if args.preserve?
     
-    options.templatePath =  @helper.findTemplatePath(options)
-    try
-      _.extend options.document, @helper.getTemplateDefinition(options.templatePath).nota,
+    # Template
+    options.templatePath =          @helper.findTemplatePath(options)
+    # Template config
+    try _.extend options.document,  @helper.getTemplateDefinition(options.templatePath).nota
     catch e then @logWarning e
-    dataRequired = if options.document.modelDriven then true else false
-    options.dataPath =      @helper.findDataPath(options, dataRequired)
+    # Data
+    options.dataPath =              @helper.findDataPath(options)
+
     return options
 
 
@@ -132,7 +142,7 @@ class Nota
     index = @helper.getTemplatesIndex(@defaults.templatesPath)
 
     if _.size(index) is 0
-      throw new Error("No (valid) templates found in templates directory.")
+      @logError "No (valid) templates found in templates directory."
     else
       headerDir     = 'Directory'
       headerName    = 'Template name'
@@ -156,22 +166,16 @@ class Nota
         console.log "nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make execution stop here with --list
 
+  log: ( msg )->
+    console.log  'nota ' + msg
+
   logWarning: ( warningMsg )->
-    console.warn "nota " + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
+    console.warn 'nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
 
   logError: ( errorMsg )->
-    console.warn "nota " + chalk.bgRed.black('ERROR') + ' ' + errorMsg
+    console.error 'nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg
 
-  logEvent: ( event )=>
-    # To prevent the output being spammed full of resource log events we allow supressing it
-    if s.startsWith(event, "page:resource") and not @options.logging.pageResources then return
-    
-    console.warn "nota " + chalk.bgBlue.black('EVENT') + ' ' + event
-
-  notify: ( message )->
-    base =
-      title:    'Nota event'
-      icon:     Path.join(__dirname, '../assets/images/icon.png')
-    notifier.notify _.extend base, message
+  logEvent: ( event )->
+    console.info 'nota ' + chalk.bgBlue.black('EVENT') + ' ' + event
 
 Nota = new Nota()
