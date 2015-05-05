@@ -1,0 +1,51 @@
+@import '../../bower_components/bootstrap/dist/css/bootstrap.css';
+@import 'compass';
+
+$primary: #0D3542;
+$secondary: #E3B74A;
+$tertiary: #925E29;
+
+$fontstack: "Georgia", serif;
+
+
+body {
+	color: $primary;
+	font-family: $fontstack;
+	font-size: 1.3em;
+	background-color: transparentize(black, 0.9);
+}
+
+a, .hyperlink {
+	color: $tertiary;
+	&:hover {
+		color: $secondary;
+	}
+}
+// Override bootstrap
+.muted {
+	color: transparentize($primary, 0.5);
+}
+
+img#logo {
+	width: 14em;
+	margin: 5% auto;
+	display: block;
+}
+
+div.container {
+	padding: 3em 5em;
+	background-color: white;
+	@include border-radius(6px);
+	@include box-shadow( 0 4px transparentize(black, 0.8) );
+
+	section.main {
+		text-align: center;
+		border-bottom: solid 1px transparentize($primary, 0.9);
+		padding-bottom: 3em;
+		margin-bottom: 3em;
+
+		button#upload {
+			margin: 2em;
+		}
+	}
+}
