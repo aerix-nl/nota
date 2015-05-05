@@ -216,12 +216,13 @@ module.exports = class NotaServer
     @ipLookup().then (ip)=>
       @log? """#{motd}
 
-          LAN: http://#{ipLan}:#{@serverPort}/render
-          WAN: http://#{ipExt}:#{@serverPort}/render
+          LAN: http://#{ip.lan}:#{@serverPort}/render
+          WAN: http://#{ip.wan}:#{@serverPort}/render
 
       """
       deferred.resolve()
     .catch (err)=>
+      console.log err
       @log? motd
       deferred.resolve()
 
@@ -229,16 +230,20 @@ module.exports = class NotaServer
 
   ipLookup: ->
     deferred = Q.defer()
+
     require('dns').lookup require('os').hostname(), (errLan, ipLan, fam)=>
-      if errLan? then deferred.reject errLan
+      if errLan? then return deferred.reject errLan
+
       require('externalip') (errExt, ipExt)=>
-        if errExt? then deferred.reject errExt
+        if errExt? then return deferred.reject errExt
+
         @ip = {
-          lan:      ipLan
-          external: ipExt
+          lan: ipLan
+          wan: ipExt
         }
         deferred.resolve @ip
-    deferred.promise()
+
+    deferred.promise
 
   webRenderInterface: (req, res)->
     res.send fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
@@ -246,6 +251,9 @@ module.exports = class NotaServer
   webRender: (req, res)=>
     mkdirp @options.webrenderPath, (err)=>
       if err
+        # PhantomJS page renderBase64 isn't available for PDF, so we can't
+        # render to memory and send it over. We need a place to put it, a sort
+        # of webrender temp dir, and then upload that file with the response.
         return @logError "Nota requires write access to #{chalk.cyan options.webrenderPath}. Error: #{err}"
 
       job = {

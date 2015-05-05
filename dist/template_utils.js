@@ -216,8 +216,8 @@
       outputPath = options.outputPath, meta = options.meta, defaultFilename = options.defaultFilename, preserve = options.preserve;
       if (outputPath != null) {
         if (this.isDirectory(outputPath)) {
-          if ((meta != null ? meta.filesystemName : void 0) != null) {
-            outputPath = Path.join(outputPath, meta.filesystemName);
+          if ((meta != null ? meta.filename : void 0) != null) {
+            outputPath = Path.join(outputPath, meta.filename);
           } else {
             outputPath = Path.join(outputPath, defaultFilename);
           }
@@ -228,8 +228,8 @@
           }
         }
       } else {
-        if ((meta != null ? meta.filesystemName : void 0) != null) {
-          outputPath = meta.filesystemName;
+        if ((meta != null ? meta.filename : void 0) != null) {
+          outputPath = meta.filename;
         } else {
           outputPath = defaultFilename;
         }

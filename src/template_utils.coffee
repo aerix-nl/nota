@@ -183,7 +183,7 @@ module.exports = class TemplateUtils
 
   # options =
   #   outputPath:       '/root/dir/subdir' | 'dir/force-filename.pdf'
-  #   meta:             { filesystemName: 'preferred-name.pdf' }
+  #   meta:             { filename: 'preferred-name.pdf' }
   #   defaultFilename:  'default.pdf'
   #   preserve:         true | false
   findOutputPath: (options)->
@@ -196,8 +196,8 @@ module.exports = class TemplateUtils
     # default filename.
     if outputPath?
       if @isDirectory(outputPath)
-        if meta?.filesystemName?
-          outputPath = Path.join(outputPath, meta.filesystemName)
+        if meta?.filename?
+          outputPath = Path.join(outputPath, meta.filename)
         else
           # Else we have no suggestion from the template, and we resort to the
           # default filename as provided in the config, which isn't a very
@@ -210,8 +210,8 @@ module.exports = class TemplateUtils
         @logWarning? "Overwriting with current render: #{outputPath}"
 
     else
-      if meta?.filesystemName?
-        outputPath = meta.filesystemName
+      if meta?.filename?
+        outputPath = meta.filename
       else
         outputPath = defaultFilename
 

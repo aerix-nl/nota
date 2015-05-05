@@ -237,12 +237,13 @@
       this.ipLookup().then((function(_this) {
         return function(ip) {
           if (typeof _this.log === "function") {
-            _this.log("" + motd + "\n\nLAN: http://" + ipLan + ":" + _this.serverPort + "/render\nWAN: http://" + ipExt + ":" + _this.serverPort + "/render\n");
+            _this.log("" + motd + "\n\nLAN: http://" + ip.lan + ":" + _this.serverPort + "/render\nWAN: http://" + ip.wan + ":" + _this.serverPort + "/render\n");
           }
           return deferred.resolve();
         };
       })(this))["catch"]((function(_this) {
         return function(err) {
+          console.log(err);
           if (typeof _this.log === "function") {
             _this.log(motd);
           }
@@ -258,21 +259,21 @@
       require('dns').lookup(require('os').hostname(), (function(_this) {
         return function(errLan, ipLan, fam) {
           if (errLan != null) {
-            deferred.reject(errLan);
+            return deferred.reject(errLan);
           }
           return require('externalip')(function(errExt, ipExt) {
             if (errExt != null) {
-              deferred.reject(errExt);
+              return deferred.reject(errExt);
             }
             _this.ip = {
               lan: ipLan,
-              external: ipExt
+              wan: ipExt
             };
             return deferred.resolve(_this.ip);
           });
         };
       })(this));
-      return deferred.promise();
+      return deferred.promise;
     };
 
     NotaServer.prototype.webRenderInterface = function(req, res) {

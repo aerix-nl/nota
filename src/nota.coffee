@@ -20,7 +20,7 @@ class Nota
   meta: require '../package.json'
 
   # Some strings that go before all logging (server origin and client origin respectively)
-  logPrefix: chalk.gray('nota ')
+  logPrefix:    chalk.gray('nota ')
   clientPrefix: chalk.gray('nota-client ')
 
   cliOptions:
