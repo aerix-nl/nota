@@ -12,7 +12,8 @@
     "requirejs": "2.1.15",
     "requirejs-text": "2.0.13",
     "requirejs-plugins": "1.0.3",
-    "underscore.string": "2.3.3"
+    "underscore.string": "2.3.3",
+    "bootstrap": "~3.3.4"
   },
   "main": "dist/client.js"
 }

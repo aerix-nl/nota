@@ -45,8 +45,8 @@ module.exports = class Document
         # find a real fix for this workaround to counter a strange zoom factor.
         # @page.zoomFactor = 0.9360
 
-        @page.onConsoleMessage  ( msg ) -> console.log   msg
-        @page.set 'onError',    ( msg ) -> console.error msg
+        @page.onConsoleMessage  ( msg ) => @server.logClient msg
+        @page.set 'onError',    ( msg ) => @onClientError msg
         @page.set 'onCallback', ( msg ) => @trigger("client:#{msg}")
         @page.set 'onResourceRequested', @onResourceRequested
         @page.set 'onResourceReceived',  @onResourceReceived
@@ -115,8 +115,13 @@ module.exports = class Document
     @page.evaluate metaRequest, deferred.resolve
     deferred.promise
 
-  capture: (captureOptions = {})->
+  capture: (job = {})->
     deferred = Q.defer()
+
+    # We're going to augment the job object into the job meta data object, better make a
+    # copy to prevent side effects.
+    job = _.extend {}, job
+
     # TODO: Remove this fix when hyperlinks are being rendered properly:
     # https://github.com/ariya/phantomjs/issues/10196
     @page.evaluate ->
@@ -131,14 +136,14 @@ module.exports = class Document
 
       outputPath = @helper.findOutputPath
         defaultFilename:  @options.defaultFilename
-        preserve:         captureOptions.preserve
-        outputPath:       captureOptions.outputPath
+        preserve:         job.preserve
+        outputPath:       job.outputPath
         meta:             meta
       
       # Update the meta data with the final output path and options passed to
       # this render call.
-      captureOptions.outputPath = outputPath
-      meta = _.extend {}, meta, captureOptions
+      job.outputPath = outputPath
+      meta = _.extend meta, job
 
       @trigger 'render:init'
       # This is where the real PDF making magic happens. Credits to PhantomJS
@@ -178,6 +183,19 @@ module.exports = class Document
       @timers['resource'] = setTimeout =>
         @trigger 'page:ready'
       , @options.resourceTimeout
+
+  onClientError: (msg)->
+    @server.logClientError? msg
+    if @options.errorTimeout?
+      # After the error timeout we trigger an event to signal that the job
+      # has crashed.
+      @timers['error'] = setTimeout =>
+        @trigger 'error-timeout', msg
+      , @options.errorTimeout
+
+      # On any sign of progress, cancel the timeout, because the job might
+      # continue after all.
+      @once 'all', => clearTimeout(@timers['error'])
 
   isReady: ->
     # Which ever comes first

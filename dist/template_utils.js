@@ -70,7 +70,7 @@
     };
 
     TemplateUtils.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var definitionPath, isDefined, templateDefinition, warningMsg;
+      var definitionPath, isDefined, template, warningMsg;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -85,23 +85,25 @@
             this.logWarning(warningMsg);
           }
         }
-        templateDefinition = {
-          name: Path.basename(dir),
+        template = {
           meta: 'not found'
         };
       } else {
         definitionPath = Path.join(dir, "bower.json");
-        templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
-        templateDefinition.meta = 'read';
+        template = JSON.parse(fs.readFileSync(definitionPath));
+        template.meta = 'read';
         if (logWarnings) {
           this.checkDependencies(dir);
         }
       }
-      if (!fs.existsSync(Path.join(dir, "template.html"))) {
-        templateDefinition.meta = 'not template';
+      if (template.name == null) {
+        template.name = Path.basename(dir);
       }
-      templateDefinition.dir = Path.basename(dir);
-      return templateDefinition;
+      if (!fs.existsSync(Path.join(dir, "template.html"))) {
+        template.meta = 'not template';
+      }
+      template.dir = Path.basename(dir);
+      return template;
     };
 
     TemplateUtils.prototype.checkDependencies = function(templateDir) {

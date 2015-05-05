@@ -20,26 +20,32 @@
         job = _ref[_i];
         this.push(job);
       }
-      this.rendered = 0;
       this.meta = new Array(this.jobs.length);
     }
 
-    JobQueue.prototype.dequeue = function() {
-      return this.splice(0, 1);
-    };
-
-    JobQueue.prototype.completeJob = function(jobMeta) {
-      var _ref;
-      this.meta[this.rendered] = jobMeta;
-      this.rendered += 1;
+    JobQueue.prototype.jobCompleted = function(job, jobMeta) {
+      var index, _ref;
+      index = this.jobIndex(job);
+      if (index === -1) {
+        throw new Error('Mentioned job is not known in this qeueue');
+      }
+      this.meta[index] = jobMeta;
       if (this.isFinished()) {
         return (_ref = this.options.deferFinish) != null ? _ref.resolve(this.meta) : void 0;
       }
     };
 
+    JobQueue.prototype.jobFailed = function(job, jobMeta) {
+      return this.jobCompleted(job, jobMeta);
+    };
+
+    JobQueue.prototype.jobIndex = function(job) {
+      return this.jobs.indexOf(job);
+    };
+
     JobQueue.prototype.nextJob = function() {
       var deq;
-      deq = this.dequeue();
+      deq = this.splice(0, 1);
       if (deq.length === 1) {
         return deq[0];
       } else {
@@ -49,6 +55,31 @@
 
     JobQueue.prototype.isFinished = function() {
       return this.length === 0;
+    };
+
+    JobQueue.prototype.inProgress = function() {
+      var i, inProgress, job;
+      inProgress = (function() {
+        var _i, _len, _ref, _results;
+        _ref = this.jobs;
+        _results = [];
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          job = _ref[i];
+          if (_(this).contains(job)) {
+            continue;
+          }
+          if (meta[i] != null) {
+            continue;
+          }
+          _results.push(job);
+        }
+        return _results;
+      }).call(this);
+      if (inProgress.length === 0) {
+        return null;
+      } else {
+        return inProgress;
+      }
     };
 
     return JobQueue;

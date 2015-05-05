@@ -34,6 +34,7 @@ picky on it's environment and dependencies. We recommend running Nota under
 Linux, and we've made a provisioning script that sets up all dependencies for
 Linux (and unverified support for Mac and Windows under cywin).
 ```
+chmod +x provision.sh
 ./provision.sh
 ```
 
@@ -138,6 +139,17 @@ meta = {
 ````
 
 
+## Scalability
+
+On a MacBook Pro mid-2014 Core i7, 16GB RAM the rendering of the `example-
+invoice` template with regularly sized data takes about 0.37 seconds.
+Performance degradations haven't been noticed for queues up to a 100 jobs.
+Testing beyond that is still needed. Scability might be hindered because job
+queues are rendered using recursion. This is required because of the
+asynchronous nature of libraries required for rendering. Some investigation on
+space and time complexity is still need.
+
+
 ## Known problems
 
 Nota is young, experimental, and built on a still developing tech stack. There
@@ -149,12 +161,26 @@ the current version a showcase of the potential of this tech stack and the
 future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
-Even though WebKit supports this, due to a
-[bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
+Even though WebKit supports this, due to
+[a bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
 PhantomJS builts on the current output PDFs have no clickable links. This has
-quite some pressing attention, so it's likely to be fixed soon, but no fix
-committed yet. For now we recommend making links that have URL as the text so
-users can copy-paste that, or avoid them.
+quite some [pressing attention](https://www.bountysource.com/issues/303463
+-suggestion-include-hyperlink-action-in-pdf-output-for-hyperlinks-in-
+webpage/backers), so it's likely to be [fixed
+soon](https://github.com/ariya/phantomjs/pull/13171), but no fix committed
+yet. For now we recommend making links that have the URL as the text so users
+can copy-paste that.
+
+#### Hyperlink expansion
+It seems that as an attempt to compensate for the lack of links, PhantomJS takes
+the `href` value of a link and suffixes it to the link's inner HTML, rendering
+a link like `<a href="www.somewhere.com">link</a>` into `<a
+href="somewhere.com">link (www.somewhere.com)</a>`. This also causes a flow
+expansion that breaks 1:1 correspondence of screen to print output, and can
+even break layouts when context flow it lightly fitted. To prevent this, for
+now Nota subsitutes all `<a>` tags with `<span class="hyperlink">` tags with
+equal inner HTML. For identical styling, we recommend a selector like `a,
+span.hyperlink` in your template CSS.
 
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a
@@ -177,7 +203,7 @@ other solutions.
 
 #### Paper size and zoom factor
 It looks like when rendering with PhantomJS 1.9.x the page receives a zoom
-factor of about 1.068 is applied, causing the content flow to run longer than
+factor of about 1.068, causing the content flow to run longer than
 what is seen when rendered in the web browser. This is likely to be fixed, or
 at least allow for a compensating counter zoomfactor in PhantomJS 2 according
 to [this bug](https://github.com/ariya/phantomjs/issues/12685). But at the

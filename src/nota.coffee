@@ -19,6 +19,47 @@ class Nota
   # Load the package definition so we may know ourselves (version etc.)
   meta: require '../package.json'
 
+  # Some strings that go before all logging (server origin and client origin respectively)
+  logPrefix: chalk.gray('nota ')
+  clientPrefix: chalk.gray('nota-client ')
+
+  cliOptions:
+    template:
+      position: 0
+      help:     'The template directory path'
+    data:
+      position: 1
+      help:    'The data file path'
+    output:
+      position: 2
+      help:    'The output file'
+
+    preview:
+      abbr: 'p'
+      flag: true
+      help: 'Preview in the browser'
+    listen:
+      abbr: 's'
+      flag: true
+      help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
+    list:
+      abbr: 'l'
+      flag: true
+      help: 'List all templates'
+      callback: @listTemplatesIndex
+    version:
+      abbr: 'v'
+      flag: true
+      help: 'Print version'
+      callback: -> @meta.version
+
+    resources:
+      flag: true
+      help: 'Show the events of page resource loading in output'
+    preserve:
+      flag: true
+      help: 'Prevent overwriting when output path is already occupied'
+
   constructor: ( logging ) ->
     # Allow redirecting of logging output through dependency injection
     if logging? then { @log, @logEvent, @logError, @logWarning } = logging
@@ -26,41 +67,10 @@ class Nota
     # Instantiate our thrusty helping hand in template and job tasks
     @helper = new TemplateUtils(@logWarning)
 
-    nomnom.options
-      template:
-        position: 0
-        help:     'The template directory path'
-      data:
-        position: 1
-        help:    'The data file path'
-      output:
-        position: 2
-        help:    'The output file'
-
-      preview:
-        abbr: 'p'
-        flag: true
-        help: 'Preview in the browser'
-      list:
-        abbr: 'l'
-        flag: true
-        help: 'List all templates'
-        callback: @listTemplatesIndex
-      version:
-        abbr: 'v'
-        flag: true
-        help: 'Print version'
-        callback: -> @meta.version
-
-      resources:
-        flag: true
-        help: 'Show the events of page resource loading in output'
-      preserve:
-        flag: true
-        help: 'Prevent overwriting when output path is already occupied'
+    nomnom.options @cliOptions
 
     try
-      @options = @settleOptions nomnom.nom(), @defaults
+      @options = @parseOptions nomnom.nom(), @defaults
     catch e
       @logError e
       return
@@ -71,19 +81,31 @@ class Nota
       return
 
     logging = {
-      log:        @log
-      logEvent:   @logEvent
-      logWarning: @logWarning
-      logError:   @logError
+      log:              @log
+      logEvent:         @logEvent
+      logWarning:       @logWarning
+      logError:         @logError
+      logClient:        @logClient
+      logClientError:   @logClientError
     }
-    # Start the server
+
     @server = new NotaServer @options, logging
+
     @server.start()
-    
-    # If we want a preview, open the web page
-    if @options.preview then open(@server.url())
-    # Else, perform the render job and close the server
-    else @render(@options)
+    # We'll need to wait till all of it's components have loaded and setup is done
+    .then =>
+
+      if @options.preview
+        # If we want a template preview, open the web page
+        open(@server.url())
+
+      if @options.listen
+        # Open the webrender page where renders can be requested
+        open(@server.webrenderUrl())
+
+      else
+        # Else, perform a single render job and close the server
+        @render(@options)
 
   # TODO: refactor this wrapper away. Right now it's an ugly extractor that
   # creates a single job and calls the server queue API, but this should
@@ -118,7 +140,7 @@ class Nota
       process.exit()
 
   # Settling options from parsed CLI arguments over defaults
-  settleOptions: ( args, defaults ) ->
+  parseOptions: ( args, defaults ) ->
     options = _.extend {}, defaults
     # Extend with mandatory arguments
     options = _.extend options,
@@ -126,11 +148,12 @@ class Nota
       dataPath:     args.data
       outputPath:   args.output
     # Extend with optional arguments
-    options.preview = args.preview                 if args.preview?
-    options.port = args.port                       if args.port?
-    options.logging.notify = args.notify           if args.notify?
-    options.logging.pageResources = args.resources if args.resources?
-    options.preserve = args.preserve               if args.preserve?
+    options.preview = args.preview                    if args.preview?
+    options.listen = args.listen                      if args.listen?
+    options.port = args.port                          if args.port?
+    options.logging.notify = args.notify              if args.notify?
+    options.logging.pageResources = args.resources    if args.resources?
+    options.preserve = args.preserve                  if args.preserve?
     
     # Template
     options.templatePath =          @helper.findTemplatePath(options)
@@ -164,24 +187,32 @@ class Nota
       headerName    = s.pad headerName, lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
-      console.log "nota "+ chalk.gray(headerDir + headerName + ' ' + headerVersion)
+      @log chalk.gray(headerDir + headerName + ' ' + headerVersion)
       templates = for dir, definition of index
         dir     = s.pad definition.dir,  lengths.dirName, ' ', 'right'
         name    = s.pad definition.name, lengths.name + 8, ' ', 'left'
         version = if definition.version? then 'v'+definition.version else ''
-        console.log "nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
+        @log chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make execution stop here with --list
 
-  log: ( msg )->
-    console.log  'nota ' + msg
+  # Server origin logging
+  log: ( msg )=>
+    console.log   @logPrefix + msg
 
-  logWarning: ( warningMsg )->
-    console.warn 'nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
+  logWarning: ( warningMsg )=>
+    console.warn  @logPrefix + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
 
-  logError: ( errorMsg )->
-    console.error 'nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg
+  logError: ( errorMsg )=>
+    console.error @logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg
 
-  logEvent: ( event )->
-    console.info 'nota ' + chalk.bgBlue.black('EVENT') + ' ' + event
+  logEvent: ( event )=>
+    console.info  @logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event
+
+  # Client origin logging
+  logClient: ( msg )=>
+    console.log   @clientPrefix + msg
+
+  logClientError: ( msg )=>
+    console.error @clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg
 
 Nota = new Nota()

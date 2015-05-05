@@ -17,7 +17,6 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
   PCKMNGR="choco"
 fi
 
-
 # Start provisioning
 echo "Installing Nota dependencies (needs root permission)"
 echo " - Updating package manager index"

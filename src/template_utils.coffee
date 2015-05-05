@@ -57,29 +57,30 @@ module.exports = class TemplateUtils
       warningMsg = "Template #{chalk.cyan(dir)} has no #{chalk.cyan 'bower.json'} definition
       #{chalk.gray '(optional, but recommended)'}"
       @logWarning? warningMsg if logWarnings
-      templateDefinition =
-        # Default it's name to it's directory name in absence of an 'official
-        # statement' so we at least have some unique identifier.
-        name: Path.basename(dir)
-        meta: 'not found'
+      template = { meta: 'not found' }
     else
       definitionPath = Path.join dir, "bower.json"
-      templateDefinition = JSON.parse fs.readFileSync definitionPath
-      templateDefinition.meta = 'read'
+      template = JSON.parse fs.readFileSync definitionPath
+      # TODO: check template definition against scheme for reuiqred properties
+      # and throw warnings otherwise) and set .defintion = 'valid' if
+      # sufficient or 'invalid' otherwise.
+      template.meta = 'read'
 
       # Not essential, but try to give the user a heads up about uninstalled dependencies
       if logWarnings then @checkDependencies(dir)
 
-      # TODO: check template definition against scheme for reuiqre properties
-      # (and throw warnings otherwise) and set .defintion = 'valid' if sufficient
+
+    # Default it's name to it's directory name in absence of an 'official
+    # statement' so we at least have some unique identifier.
+    template.name = Path.basename(dir) unless template.name?
 
     # Check requirements for template
     if not fs.existsSync( Path.join dir, "template.html" )
-      templateDefinition.meta = 'not template'
+      template.meta = 'not template'
 
     # Supplement the definition with some meta data that is now available
-    templateDefinition.dir = Path.basename(dir)
-    return templateDefinition
+    template.dir = Path.basename(dir)
+    return template
 
   # Logging some warnings about uninstalled dependencies when needed
   checkDependencies: (templateDir)->

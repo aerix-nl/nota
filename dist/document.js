@@ -39,10 +39,10 @@
             };
             _this.page.set('paperSize', _this.options.paperSize);
             _this.page.onConsoleMessage(function(msg) {
-              return console.log(msg);
+              return _this.server.logClient(msg);
             });
             _this.page.set('onError', function(msg) {
-              return console.error(msg);
+              return _this.onClientError(msg);
             });
             _this.page.set('onCallback', function(msg) {
               return _this.trigger("client:" + msg);
@@ -120,12 +120,13 @@
       return deferred.promise;
     };
 
-    Document.prototype.capture = function(captureOptions) {
+    Document.prototype.capture = function(job) {
       var deferred;
-      if (captureOptions == null) {
-        captureOptions = {};
+      if (job == null) {
+        job = {};
       }
       deferred = Q.defer();
+      job = _.extend({}, job);
       this.page.evaluate(function() {
         if (typeof $ !== "undefined" && $ !== null) {
           return $('a').each(function(idx, a) {
@@ -143,12 +144,12 @@
           }
           outputPath = _this.helper.findOutputPath({
             defaultFilename: _this.options.defaultFilename,
-            preserve: captureOptions.preserve,
-            outputPath: captureOptions.outputPath,
+            preserve: job.preserve,
+            outputPath: job.outputPath,
             meta: meta
           });
-          captureOptions.outputPath = outputPath;
-          meta = _.extend({}, meta, captureOptions);
+          job.outputPath = outputPath;
+          meta = _.extend(meta, job);
           _this.trigger('render:init');
           return _this.page.render(outputPath, function() {
             _this.trigger('render:done', meta);
@@ -190,6 +191,25 @@
             return _this.trigger('page:ready');
           };
         })(this), this.options.resourceTimeout);
+      }
+    };
+
+    Document.prototype.onClientError = function(msg) {
+      var _base;
+      if (typeof (_base = this.server).logClientError === "function") {
+        _base.logClientError(msg);
+      }
+      if (this.options.errorTimeout != null) {
+        this.timers['error'] = setTimeout((function(_this) {
+          return function() {
+            return _this.trigger('error-timeout', msg);
+          };
+        })(this), this.options.errorTimeout);
+        return this.once('all', (function(_this) {
+          return function() {
+            return clearTimeout(_this.timers['error']);
+          };
+        })(this));
       }
     };
 
