@@ -1,31 +1,33 @@
 # Nota
 <img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
 
-Nota eats your template (HTML5+CSS3+optionally JS) + optionally your data
-(JSON) and excretes pretty PDF documents. Perfect for things like automating
-invoice or ticket generation, but also simply compiling a static document to
-PDF. Nota can be used for any kind of document typesetting, layout and markup
-jobs, especially those that require automation and custom
-processing/presentation of data.
+Nota eats your HTML based static or scripted template, allows you to mix in
+your data and excretes pretty PDF documents. Perfect for automating things
+like invoice or ticket generation, but also a convenient tool rendering a
+simple static document to PDF.
 
+
+## Features
+
+#### Development ease
 Develop and debug while feeling right at home in your favorite browser, with a
 1:1 preview of what Nota turns into a .PDF for you. Nota makes designing and
-programming your documents a breeze with `--preview`.
+programming your documents a breeze. Try in your shell:
+``` nota --template=example-invoice --preview ```
 
+#### Programmable
 Spare yourself the mind numbing routine of creating series of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
-intellectual slave labour.
+intellectual slave labour. Try in your Node package:
 ```
-jobs = [{
-  data:       'data1.json'
-  outputPath: 'output1.pdf'
-}, {
-  data:       'data2.json'
-  outputPath: 'output2.pdf'
-}]
-server.render jobs
+nota = require('nota')
+nota.queue [job1, job2, job3]
 ```
+
+#### Webinterface
+Run Nota as a webservice, and create your PDF's though a friendly UI where you can upload a JSON file and get a PDF in return. Or use the REST API to expose Nota over your the interwebs or LAN. Send a POST request with JSON, and get a PDF download in return. Try in your shell:
+``` nota --template=example-invoice --listen ```
 
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-

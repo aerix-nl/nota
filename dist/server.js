@@ -37,7 +37,6 @@
       var _ref;
       this.options = options;
       this.webRender = __bind(this.webRender, this);
-      this.webRenderInterface = __bind(this.webRenderInterface, this);
       this.webrenderUrl = __bind(this.webrenderUrl, this);
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
@@ -225,7 +224,7 @@
     };
 
     NotaServer.prototype.listen = function() {
-      var bodyParser, deferred;
+      var bodyParser, deferred, motd;
       deferred = Q.defer();
       bodyParser = require('body-parser');
       this.app.use(bodyParser.json());
@@ -234,17 +233,46 @@
       }));
       this.app.post('/render', this.webRender);
       this.app.get('/render', this.webRenderInterface);
-      require('dns').lookup(require('os').hostname(), (function(_this) {
-        return function(errLan, ipLan, fam) {
-          return require('externalip')(function(errExt, ipExt) {
-            if (typeof _this.log === "function") {
-              _this.log("Listening at " + (chalk.cyan('http://localhost:' + _this.serverPort + '/render')) + " for POST requests\n\n  LAN: http://" + ipLan + ":" + _this.serverPort + "\n  WAN: http://" + ipExt + ":" + _this.serverPort + "\n");
-            }
-            return deferred.resolve();
-          });
+      motd = "Listening at " + (chalk.cyan('http://localhost:' + this.serverPort + '/render')) + " for POST requests";
+      this.ipLookup().then((function(_this) {
+        return function(ip) {
+          if (typeof _this.log === "function") {
+            _this.log("" + motd + "\n\nLAN: http://" + ipLan + ":" + _this.serverPort + "/render\nWAN: http://" + ipExt + ":" + _this.serverPort + "/render\n");
+          }
+          return deferred.resolve();
+        };
+      })(this))["catch"]((function(_this) {
+        return function(err) {
+          if (typeof _this.log === "function") {
+            _this.log(motd);
+          }
+          return deferred.resolve();
         };
       })(this));
       return deferred.promise;
+    };
+
+    NotaServer.prototype.ipLookup = function() {
+      var deferred;
+      deferred = Q.defer();
+      require('dns').lookup(require('os').hostname(), (function(_this) {
+        return function(errLan, ipLan, fam) {
+          if (errLan != null) {
+            deferred.reject(errLan);
+          }
+          return require('externalip')(function(errExt, ipExt) {
+            if (errExt != null) {
+              deferred.reject(errExt);
+            }
+            _this.ip = {
+              lan: ipLan,
+              external: ipExt
+            };
+            return deferred.resolve(_this.ip);
+          });
+        };
+      })(this));
+      return deferred.promise();
     };
 
     NotaServer.prototype.webRenderInterface = function(req, res) {

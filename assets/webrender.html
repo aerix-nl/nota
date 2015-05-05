@@ -13,20 +13,21 @@
 	
 	<div class="container">
 		<section class="main">
-		<h1>Nota webrender service</h1>
-		<p>Upload a .JSON data file and get a pretty rendered PDF in return.<br>Currently selected template: <code>{{ template.name }}</code></p>
-		<button id="upload" class="btn btn-default">Upload .JSON</button>
-		<p>Or drag and drop a file here!</p>
+			<h1>Nota webrender service</h1>
+			<p>Upload a .JSON data file and get a pretty rendered PDF in return.<br>Currently selected template: <code>{{ template.name }}</code></p>
+			<a href="/" id="preview" class="btn btn-default">Preview template</a>
+			<button id="upload" class="btn btn-default">Upload .JSON</button>
+			<p>Or drag and drop a file here!</p>
 		</section>
 
-		<h3>REST API</h3>
 
+		<h4>REST API</h4>
 		<p>
 		Alternatively, use the REST-API by sending a POST request with data to:
 		<ul>
-			<li>Locally: <code>http://localhost:'+@serverPort+'/render'</code></li>
-			<li>LAN: <code>http://localhost:'+@serverPort+'/render'</code></li>
-			<li>WAN: <code>http://localhost:'+@serverPort+'/render'</code></li>
+			<li>Locally: <code>http://localhost:{{serverPort}}/render'</code></li>
+			<li>LAN: <code>http://{{ipLan}}:{{serverPort}}/render'</code></li>
+			<li>WAN: <code>http://{{ipExt}}:{{serverPort}}/render'</code></li>
 		</ul>
 		</p>
 

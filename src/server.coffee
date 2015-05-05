@@ -212,20 +212,35 @@ module.exports = class NotaServer
     @app.post '/render', @webRender
     @app.get  '/render', @webRenderInterface
 
-    require('dns').lookup require('os').hostname(), (errLan, ipLan, fam)=>
-      require('externalip') (errExt, ipExt)=>
-        @log? """
-          Listening at #{chalk.cyan 'http://localhost:'+@serverPort+'/render'} for POST requests
+    motd = "Listening at #{chalk.cyan 'http://localhost:'+@serverPort+'/render'} for POST requests"
+    @ipLookup().then (ip)=>
+      @log? """#{motd}
 
-            LAN: http://#{ipLan}:#{@serverPort}
-            WAN: http://#{ipExt}:#{@serverPort}
+          LAN: http://#{ipLan}:#{@serverPort}/render
+          WAN: http://#{ipExt}:#{@serverPort}/render
 
-        """
-        deferred.resolve()
+      """
+      deferred.resolve()
+    .catch (err)=>
+      @log? motd
+      deferred.resolve()
 
     deferred.promise
 
-  webRenderInterface: (req, res)=>
+  ipLookup: ->
+    deferred = Q.defer()
+    require('dns').lookup require('os').hostname(), (errLan, ipLan, fam)=>
+      if errLan? then deferred.reject errLan
+      require('externalip') (errExt, ipExt)=>
+        if errExt? then deferred.reject errExt
+        @ip = {
+          lan:      ipLan
+          external: ipExt
+        }
+        deferred.resolve @ip
+    deferred.promise()
+
+  webRenderInterface: (req, res)->
     res.send fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
 
   webRender: (req, res)=>
