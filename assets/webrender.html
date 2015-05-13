@@ -23,22 +23,20 @@
 
 		<h4>REST API</h4>
 		<p>
-		Alternatively, use the REST-API by sending a POST request with data to:
+		Alternatively, you can use the REST API. In matter of fact, this page is a simple app that uses that API. Send a POST request with data to the following URL, ad get the PDF download offer in the response header:
 		<ul>
-			<li>Locally: <code>http://localhost:{{serverPort}}/render'</code></li>
-			<li>LAN: <code>http://{{ipLan}}:{{serverPort}}/render'</code></li>
-			<li>WAN: <code>http://{{ipExt}}:{{serverPort}}/render'</code></li>
+			<li>Locally: 	<code>http://localhost:{{serverPort}}/render'</code></li>
+			<li>LAN: 			<code>http://{{ipLan}}:{{serverPort}}/render'</code></li>
+			<li>WAN: 			<code>http://{{ipExt}}:{{serverPort}}/render'</code></li>
 		</ul>
 		</p>
-
 		<p>
-		Supported content-type headers:
+		Supported request content-type headers:
 		<ul>
-			<li>JSON string: <code>application/json</code></li>
-			<li>Form key-value pairs: <code>application/x-www-form-urlencoded</code></li>
+			<li>JSON string: 						<code>application/json</code></li>
+			<li>Form key-value pairs: 	<code>application/x-www-form-urlencoded</code></li>
 		</ul>
 		</p>
-
 		<p>Parsing implementation by <a href="https://www.npmjs.com/package/body-parser">bodyparser</a>. For testing we recommend <a href="https://addons.mozilla.org/en-US/firefox/addon/restclient/">RESTClient</a> for Firefox or <a href="https://chrome.google.com/webstore/detail/fdmmgilgnpjigdojojpjoooidkmcomcm">Postman</a> for Chrome (<a href="http://stackoverflow.com/questions/4797534/how-do-i-manually-fire-http-post-requests-with-firefox-or-chrome">source</a>).</p>
 	</div>
 </body>

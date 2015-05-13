@@ -37,7 +37,7 @@ define ['backbone', 'json'], ->
     # meta data hash example = {
     #   id: '44'
     #   documentTitle: 'Invoice 2013.0044'
-    #   filesystemName: 'Invoice_2014.0044-Client_Name.pdf'
+    #   filename: 'Invoice_2014.0044-Client_Name.pdf'
     # }
     documentMeta:
       data:     null
