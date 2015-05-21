@@ -42,7 +42,7 @@ nota --template=example-invoice --preview
 ```
 And you're ready to start customizing!
 
-#### Programmable
+#### API
 Spare yourself the mind numbing routine of creating series of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
@@ -79,17 +79,17 @@ For now we recommend copying and adapting either one of the following
 example templates:
 
 * Static template example: `example-doc`
-* Model driven scripted template example: `example-invoice`
+* (Model driven) scripted template example: `example-invoice`
 
 
 #### About static templates
 Nota will scan the `template.html` for any `<script>` tag, and if there are
-none, it automatically assume it's stand-alone: `static`. This will make it
+none, it automatically assumes it's stand-alone: `static`. This will make it
 wait for all page resources to have finished loading and then perform the
 capture automatically. This makes Nota a luxury equivalent of [rasterize.js](h
 ttps://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-#### About dynamic templates 
+#### About scripted templates 
 If there are script tags found Nota will also wait for all resources to finish
 loading before injecting data and capturing. After the resources have been
 loading it allows for some time for the template and other things to set up
@@ -99,7 +99,7 @@ for the job, the data is made available and your template can query it from
 `/data.json`. Nota will wait the same timeout again so the template and other
 stuffs have time to render the data, after that the capture is performed.
 
-#### About Nota client API for dynamic templates
+#### About Nota client API for scripted and model driven templates
 If twice this timeout is way more than you need, you can skip this wait by
 talking to the Nota client API. Require the Nota client from the address
 `/nota.js`, which will expose the `Nota` client object which exposes
