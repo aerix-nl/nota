@@ -2,7 +2,7 @@
 
 # Require sudo for package manager commands
 if [[ $UID != 0 ]]; then
-    echo "Please run this script with sudo:"
+    echo "This script needs root permissions to install some packages. Please run with sudo:"
     echo "sudo $0 $*"
     exit 1
 fi
@@ -17,8 +17,9 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
   PCKMNGR="choco"
 fi
 
+
 # Start provisioning
-echo "Installing Nota dependencies (needs root permission)"
+echo "Installing Nota dependencies"
 echo " - Updating package manager index"
 $PCKMNGR update > /dev/null 2>&1
 
@@ -50,7 +51,9 @@ bower install --allow-root > /dev/null 2>&1
 
 echo " - Installing example templates"
 git submodule update --init --recursive > /dev/null 2>&1
-for dir in $(ls templates); do `cd "templates/$dir"; npm install; bower install`; done
+
+echo " - Installing example template dependencies"
+for dir in $(ls templates); do `cd "templates/$dir"; npm install; bower install --allow-root; cd ../..`; done
 
 echo " "
 echo "Provisioning finished."
