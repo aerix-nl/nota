@@ -28,7 +28,7 @@ When finished Nota has rendered a simple PDF page, consisting of some custom
 rendering of preview data as declared in the template `bower.json`. Change the
 company logo image and try modifing the example data to see how easy it is to
 customise it and create your own invoice. Then render your own data with
-`--data=<path>` and set the PDF destinartion with `--output=<path>` and you're
+`--data=<path>` and set the PDF destination with `--output=<path>` and you're
 creating your own invoices!
 
 #### Development ease
@@ -70,8 +70,9 @@ Technically this primarily consists out of a pipeline of
 and capturing PDF) with the [phantomjs-node](https://github.com/sgentle
 /phantomjs-node) bindings for interfacing using
 [Node.js](https://nodejs.org/). So all the credits really go out to them. This
-package is mostly some frameworking and task automation around the
-beforementioned, to make the job of crafting and rendering templates easier.
+package is mostly some CoffeeScript based API en UI frameworking around
+the beforementioned, to make the job of crafting and rendering templates
+easier.
 
 
 ## Creating templates
@@ -81,25 +82,30 @@ example templates:
 * Static template example: `example-doc`
 * (Model driven) scripted template example: `example-invoice`
 
+They are extensively commented and should help you give an idea of teh
+template structure.
 
-#### About static templates
-Nota will scan the `template.html` for any `<script>` tag, and if there are
-none, it automatically assumes it's stand-alone: `static`. This will make it
-wait for all page resources to have finished loading and then perform the
-capture automatically. This makes Nota a luxury equivalent of [rasterize.js](h
-ttps://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
+#### Static templates
+The most simple template is a static template. Nota will scan the
+`template.html` for any `<script>` tag. If there are none, it automatically
+assumes the template is `static`. When rendering in this mode Nota will wait
+for all the template's page resources like images to have finished loading and
+then perform the capture automatically. This makes Nota a luxury equivalent of
+[rasterize.js](https://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-#### About scripted templates 
-If there are script tags found Nota will also wait for all resources to finish
-loading before injecting data and capturing. After the resources have been
-loading it allows for some time for the template and other things to set up
-and initialize. This timeout is defined in `default-config.json`. After that
-timeout `page:loaded` is triggered internally, and if data has been provided
-for the job, the data is made available and your template can query it from
-`/data.json`. Nota will wait the same timeout again so the template and other
-stuffs have time to render the data, after that the capture is performed.
+#### Scripted templates 
+If there are script tags found Nota will also wait for all page resources to
+finish loading before injecting data and capturing. After the resources have
+been loaded Nota will allow the template some time set up and allow possible
+template code to initialize. This timeout duration is defined in `default-
+config.json` at `document.templateTimeout`.
 
-#### About Nota client API for scripted and model driven templates
+After that timeout the `page:ready` event is automatically triggered
+internally, and after the `document.renderTimeout` period the capture is
+performed. If data has been provided for the job, the data is made available
+and your template at the URI `/data.json`.
+
+#### Nota client API for scripted and model driven templates
 If twice this timeout is way more than you need, you can skip this wait by
 talking to the Nota client API. Require the Nota client from the address
 `/nota.js`, which will expose the `Nota` client object which exposes
@@ -135,10 +141,12 @@ meta = {
   id:             '42'
   documentTitle:  'Invoice 2013.0042'
 ````
-Currently only the `filename` is used. If defined the meta data also provides
-a way for the Nota backend to 'asks' your template for a suggested filename.
-If no output filename is provided, or the output path is a directory, then
-this filename will be used.
+Currently only the `filename` is used by Nota, but you can supplement it with
+whatever data you like, and have you application that builds on Nota use that.
+
+The `filename` property provides a way for the Nota backend to 'asks' your
+template for a suggested filename. If no output filename is provided, or the
+output path is a directory, then this filename will be used.
 
 
 ## Scalability
