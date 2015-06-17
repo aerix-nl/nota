@@ -1,6 +1,6 @@
 {
   "name": "nota",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Programmable PDF generator for static, scripted and model driven documents",
   "homepage": "https://github.com/aerix-nl/nota",
   "license": "MIT",
