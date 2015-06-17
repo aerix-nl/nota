@@ -11,7 +11,7 @@ NotaServer    = require('./server')
 JobQueue      = require('./queue')
 TemplateUtils = require('./template_utils')
 
-class Nota
+class NotaCLI
 
   # Load the (default) configuration
   defaults: require '../config-default.json'
@@ -23,43 +23,6 @@ class Nota
   logPrefix:    chalk.gray('nota ')
   clientPrefix: chalk.gray('nota-client ')
 
-  cliOptions:
-    template:
-      position: 0
-      help:     'The template directory path'
-    data:
-      position: 1
-      help:    'The data file path'
-    output:
-      position: 2
-      help:    'The output file'
-
-    preview:
-      abbr: 'p'
-      flag: true
-      help: 'Preview in the browser'
-    listen:
-      abbr: 's'
-      flag: true
-      help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
-    list:
-      abbr: 'l'
-      flag: true
-      help: 'List all templates'
-      callback: @listTemplatesIndex
-    version:
-      abbr: 'v'
-      flag: true
-      help: 'Print version'
-      callback: -> @meta.version
-
-    resources:
-      flag: true
-      help: 'Show the events of page resource loading in output'
-    preserve:
-      flag: true
-      help: 'Prevent overwriting when output path is already occupied'
-
   constructor: ( logging ) ->
     # Allow redirecting of logging output through dependency injection
     if logging? then { @log, @logEvent, @logError, @logWarning } = logging
@@ -67,7 +30,46 @@ class Nota
     # Instantiate our thrusty helping hand in template and job tasks
     @helper = new TemplateUtils(@logWarning)
 
-    nomnom.options @cliOptions
+    nomnom.options
+      template:
+        position: 0
+        help:     'The template directory path'
+      data:
+        position: 1
+        help:    'The data file path'
+      output:
+        position: 2
+        help:    'The output file'
+
+      preview:
+        abbr: 'p'
+        flag: true
+        help: 'Preview in the browser'
+      listen:
+        abbr: 's'
+        flag: true
+        help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
+      list:
+        abbr: 'l'
+        flag: true
+        help: 'List all templates'
+        callback: => @listTemplatesIndex()
+      verbove:
+        abbr: 'b'
+        flag: true
+        help: 'More detailed console output on errors'
+      version:
+        abbr: 'v'
+        flag: true
+        help: 'Print version'
+        callback: => @meta.version
+
+      resources:
+        flag: true
+        help: 'Show the events of page resource loading in output'
+      preserve:
+        flag: true
+        help: 'Prevent overwriting when output path is already occupied'
 
     try
       @options = @parseOptions nomnom.nom(), @defaults
@@ -75,10 +77,6 @@ class Nota
       @logError e
       return
 
-    definition = @helper.getTemplateDefinition @options.templatePath, false
-    if definition.meta is "not template"
-      @logError "Template #{chalk.cyan(definition.name)} has no mandatory #{chalk.cyan 'template.html'} file"
-      return
 
     logging = {
       log:              @log
@@ -154,11 +152,14 @@ class Nota
     options.logging.notify = args.notify              if args.notify?
     options.logging.pageResources = args.resources    if args.resources?
     options.preserve = args.preserve                  if args.preserve?
+    options.verbose = args.verbose                    if args.verbose?
     
     # Template
     options.templatePath =          @helper.findTemplatePath(options)
     # Template config
-    try _.extend options.document,  @helper.getTemplateDefinition(options.templatePath).nota
+    try
+      definition = @helper.getTemplateDefinition @options.templatePath
+      _.extend options.document, definition.nota
     catch e then @logWarning e
     # Data
     options.dataPath =              @helper.findDataPath(options)
@@ -204,6 +205,8 @@ class Nota
 
   logError: ( errorMsg )=>
     console.error @logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg
+    if @options.verbose and errorMsg.toSource?
+      console.error @logPrefix + errorMsg.toSource()
 
   logEvent: ( event )=>
     console.info  @logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event
@@ -215,4 +218,4 @@ class Nota
   logClientError: ( msg )=>
     console.error @clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg
 
-Nota = new Nota()
+notaCLI = new NotaCLI()

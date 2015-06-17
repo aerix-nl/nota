@@ -114,8 +114,8 @@
           if (args[2] == null) {
             return;
           }
-          depsDir = Path.join(templateDir, args[0] + '_' + args[1]);
           defType = s.capitalize(args[0]);
+          depsDir = Path.join(templateDir, args[0] + '_' + args[1]);
           deps = (args[2].dependencies != null) && _.keys(args[2].dependencies).length > 0;
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
@@ -174,7 +174,7 @@
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
-          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ".");
+          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ". Try " + (chalk.cyan('--list')) + " for an overview of available templates.");
         }
       }
       return templatePath;

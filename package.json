@@ -50,8 +50,9 @@
     "bower-requirejs": "1.1.2",
     "grunt": "~0.4.5",
     "grunt-contrib-coffee": "~0.10.1",
-    "grunt-contrib-sass": "~0.7.3",
     "grunt-contrib-watch": "~0.3.1",
+    "grunt-sass": "^1.0.0",
+    "load-grunt-tasks": "^3.2.0",
     "node-inspector": "0.9.1",
     "require": "0.5.0"
   },

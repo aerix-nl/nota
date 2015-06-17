@@ -84,24 +84,33 @@ module.exports = class TemplateUtils
 
   # Logging some warnings about uninstalled dependencies when needed
   checkDependencies: (templateDir)->
+    # Dependency check function that warns the user if they are not installed yet
     checknwarn = (args)=>
+      # is there any dependency spec at all?
       return unless args[2]?
-      depsDir = Path.join templateDir, args[0]+'_'+args[1] # e.g 'node_modules'
-      defType = s.capitalize args[0] # e.g. 'Bower', 'Node'
+      # package manager, e.g. 'Bower', 'Node'
+      defType = s.capitalize args[0]
+      # directory where package manager keeps installed dependencies, e.g 'node_modules'
+      depsDir = Path.join templateDir, args[0]+'_'+args[1]
+      # are there any dependencies?
       deps    = args[2].dependencies?    and _.keys(args[2].dependencies).length > 0
+      # and any dev dependencies?
       devDeps = args[2].devDependencies? and _.keys(args[2].devDependencies).length > 0
+      # if there are dependencies, are is there a sign of the containing directory?
       if (deps or devDeps) and not @isDirectory depsDir
         mngr = if args[0] is 'node' then 'npm' else args[0]
         @logWarning? "Template #{chalk.cyan templateDir}
         has #{defType} definition with dependencies, but no #{defType}
         #{args[1]} seem installed yet. Forgot #{chalk.cyan mngr+' install'}?"
 
+    # Check Bower dependencies
     bowerPath = Path.join templateDir, "bower.json"
     if @isFile bowerPath
       bower = JSON.parse fs.readFileSync bowerPath
     
     checknwarn ['bower', 'components', bower]
 
+    # Check NPM dependencies
     nodePath = Path.join templateDir, "package.json"
     if @isFile nodePath
       node = JSON.parse fs.readFileSync nodePath
@@ -153,7 +162,7 @@ module.exports = class TemplateUtils
         throw new Error("No template at '#{templatePath}'. But we did find a
         template which declares it's name as such. It's path is '#{match.dir}'")
 
-      else throw new Error("Failed to find template #{chalk.cyan templatePath}.")
+      else throw new Error("Failed to find template #{chalk.cyan templatePath}. Try #{chalk.cyan '--list'} for an overview of available templates.")
     templatePath
 
   findDataPath: ( options ) ->
