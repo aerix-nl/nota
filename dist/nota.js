@@ -41,7 +41,6 @@
       this.logWarning = __bind(this.logWarning, this);
       this.log = __bind(this.log, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var e;
       if (logging != null) {
         this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
       }
@@ -103,6 +102,10 @@
           help: 'Prevent overwriting when output path is already occupied'
         }
       });
+    }
+
+    NotaCLI.prototype.start = function() {
+      var e, logging;
       try {
         this.options = this.parseOptions(nomnom.nom(), this.defaults);
       } catch (_error) {
@@ -119,7 +122,7 @@
         logClientError: this.logClientError
       };
       this.server = new NotaServer(this.options, logging);
-      this.server.start().then((function(_this) {
+      return s = this.server.start().then((function(_this) {
         return function() {
           if (_this.options.preview) {
             open(_this.server.url());
@@ -131,7 +134,7 @@
           }
         };
       })(this));
-    }
+    };
 
     NotaCLI.prototype.render = function(options) {
       var job;
@@ -196,7 +199,7 @@
       }
       options.templatePath = this.helper.findTemplatePath(options);
       try {
-        definition = this.helper.getTemplateDefinition(this.options.templatePath);
+        definition = this.helper.getTemplateDefinition(options.templatePath);
         _.extend(options.document, definition.nota);
       } catch (_error) {
         e = _error;
@@ -251,8 +254,9 @@
     };
 
     NotaCLI.prototype.logError = function(errorMsg) {
+      var _ref;
       console.error(this.logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
-      if (this.options.verbose && (errorMsg.toSource != null)) {
+      if (((_ref = this.options) != null ? _ref.verbose : void 0) && (errorMsg.toSource != null)) {
         return console.error(this.logPrefix + errorMsg.toSource());
       }
     };
@@ -274,5 +278,7 @@
   })();
 
   notaCLI = new NotaCLI();
+
+  notaCLI.start();
 
 }).call(this);

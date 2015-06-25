@@ -38,6 +38,15 @@
               'extrender': null
             };
             _this.page.set('paperSize', _this.options.paperSize);
+            _this.page.set('zoomFactor', _this.options.zoomFactor);
+            _this.page.evaluate(function() {
+              var html;
+              html = document.getElementsByTagName('html').item(0);
+              html.style['transform-origin'] = '0 0';
+              html.style['-webkit-transform-origin'] = '0 0';
+              html.style['transform'] = 'scale(0.68)';
+              return html.style['-webkit-transform'] = 'scale(0.68)';
+            });
             _this.page.onConsoleMessage(function(msg) {
               return _this.server.logClient(msg);
             });

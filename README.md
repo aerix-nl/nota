@@ -52,8 +52,17 @@ nota = require('nota')
 nota.queue [job1, job2, job3]
 ```
 
+## Prerequisites
+
+You will need the following things properly installed on your computer.
+
+* [Git](http://git-scm.com/)
+* [Node.js](http://nodejs.org/) (with NPM)
+* [Bower](http://bower.io/)
+* [PhantomJS v1.9.8](http://phantomjs.org/)
 
 ## Setup
+
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-
 problems)) in the depencencies that are still being worked out, Nota is a bit
 picky on it's environment and dependencies. We recommend running Nota under

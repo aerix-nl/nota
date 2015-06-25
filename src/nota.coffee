@@ -71,6 +71,7 @@ class NotaCLI
         flag: true
         help: 'Prevent overwriting when output path is already occupied'
 
+  start: ->
     try
       @options = @parseOptions nomnom.nom(), @defaults
     catch e
@@ -89,10 +90,10 @@ class NotaCLI
 
     @server = new NotaServer @options, logging
 
-    @server.start()
+    s = @server.start()
     # We'll need to wait till all of it's components have loaded and setup is done
     .then =>
-
+      
       if @options.preview
         # If we want a template preview, open the web page
         open(@server.url())
@@ -157,8 +158,8 @@ class NotaCLI
     # Template
     options.templatePath =          @helper.findTemplatePath(options)
     # Template config
-    try
-      definition = @helper.getTemplateDefinition @options.templatePath
+    try # We can do without them though
+      definition = @helper.getTemplateDefinition options.templatePath
       _.extend options.document, definition.nota
     catch e then @logWarning e
     # Data
@@ -205,7 +206,7 @@ class NotaCLI
 
   logError: ( errorMsg )=>
     console.error @logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg
-    if @options.verbose and errorMsg.toSource?
+    if @options?.verbose and errorMsg.toSource?
       console.error @logPrefix + errorMsg.toSource()
 
   logEvent: ( event )=>
@@ -219,3 +220,4 @@ class NotaCLI
     console.error @clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg
 
 notaCLI = new NotaCLI()
+notaCLI.start()

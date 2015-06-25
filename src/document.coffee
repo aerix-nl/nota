@@ -40,6 +40,15 @@ module.exports = class Document
         }
 
         @page.set 'paperSize', @options.paperSize
+        @page.set 'zoomFactor', @options.zoomFactor
+        # workaround for phantomJS2 rendering pages too large:
+        # https://github.com/ariya/phantomjs/issues/12685
+        @page.evaluate ->
+          html = document.getElementsByTagName('html').item(0)
+          html.style['transform-origin'] =          '0 0'
+          html.style['-webkit-transform-origin'] =  '0 0'
+          html.style['transform'] =                 'scale(0.68)'
+          html.style['-webkit-transform'] =         'scale(0.68)'
 
         # TODO: Find for a fix that makes the zoomFactor work again, and after
         # find a real fix for this workaround to counter a strange zoom factor.

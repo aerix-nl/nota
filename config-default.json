@@ -17,6 +17,7 @@
     "extRenderTimeout":   8000,
     "errorTimeout":       2000,
     "defaultFilename":    "output.pdf",
+    "zoomFactor":         1,
     "paperSize": {
       "format":           "A4",
       "orientation":      "portrait",

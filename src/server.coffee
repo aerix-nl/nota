@@ -58,17 +58,19 @@ module.exports = class NotaServer
     @trigger "server:running"
 
     if @options.preview
-      return @
+      # Leave it at this ... just serving the web assets to the browser
+      deferred.resolve()
+    else 
+      # Start up the virtual document
+      @document = new Document(@, @options.document)
+      @document.on 'all', @logEvent
 
-    @document = new Document(@, @options.document)
-    @document.on 'all', @logEvent
-
-    if @options.listen
-      @document.once 'page:ready', =>
-        @listen().then deferred.resolve
-    else
-      @document.once 'page:ready', =>
-        deferred.resolve()
+      if @options.listen
+        @document.once 'page:ready', =>
+          @listen().then deferred.resolve
+      else
+        @document.once 'page:ready', =>
+          deferred.resolve()
 
     deferred.promise
 

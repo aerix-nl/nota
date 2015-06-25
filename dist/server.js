@@ -73,22 +73,23 @@
       this.server.listen(this.serverPort);
       this.trigger("server:running");
       if (this.options.preview) {
-        return this;
-      }
-      this.document = new Document(this, this.options.document);
-      this.document.on('all', this.logEvent);
-      if (this.options.listen) {
-        this.document.once('page:ready', (function(_this) {
-          return function() {
-            return _this.listen().then(deferred.resolve);
-          };
-        })(this));
+        deferred.resolve();
       } else {
-        this.document.once('page:ready', (function(_this) {
-          return function() {
-            return deferred.resolve();
-          };
-        })(this));
+        this.document = new Document(this, this.options.document);
+        this.document.on('all', this.logEvent);
+        if (this.options.listen) {
+          this.document.once('page:ready', (function(_this) {
+            return function() {
+              return _this.listen().then(deferred.resolve);
+            };
+          })(this));
+        } else {
+          this.document.once('page:ready', (function(_this) {
+            return function() {
+              return deferred.resolve();
+            };
+          })(this));
+        }
       }
       return deferred.promise;
     };
