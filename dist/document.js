@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, Path, Q, TemplateUtils, phantom, _,
+  var Backbone, Document, Path, Q, TemplateHelper, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Q = require('q');
@@ -12,7 +12,7 @@
 
   Backbone = require('backbone');
 
-  TemplateUtils = require('./template_utils');
+  TemplateHelper = require('./template_helper');
 
   module.exports = Document = (function() {
     Document.prototype.pagePhases = ['page:init', 'page:opened', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded', 'page:ready', 'client:template:render:init', 'client:template:render:done', 'page:rendered'];
@@ -23,7 +23,7 @@
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       _.extend(this, Backbone.Events);
-      this.helper = new TemplateUtils();
+      this.helper = new TemplateHelper();
       this.on('all', this.setState, this);
       phantom.create((function(_this) {
         return function(phantomInstance) {
@@ -230,7 +230,7 @@
       var deferred, inject;
       deferred = Q.defer();
       inject = function(data) {
-        return Nota.injectData(data);
+        return typeof Nota !== "undefined" && Nota !== null ? Nota.injectData(data) : void 0;
       };
       this.page.evaluate(inject, deferred.resolve, data);
       return deferred.promise;

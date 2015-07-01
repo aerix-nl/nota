@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, JobQueue, NotaServer, Path, Q, TemplateUtils, chalk, express, fs, http, mkdirp, open, phantom, s, _,
+  var Backbone, Document, JobQueue, NotaServer, Path, Q, TemplateHelper, chalk, express, fs, http, mkdirp, open, phantom, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
@@ -28,7 +28,7 @@
 
   Document = require('./document');
 
-  TemplateUtils = require('./template_utils');
+  TemplateHelper = require('./template_helper');
 
   JobQueue = require('./queue');
 
@@ -42,7 +42,7 @@
       _.extend(this, Backbone.Events);
       this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning, this.logClient = logging.logClient, this.logClientError = logging.logClientError;
       _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
-      this.helper = new TemplateUtils(this.logWarning);
+      this.helper = new TemplateHelper(this.logWarning);
       _.extend(this.options.document, {
         templateType: this.helper.getTemplateType(this.templatePath)
       });

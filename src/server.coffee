@@ -12,7 +12,7 @@ open          = require("open")
 Backbone      = require('backbone')
 
 Document      = require('./document')
-TemplateUtils = require('./template_helper')
+TemplateHelper = require('./template_helper')
 JobQueue      = require('./queue')
 
 module.exports = class NotaServer
@@ -24,7 +24,7 @@ module.exports = class NotaServer
 
     { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
 
-    @helper = new TemplateUtils(@logWarning)
+    @helper = new TemplateHelper(@logWarning)
     _.extend @options.document, templateType: @helper.getTemplateType(@templatePath)
 
     @on 'all', @logEvent, @
