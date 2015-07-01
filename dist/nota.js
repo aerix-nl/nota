@@ -1,5 +1,5 @@
 (function() {
-  var JobQueue, NotaCLI, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notaCLI, notifier, open, s, _,
+  var JobQueue, NotaCLI, NotaServer, Path, TemplateHelper, chalk, fs, nomnom, notaCLI, notifier, open, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -22,7 +22,7 @@
 
   JobQueue = require('./queue');
 
-  TemplateUtils = require('./template_utils');
+  TemplateHelper = require('./template_helper');
 
   NotaCLI = (function() {
     NotaCLI.prototype.defaults = require('../config-default.json');
@@ -44,7 +44,7 @@
       if (logging != null) {
         this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
       }
-      this.helper = new TemplateUtils(this.logWarning);
+      this.helper = new TemplateHelper(this.logWarning);
       nomnom.options({
         template: {
           position: 0,

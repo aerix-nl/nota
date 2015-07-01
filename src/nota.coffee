@@ -9,7 +9,7 @@ notifier      = require('node-notifier')
 
 NotaServer    = require('./server')
 JobQueue      = require('./queue')
-TemplateUtils = require('./template_utils')
+TemplateHelper = require('./template_helper')
 
 class NotaCLI
 
@@ -28,7 +28,7 @@ class NotaCLI
     if logging? then { @log, @logEvent, @logError, @logWarning } = logging
 
     # Instantiate our thrusty helping hand in template and job tasks
-    @helper = new TemplateUtils(@logWarning)
+    @helper = new TemplateHelper(@logWarning)
 
     nomnom.options
       template:
