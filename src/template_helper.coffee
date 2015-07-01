@@ -7,7 +7,7 @@ chalk         = require('chalk')
 cheerio       = require('cheerio')
 
 # Utility class to help it with common filesystem and template/data related questiosn
-module.exports = class TemplateUtils
+module.exports = class TemplateHelper
 
   constructor: ( @logWarning )->
     _.extend(@, Backbone.Events)

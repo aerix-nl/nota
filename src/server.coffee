@@ -12,7 +12,7 @@ open          = require("open")
 Backbone      = require('backbone')
 
 Document      = require('./document')
-TemplateUtils = require('./template_utils')
+TemplateUtils = require('./template_helper')
 JobQueue      = require('./queue')
 
 module.exports = class NotaServer

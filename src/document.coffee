@@ -4,7 +4,7 @@ phantom       = require('phantom')
 _             = require('underscore')._
 Backbone      = require('backbone')
 
-TemplateUtils = require('./template_utils')
+TemplateHelper = require('./template_helper')
 
 # This class is basically a wrapper of a PhantomJS instance
 module.exports = class Document
@@ -24,7 +24,7 @@ module.exports = class Document
 
   constructor: ( @server, @options ) ->
     _.extend(@, Backbone.Events)
-    @helper = new TemplateUtils()
+    @helper = new TemplateHelper()
 
     @on 'all', @setState, @
 
