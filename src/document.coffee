@@ -120,7 +120,11 @@ module.exports = class Document
   # The callback will receive the meta data as it's argument when done
   getMeta: ->
     deferred = Q.defer()
-    metaRequest = -> Nota?.getDocumentMeta()
+    
+    metaRequest = ->
+      # Try and get meta data if Nota client is present (i.e. template loaded it)
+      Nota?.getDocumentMeta()
+
     @page.evaluate metaRequest, deferred.resolve
     deferred.promise
 
@@ -213,7 +217,8 @@ module.exports = class Document
   injectData: (data)->
     deferred = Q.defer()
     inject = (data)->
-      Nota.injectData(data)
+      # Try and inject data if Nota client is present (i.e. template loaded it)
+      Nota?.injectData(data)
     @page.evaluate inject, deferred.resolve, data
     deferred.promise
 
