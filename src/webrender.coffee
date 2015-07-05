@@ -17,32 +17,38 @@ define ['backbone', 'json'], ->
   $upload   = $('#upload')
   $data     = $('#data')
   $filename = $('#data-filename')
-  reader    = new FileReader()
+  $form     = $('section.main form')
+
+  showBlock = (block)->
+    $('section.main form').toggleClass      'hidden', block isnt 'form'
+    $('div.loading').toggleClass            'hidden', block isnt 'loading'
+    $('div.fail').toggleClass               'hidden', block isnt 'fail'
+    $('div.done').toggleClass               'hidden', block isnt 'done'
 
   $upload.on 'click', (e)->
     e.preventDefault()
     $data.click()
 
   $data.on 'change', (e)->
-    file = e.target.files[0]
+    $filename.html e.target.files[0].name
+    showBlock('loading')
+    $form.submit()
 
-    $filename.html file.name
-    $('section.main form').addClass('hidden')
-    $('section.main div.jumbotron').removeClass('hidden')
+    # reader.onload = ()->
+    #   $.ajax
+    #     type: 'POST'
+    #     url: '/render'
+    #     data: reader.result
+    #     contentType: 'application/json'
 
-    reader.onload = ()->
-      $.ajax
-        type: 'POST'
-        url: '/render'
-        data: reader.result
-        contentType: 'application/json'
+    #   .done (res)->
+    #     showBlock('done')
+    #     window.open(res)
+    #   .fail (err)->
+    #     showBlock('error')
+    #     console.log err
 
-      .done (res)->
-        console.log res
-      .fail (err)->
-        console.log err
-
-    reader.readAsText(file)
+    # reader.readAsText(file)
 
 
     

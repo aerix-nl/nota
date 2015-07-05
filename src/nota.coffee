@@ -44,7 +44,7 @@ class NotaCLI
       preview:
         abbr: 'p'
         flag: true
-        help: 'Preview in the browser'
+        help: 'Preview template in the browser'
       listen:
         abbr: 's'
         flag: true
@@ -90,7 +90,7 @@ class NotaCLI
 
     @server = new NotaServer @options, logging
 
-    s = @server.start()
+    @server.start()
     # We'll need to wait till all of it's components have loaded and setup is done
     .then =>
       
@@ -115,7 +115,7 @@ class NotaCLI
       outputPath: options.outputPath
       preserve:   options.preserve
     }
-    @server.queue [job]
+    @server.queue job
     .then (meta) =>
       # We're done!
 

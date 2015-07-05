@@ -51,6 +51,7 @@ module.exports  = class NotaServer
     @app.use '/nota.js',  express.static("#{__dirname}/client.js")
 
     @app.get '/data', ( req, res ) =>
+      res.setHeader 'Content-Type', 'application/json'
       res.send fs.readFileSync(@dataPath, encoding: 'utf8')
 
     @server.listen(@serverPort)
@@ -66,7 +67,7 @@ module.exports  = class NotaServer
 
       if @options.listen
         @document.once 'page:ready', =>
-          @listen().then deferred.resolve
+          @listen().then deferred.resolve()
       else
         @document.once 'page:ready', =>
           deferred.resolve()
@@ -84,8 +85,7 @@ module.exports  = class NotaServer
   # Call with either a JobQueue instance or
   # with (jobs , options) where
   #
-  #   jobs = [
-  #     {
+  #   jobs = [{
   #       dataPath:   dataPath
   #       data:       obj (alternatively)
   #       outputPath: outputPath
@@ -115,9 +115,9 @@ module.exports  = class NotaServer
       jobQueue = args[0]
     else
 
-      if args[0] instanceof array
+      if args[0] instanceof Array
         jobs  = args[0]
-      else if args[0] instanceof Object and ( args[0].data? or args[0].dataPath?)
+      else if args[0] instanceof Object and ( args[0].data? or args[0].dataPath? )
         jobs  = [ args[0] ] # Create new jobs array of the provided job object
 
       options = args[1] or {}
@@ -220,22 +220,26 @@ module.exports  = class NotaServer
     deferred = Q.defer()
 
     # Load dependencies only needed for wendering service
-    global.mkdirp     = require('mkdirp')
-    global.bodyParser = require('body-parser')
-    global.Handlebars = require('handlebars')
+    mkdirp     = require('mkdirp')
+    bodyParser = require('body-parser')
+    Handlebars = require('handlebars')
+    multer     = require('multer')
 
+    # PhantomJS page renderBase64 isn't available for PDF, so we can't render
+    # to memory and buffer it there before sending it over to the client. So
+    # we need somewhere on the filesystem to park it, a sort of webrender temp
+    # dir, and then upload that file with the response. We need to be able to
+    # create this dir (or it has to already exist) to continue.
     mkdirp @options.webrenderPath, (err)=> if err
-      # PhantomJS page renderBase64 isn't available for PDF, so we can't
-      # render to memory and buffer it there for sending it ovet to the
-      # client. So we need a place to put it, a sort of webrender temp dir,
-      # and then upload that file with the response.
-      deferred.reject "Unable to create render output buffer path 
+      deferred.reject "Unable to create render output path 
       #{chalk.cyan options.webrenderPath}. Error: #{err}"
 
     # For parsing request bodies to 'application/json'
     @app.use bodyParser.json()
-    # For parsing application/x-www-form-urlencoded
+    # For parsing request bodies to 'application/x-www-form-urlencoded'
     @app.use bodyParser.urlencoded extended: true
+    # For parsing request bodies to 'multipart/form-data'
+    @app.use multer()
     
     @app.post '/render', @webRender
     @app.get  '/render', @webRenderInterface
@@ -322,6 +326,9 @@ module.exports  = class NotaServer
     res.send webRenderHTML
 
   webRender: (req, res)=>
+    console.log req.body
+
+    return 
     job = {
       data:           req.body
       outputPath:     @options.webrenderPath
@@ -331,7 +338,8 @@ module.exports  = class NotaServer
       if meta[0].fail?
         res.send 'fuck' # profane Nota fuck yeah!
       else
-        res.download Path.resolve meta[0].outputPath
+        pdf = Path.resolve meta[0].outputPath
+        res.download pdf
 
   after: (event, callback, context)->
     if @document.state is event then callback.apply(context or @)

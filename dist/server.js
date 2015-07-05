@@ -64,6 +64,7 @@
       this.app.use('/nota.js', express["static"]("" + __dirname + "/client.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
+          res.setHeader('Content-Type', 'application/json');
           return res.send(fs.readFileSync(_this.dataPath, {
             encoding: 'utf8'
           }));
@@ -79,7 +80,7 @@
         if (this.options.listen) {
           this.document.once('page:ready', (function(_this) {
             return function() {
-              return _this.listen().then(deferred.resolve);
+              return _this.listen().then(deferred.resolve());
             };
           })(this));
         } else {
@@ -132,7 +133,7 @@
       if (args[0] instanceof JobQueue) {
         return jobQueue = args[0];
       } else {
-        if (args[0] instanceof array) {
+        if (args[0] instanceof Array) {
           jobs = args[0];
         } else if (args[0] instanceof Object && ((args[0].data != null) || (args[0].dataPath != null))) {
           jobs = [args[0]];
@@ -233,15 +234,16 @@
     };
 
     NotaServer.prototype.listen = function() {
-      var deferred;
+      var Handlebars, bodyParser, deferred, mkdirp, multer;
       deferred = Q.defer();
-      global.mkdirp = require('mkdirp');
-      global.bodyParser = require('body-parser');
-      global.Handlebars = require('handlebars');
+      mkdirp = require('mkdirp');
+      bodyParser = require('body-parser');
+      Handlebars = require('handlebars');
+      multer = require('multer');
       mkdirp(this.options.webrenderPath, (function(_this) {
         return function(err) {
           if (err) {
-            return deferred.reject("Unable to create render output buffer path " + (chalk.cyan(options.webrenderPath)) + ". Error: " + err);
+            return deferred.reject("Unable to create render output path " + (chalk.cyan(options.webrenderPath)) + ". Error: " + err);
           }
         };
       })(this));
@@ -249,6 +251,7 @@
       this.app.use(bodyParser.urlencoded({
         extended: true
       }));
+      this.app.use(multer());
       this.app.post('/render', this.webRender);
       this.app.get('/render', this.webRenderInterface);
       if (typeof this.log === "function") {
@@ -356,15 +359,19 @@
 
     NotaServer.prototype.webRender = function(req, res) {
       var job;
+      console.log(req.body);
+      return;
       job = {
         data: req.body,
         outputPath: this.options.webrenderPath
       };
       return this.queue(job).then(function(meta) {
+        var pdf;
         if (meta[0].fail != null) {
           return res.send('fuck');
         } else {
-          return res.download(Path.resolve(meta[0].outputPath));
+          pdf = Path.resolve(meta[0].outputPath);
+          return res.download(pdf);
         }
       });
     };

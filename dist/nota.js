@@ -61,7 +61,7 @@
         preview: {
           abbr: 'p',
           flag: true,
-          help: 'Preview in the browser'
+          help: 'Preview template in the browser'
         },
         listen: {
           abbr: 's',
@@ -122,7 +122,7 @@
         logClientError: this.logClientError
       };
       this.server = new NotaServer(this.options, logging);
-      return s = this.server.start().then((function(_this) {
+      return this.server.start().then((function(_this) {
         return function() {
           if (_this.options.preview) {
             open(_this.server.url());
@@ -143,7 +143,7 @@
         outputPath: options.outputPath,
         preserve: options.preserve
       };
-      return this.server.queue([job]).then((function(_this) {
+      return this.server.queue(job).then((function(_this) {
         return function(meta) {
           if (options.logging.notify) {
             notifier.on('click', function() {

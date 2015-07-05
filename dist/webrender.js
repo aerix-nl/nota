@@ -11,34 +11,25 @@
   });
 
   define(['backbone', 'json'], function() {
-    var $data, $filename, $upload, reader;
+    var $data, $filename, $form, $upload, showBlock;
     $upload = $('#upload');
     $data = $('#data');
     $filename = $('#data-filename');
-    reader = new FileReader();
+    $form = $('section.main form');
+    showBlock = function(block) {
+      $('section.main form').toggleClass('hidden', block !== 'form');
+      $('div.loading').toggleClass('hidden', block !== 'loading');
+      $('div.fail').toggleClass('hidden', block !== 'fail');
+      return $('div.done').toggleClass('hidden', block !== 'done');
+    };
     $upload.on('click', function(e) {
       e.preventDefault();
       return $data.click();
     });
     return $data.on('change', function(e) {
-      var file;
-      file = e.target.files[0];
-      $filename.html(file.name);
-      $('section.main form').addClass('hidden');
-      $('section.main div.jumbotron').removeClass('hidden');
-      reader.onload = function() {
-        return $.ajax({
-          type: 'POST',
-          url: '/render',
-          data: reader.result,
-          contentType: 'application/json'
-        }).done(function(res) {
-          return console.log(res);
-        }).fail(function(err) {
-          return console.log(err);
-        });
-      };
-      return reader.readAsText(file);
+      $filename.html(e.target.files[0].name);
+      showBlock('loading');
+      return $form.submit();
     });
   });
 
