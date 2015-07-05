@@ -1,21 +1,20 @@
-_             = require('underscore')._
-s             = require('underscore.string')
-chalk         = require('chalk')
-http          = require('http')
-express       = require('express')
-phantom       = require('phantom')
-fs            = require('fs')
-mkdirp        = require('mkdirp')
-Q             = require('q')
-Path          = require('path')
-open          = require("open")
-Backbone      = require('backbone')
+_               = require('underscore')._
+s               = require('underscore.string')
+chalk           = require('chalk')
+http            = require('http')
+express         = require('express')
+phantom         = require('phantom')
+fs              = require('fs')
+Q               = require('q')
+Path            = require('path')
+open            = require("open")
+Backbone        = require('backbone')
 
-Document      = require('./document')
-TemplateHelper = require('./template_helper')
-JobQueue      = require('./queue')
+Document        = require('./document')
+TemplateHelper  = require('./template_helper')
+JobQueue        = require('./queue')
 
-module.exports = class NotaServer
+module.exports  = class NotaServer
 
   constructor: ( @options, logging ) ->
     _.extend(@, Backbone.Events)
@@ -100,16 +99,7 @@ module.exports = class NotaServer
   queue: ( ) ->
     deferred = Q.defer()
 
-    if arguments[0] instanceof JobQueue
-      @jobQueue = arguments[0]
-    else
-      jobs    = arguments[0]
-      options = arguments[1] or {}
-      _.extend options, {
-        deferFinish:  deferred
-        templateType: @document.options.templateType
-      }
-      @jobQueue = new JobQueue(jobs, options)
+    @jobQueue = @parseQueueArgs(arguments, deferred)
 
     switch @jobQueue.options.templateType
       when 'static'   then @after 'page:rendered', => @renderStatic(@jobQueue)
@@ -117,6 +107,28 @@ module.exports = class NotaServer
 
     deferred.promise
           
+  # Parses the arguments of the queue call. Which could be either a single
+  # queue argument, and array of jobs with and options hash, or a single job
+  # object with an options hash.
+  parseQueueArgs: (args, deferred)->
+    if args[0] instanceof JobQueue
+      jobQueue = args[0]
+    else
+
+      if args[0] instanceof array
+        jobs  = args[0]
+      else if args[0] instanceof Object and ( args[0].data? or args[0].dataPath?)
+        jobs  = [ args[0] ] # Create new jobs array of the provided job object
+
+      options = args[1] or {}
+
+      _.extend options, {
+        deferFinish:  deferred
+        templateType: @document.options.templateType
+      }
+
+      jobQueue = new JobQueue(jobs, options)
+
   renderStatic: (queue)->
     # Dequeue the next job
     job = queue.nextJob()
@@ -203,9 +215,23 @@ module.exports = class NotaServer
       .then postRender
       .catch error
 
+  # Start listening for HTTP render requests
   listen: ->
     deferred = Q.defer()
-    bodyParser = require('body-parser')
+
+    # Load dependencies only needed for wendering service
+    global.mkdirp     = require('mkdirp')
+    global.bodyParser = require('body-parser')
+    global.Handlebars = require('handlebars')
+
+    mkdirp @options.webrenderPath, (err)=> if err
+      # PhantomJS page renderBase64 isn't available for PDF, so we can't
+      # render to memory and buffer it there for sending it ovet to the
+      # client. So we need a place to put it, a sort of webrender temp dir,
+      # and then upload that file with the response.
+      deferred.reject "Unable to create render output buffer path 
+      #{chalk.cyan options.webrenderPath}. Error: #{err}"
+
     # For parsing request bodies to 'application/json'
     @app.use bodyParser.json()
     # For parsing application/x-www-form-urlencoded
@@ -214,61 +240,98 @@ module.exports = class NotaServer
     @app.post '/render', @webRender
     @app.get  '/render', @webRenderInterface
 
-    motd = "Listening at #{chalk.cyan 'http://localhost:'+@serverPort+'/render'} for POST requests"
-    @ipLookup().then (ip)=>
-      @log? """#{motd}
+    @log? "Listening at #{chalk.cyan 'http://localhost:'+@serverPort+'/render'} for POST requests"
 
-          LAN: http://#{ip.lan}:#{@serverPort}/render
-          WAN: http://#{ip.wan}:#{@serverPort}/render
+    # For convenience try to do a local and external IP lookup (LAN and WAN)
+    @ipLookups().then (@ip)=>
+      if @ip.lan? then @log? "LAN: http://#{ip.lan}:#{@serverPort}/render"
+      if @ip.wan? then @log? "WAN: http://#{ip.wan}:#{@serverPort}/render"
 
-      """
-      deferred.resolve()
+      deferred.resolve @ip
+
     .catch (err)=>
-      console.log err
-      @log? motd
-      deferred.resolve()
+      # Don't log whatever error gets caught here as an error, because the LAN
+      # and WAN IP lookups where are purely a convenience and optional.
+      @log? err
+      deferred.resolve {}
+
+    # .finally ()=>
+    #   global.webRenderHTML = template {
+    #     template:     definition
+    #     serverPort:   @serverPort
+    #     ip:           @ip
+    #   }
 
     deferred.promise
 
-  ipLookup: ->
+  ipLookups: ->
+    deferred = Q.defer()
+
+    timeout = 2000
+    local   = @ipLookupLocal()
+    ext     = @ipLookupExt()
+    reject  = ->
+      # If it's time to reject we see if any of both lookups has finished
+      # and provide that (harvest what you can so to say).
+      if local.inspect().status is "fulfilled"
+        return deferred.resolve lan: local.inspect().value
+      if ext.inspect().status   is "fulfilled"
+        return deferred.resolve wan: ext.inspect().value
+      # If we got here we got nothing ...
+      deferred.reject "LAN and WAN IP lookup canceled after timeout of #{timeout}ms"
+
+    # We give the lookup 2 seconds to keep the CLI command responsive
+    setTimeout reject, timeout
+
+    # If we're not yet rejected and both resolved, we provide both IP addresses
+    local.then (localIp)-> ext.then (extIp)->
+      deferred.resolve {
+        lan: localIp
+        wan: extIp
+      }
+
+    deferred.promise
+
+  ipLookupLocal: ->
     deferred = Q.defer()
 
     require('dns').lookup require('os').hostname(), (errLan, ipLan, fam)=>
       if errLan? then return deferred.reject errLan
-
-      require('externalip') (errExt, ipExt)=>
-        if errExt? then return deferred.reject errExt
-
-        @ip = {
-          lan: ipLan
-          wan: ipExt
-        }
-        deferred.resolve @ip
+      deferred.resolve ipLan
 
     deferred.promise
 
-  webRenderInterface: (req, res)->
-    res.send fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+  ipLookupExt: ->
+    deferred = Q.defer()
+
+    require('externalip') (errExt, ipExt)=>
+      if errExt? then return deferred.reject errExt
+      deferred.resolve ipExt
+
+    deferred.promise
+
+  webRenderInterface: (req, res)=>
+    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    template = Handlebars.compile html
+    definition = @helper.getTemplateDefinition(@templatePath)
+    webRenderHTML = template({
+      template:     definition
+      serverPort:   @serverPort
+      ip:           @ip
+    })
+    res.send webRenderHTML
 
   webRender: (req, res)=>
-    mkdirp @options.webrenderPath, (err)=>
-      if err
-        # PhantomJS page renderBase64 isn't available for PDF, so we can't
-        # render to memory and send it over. We need a place to put it, a sort
-        # of webrender temp dir, and then upload that file with the response.
-        return @logError "Nota requires write access to #{chalk.cyan options.webrenderPath}. Error: #{err}"
+    job = {
+      data:           req.body
+      outputPath:     @options.webrenderPath
+    }
 
-      job = {
-        data:           req.body
-        outputPath:     @options.webrenderPath
-      }
-
-      @queue(job)
-      .then (meta)->
-        if meta[0].fail?
-          res.send 'fuck' # profane Nota fuck yeah!
-        else
-          res.download Path.resolve meta[0].outputPath
+    @queue(job).then (meta)->
+      if meta[0].fail?
+        res.send 'fuck' # profane Nota fuck yeah!
+      else
+        res.download Path.resolve meta[0].outputPath
 
   after: (event, callback, context)->
     if @document.state is event then callback.apply(context or @)

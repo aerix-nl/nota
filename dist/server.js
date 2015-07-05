@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, JobQueue, NotaServer, Path, Q, TemplateHelper, chalk, express, fs, http, mkdirp, open, phantom, s, _,
+  var Backbone, Document, JobQueue, NotaServer, Path, Q, TemplateHelper, chalk, express, fs, http, open, phantom, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
@@ -15,8 +15,6 @@
   phantom = require('phantom');
 
   fs = require('fs');
-
-  mkdirp = require('mkdirp');
 
   Q = require('q');
 
@@ -37,6 +35,7 @@
       var _ref;
       this.options = options;
       this.webRender = __bind(this.webRender, this);
+      this.webRenderInterface = __bind(this.webRenderInterface, this);
       this.webrenderUrl = __bind(this.webrenderUrl, this);
       this.url = __bind(this.url, this);
       _.extend(this, Backbone.Events);
@@ -107,19 +106,9 @@
     };
 
     NotaServer.prototype.queue = function() {
-      var deferred, jobs, options;
+      var deferred;
       deferred = Q.defer();
-      if (arguments[0] instanceof JobQueue) {
-        this.jobQueue = arguments[0];
-      } else {
-        jobs = arguments[0];
-        options = arguments[1] || {};
-        _.extend(options, {
-          deferFinish: deferred,
-          templateType: this.document.options.templateType
-        });
-        this.jobQueue = new JobQueue(jobs, options);
-      }
+      this.jobQueue = this.parseQueueArgs(arguments, deferred);
       switch (this.jobQueue.options.templateType) {
         case 'static':
           this.after('page:rendered', (function(_this) {
@@ -136,6 +125,25 @@
           })(this));
       }
       return deferred.promise;
+    };
+
+    NotaServer.prototype.parseQueueArgs = function(args, deferred) {
+      var jobQueue, jobs, options;
+      if (args[0] instanceof JobQueue) {
+        return jobQueue = args[0];
+      } else {
+        if (args[0] instanceof array) {
+          jobs = args[0];
+        } else if (args[0] instanceof Object && ((args[0].data != null) || (args[0].dataPath != null))) {
+          jobs = [args[0]];
+        }
+        options = args[1] || {};
+        _.extend(options, {
+          deferFinish: deferred,
+          templateType: this.document.options.templateType
+        });
+        return jobQueue = new JobQueue(jobs, options);
+      }
     };
 
     NotaServer.prototype.renderStatic = function(queue) {
@@ -225,36 +233,85 @@
     };
 
     NotaServer.prototype.listen = function() {
-      var bodyParser, deferred, motd;
+      var deferred;
       deferred = Q.defer();
-      bodyParser = require('body-parser');
+      global.mkdirp = require('mkdirp');
+      global.bodyParser = require('body-parser');
+      global.Handlebars = require('handlebars');
+      mkdirp(this.options.webrenderPath, (function(_this) {
+        return function(err) {
+          if (err) {
+            return deferred.reject("Unable to create render output buffer path " + (chalk.cyan(options.webrenderPath)) + ". Error: " + err);
+          }
+        };
+      })(this));
       this.app.use(bodyParser.json());
       this.app.use(bodyParser.urlencoded({
         extended: true
       }));
       this.app.post('/render', this.webRender);
       this.app.get('/render', this.webRenderInterface);
-      motd = "Listening at " + (chalk.cyan('http://localhost:' + this.serverPort + '/render')) + " for POST requests";
-      this.ipLookup().then((function(_this) {
+      if (typeof this.log === "function") {
+        this.log("Listening at " + (chalk.cyan('http://localhost:' + this.serverPort + '/render')) + " for POST requests");
+      }
+      this.ipLookups().then((function(_this) {
         return function(ip) {
-          if (typeof _this.log === "function") {
-            _this.log("" + motd + "\n\nLAN: http://" + ip.lan + ":" + _this.serverPort + "/render\nWAN: http://" + ip.wan + ":" + _this.serverPort + "/render\n");
+          _this.ip = ip;
+          if (_this.ip.lan != null) {
+            if (typeof _this.log === "function") {
+              _this.log("LAN: http://" + ip.lan + ":" + _this.serverPort + "/render");
+            }
           }
-          return deferred.resolve();
+          if (_this.ip.wan != null) {
+            if (typeof _this.log === "function") {
+              _this.log("WAN: http://" + ip.wan + ":" + _this.serverPort + "/render");
+            }
+          }
+          return deferred.resolve(_this.ip);
         };
       })(this))["catch"]((function(_this) {
         return function(err) {
-          console.log(err);
           if (typeof _this.log === "function") {
-            _this.log(motd);
+            _this.log(err);
           }
-          return deferred.resolve();
+          return deferred.resolve({});
         };
       })(this));
       return deferred.promise;
     };
 
-    NotaServer.prototype.ipLookup = function() {
+    NotaServer.prototype.ipLookups = function() {
+      var deferred, ext, local, reject, timeout;
+      deferred = Q.defer();
+      timeout = 2000;
+      local = this.ipLookupLocal();
+      ext = this.ipLookupExt();
+      reject = function() {
+        if (local.inspect().status === "fulfilled") {
+          return deferred.resolve({
+            lan: local.inspect().value
+          });
+        }
+        if (ext.inspect().status === "fulfilled") {
+          return deferred.resolve({
+            wan: ext.inspect().value
+          });
+        }
+        return deferred.reject("LAN and WAN IP lookup canceled after timeout of " + timeout + "ms");
+      };
+      setTimeout(reject, timeout);
+      local.then(function(localIp) {
+        return ext.then(function(extIp) {
+          return deferred.resolve({
+            lan: localIp,
+            wan: extIp
+          });
+        });
+      });
+      return deferred.promise;
+    };
+
+    NotaServer.prototype.ipLookupLocal = function() {
       var deferred;
       deferred = Q.defer();
       require('dns').lookup(require('os').hostname(), (function(_this) {
@@ -262,47 +319,54 @@
           if (errLan != null) {
             return deferred.reject(errLan);
           }
-          return require('externalip')(function(errExt, ipExt) {
-            if (errExt != null) {
-              return deferred.reject(errExt);
-            }
-            _this.ip = {
-              lan: ipLan,
-              wan: ipExt
-            };
-            return deferred.resolve(_this.ip);
-          });
+          return deferred.resolve(ipLan);
+        };
+      })(this));
+      return deferred.promise;
+    };
+
+    NotaServer.prototype.ipLookupExt = function() {
+      var deferred;
+      deferred = Q.defer();
+      require('externalip')((function(_this) {
+        return function(errExt, ipExt) {
+          if (errExt != null) {
+            return deferred.reject(errExt);
+          }
+          return deferred.resolve(ipExt);
         };
       })(this));
       return deferred.promise;
     };
 
     NotaServer.prototype.webRenderInterface = function(req, res) {
-      return res.send(fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
+      var definition, html, template, webRenderHTML;
+      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
         encoding: 'utf8'
-      }));
+      });
+      template = Handlebars.compile(html);
+      definition = this.helper.getTemplateDefinition(this.templatePath);
+      webRenderHTML = template({
+        template: definition,
+        serverPort: this.serverPort,
+        ip: this.ip
+      });
+      return res.send(webRenderHTML);
     };
 
     NotaServer.prototype.webRender = function(req, res) {
-      return mkdirp(this.options.webrenderPath, (function(_this) {
-        return function(err) {
-          var job;
-          if (err) {
-            return _this.logError("Nota requires write access to " + (chalk.cyan(options.webrenderPath)) + ". Error: " + err);
-          }
-          job = {
-            data: req.body,
-            outputPath: _this.options.webrenderPath
-          };
-          return _this.queue(job).then(function(meta) {
-            if (meta[0].fail != null) {
-              return res.send('fuck');
-            } else {
-              return res.download(Path.resolve(meta[0].outputPath));
-            }
-          });
-        };
-      })(this));
+      var job;
+      job = {
+        data: req.body,
+        outputPath: this.options.webrenderPath
+      };
+      return this.queue(job).then(function(meta) {
+        if (meta[0].fail != null) {
+          return res.send('fuck');
+        } else {
+          return res.download(Path.resolve(meta[0].outputPath));
+        }
+      });
     };
 
     NotaServer.prototype.after = function(event, callback, context) {

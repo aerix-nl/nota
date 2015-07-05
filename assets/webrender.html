@@ -5,7 +5,7 @@
 	<title>Nota - template: {{ template.name }}</title>
 
   <link href="assets/stylesheets/webrender.css" rel="stylesheet" type="text/css" media="all">
-
+  <script data-main='lib/webrender' src='bower_components/requirejs/require.js'></script>
 </head>
 <body>
 	
@@ -14,10 +14,28 @@
 	<div class="container">
 		<section class="main">
 			<h1>Nota webrender service</h1>
-			<p>Upload a .JSON data file and get a pretty rendered PDF in return.<br>Currently selected template: <code>{{ template.name }}</code></p>
-			<a href="/" id="preview" class="btn btn-default">Preview template</a>
-			<button id="upload" class="btn btn-default">Upload .JSON</button>
-			<p>Or drag and drop a file here!</p>
+
+			<div class="jumbotron hidden">
+				<p>Rendering <code id="data-filename"></code>, please wait...</p>
+				<img src="/vendor/svg-spinners/loading-spin.svg" alt="Loading icon" />
+			</div>
+
+			<p>
+				Upload a .JSON data file and get a pretty rendered PDF in
+				return.<br>Currently selected template: <code>{{ template.name }}</code>
+			</p>
+			
+
+			<form>
+				<div class="btn-group">
+				<a href="/" id="preview" class="btn btn-default">Preview template</a>
+				<a href="/data" id="example" class="btn btn-default">Show example data</a>
+				</div>
+				<input id="data" type="file" class="hidden" />
+				<button id="upload" class="btn btn-primary">Upload and render data</button>
+				<p>Or drag and drop a file here!</p>
+			</form>
+
 		</section>
 
 
@@ -25,9 +43,13 @@
 		<p>
 		Alternatively, you can use the REST API. In matter of fact, this page is a simple app that uses that API. Send a POST request with data to the following URL, ad get the PDF download offer in the response header:
 		<ul>
-			<li>Locally: 	<code>http://localhost:{{serverPort}}/render'</code></li>
-			<li>LAN: 			<code>http://{{ipLan}}:{{serverPort}}/render'</code></li>
-			<li>WAN: 			<code>http://{{ipExt}}:{{serverPort}}/render'</code></li>
+			<li>Locally: 	<code>http://localhost:{{serverPort}}/render</code></li>
+			{{#if ip.lan }}
+			<li>LAN: 			<code>http://{{ip.lan}}:{{serverPort}}/render'</code></li>
+			{{/if}}
+			{{#if ip.wan }}
+			<li>WAN: 			<code>http://{{ip.wan}}:{{serverPort}}/render'</code></li>
+			{{/if}}
 		</ul>
 		</p>
 		<p>

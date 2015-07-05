@@ -157,7 +157,7 @@ class NotaCLI
     
     # Template
     options.templatePath =          @helper.findTemplatePath(options)
-    # Template config
+    # Template document config
     try # We can do without them though
       definition = @helper.getTemplateDefinition options.templatePath
       _.extend options.document, definition.nota
