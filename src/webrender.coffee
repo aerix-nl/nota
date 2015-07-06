@@ -8,9 +8,9 @@ requirejs.config {
     'underscore': '/vendor/underscore/underscore'
 
     # RequireJS json! deps
-    'json':      '/vendor/requirejs-plugins/src/json'
-    'text':      '/vendor/requirejs-text/text'
-    'requirejs': '/vendor/requirejs/require'
+    'json':       '/vendor/requirejs-plugins/src/json'
+    'text':       '/vendor/requirejs-text/text'
+    'requirejs':  '/vendor/requirejs/require'
 }
 
 define ['backbone', 'json'], ->
@@ -18,6 +18,7 @@ define ['backbone', 'json'], ->
   $data     = $('#data')
   $filename = $('#data-filename')
   $form     = $('section.main form')
+  $cancel   = $('#cancel')
 
   showBlock = (block)->
     $('section.main form').toggleClass      'hidden', block isnt 'form'
@@ -34,21 +35,5 @@ define ['backbone', 'json'], ->
     showBlock('loading')
     $form.submit()
 
-    # reader.onload = ()->
-    #   $.ajax
-    #     type: 'POST'
-    #     url: '/render'
-    #     data: reader.result
-    #     contentType: 'application/json'
-
-    #   .done (res)->
-    #     showBlock('done')
-    #     window.open(res)
-    #   .fail (err)->
-    #     showBlock('error')
-    #     console.log err
-
-    # reader.readAsText(file)
-
-
-    
+  $cancel.on 'click', (e)->
+    showBlock('form')

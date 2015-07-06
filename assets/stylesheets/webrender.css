@@ -1,5 +1,5 @@
-@import url(../../bower_components/bootstrap/dist/css/bootstrap.css);
-@import url(../../bower_components/mdi/css/materialdesignicons.css);
+@import url(/vendor/bootstrap/dist/css/bootstrap.css);
+@import url(/vendor/mdi/css/materialdesignicons.css);
 body {
   color: #0D3542;
   font-family: "Baskerville", "Georgia", serif;

@@ -11,11 +11,12 @@
   });
 
   define(['backbone', 'json'], function() {
-    var $data, $filename, $form, $upload, showBlock;
+    var $cancel, $data, $filename, $form, $upload, showBlock;
     $upload = $('#upload');
     $data = $('#data');
     $filename = $('#data-filename');
     $form = $('section.main form');
+    $cancel = $('#cancel');
     showBlock = function(block) {
       $('section.main form').toggleClass('hidden', block !== 'form');
       $('div.loading').toggleClass('hidden', block !== 'loading');
@@ -26,10 +27,13 @@
       e.preventDefault();
       return $data.click();
     });
-    return $data.on('change', function(e) {
+    $data.on('change', function(e) {
       $filename.html(e.target.files[0].name);
       showBlock('loading');
       return $form.submit();
+    });
+    return $cancel.on('click', function(e) {
+      return showBlock('form');
     });
   });
 

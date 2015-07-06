@@ -5,7 +5,7 @@
 	<title>Nota - template: {{ template.name }}</title>
 
   <link href="assets/stylesheets/webrender.css" rel="stylesheet" type="text/css" media="all">
-  <script data-main='lib/webrender' src='bower_components/requirejs/require.js'></script>
+  <script data-main='lib/webrender' src='/vendor/requirejs/require.js'></script>
 </head>
 <body>
 	
@@ -36,12 +36,12 @@
 			</p>
 			
 
-			<form method="post" enctype="application/x-www-form-urlencoded">
+			<form method="post" enctype="multipart/form-data">
 				<div class="btn-group">
 				<a href="/" id="preview" class="btn btn-default">Preview template</a>
-				<a href="/data" id="example" class="btn btn-default">Show example data</a>
+				<a href="/data" id="example" class="btn btn-default">Show current data</a>
 				</div>
-				<input id="data" type="file" class="hidden" />
+				<input name="data" id="data" type="file" class="hidden" />
 				<button id="upload" class="btn btn-primary">Upload and render data</button>
 				<p>Or drag and drop a file here!</p>
 			</form>

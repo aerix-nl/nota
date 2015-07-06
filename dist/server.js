@@ -234,11 +234,11 @@
     };
 
     NotaServer.prototype.listen = function() {
-      var Handlebars, bodyParser, deferred, mkdirp, multer;
+      var bodyParser, deferred, mkdirp, multer;
       deferred = Q.defer();
       mkdirp = require('mkdirp');
       bodyParser = require('body-parser');
-      Handlebars = require('handlebars');
+      this.Handlebars = require('handlebars');
       multer = require('multer');
       mkdirp(this.options.webrenderPath, (function(_this) {
         return function(err) {
@@ -347,7 +347,7 @@
       html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
         encoding: 'utf8'
       });
-      template = Handlebars.compile(html);
+      template = this.Handlebars.compile(html);
       definition = this.helper.getTemplateDefinition(this.templatePath);
       webRenderHTML = template({
         template: definition,
@@ -358,17 +358,20 @@
     };
 
     NotaServer.prototype.webRender = function(req, res) {
-      var job;
-      console.log(req.body);
-      return;
+      var job, _ref, _ref1;
       job = {
-        data: req.body,
         outputPath: this.options.webrenderPath
       };
+      if (req.body != null) {
+        job.data = req.body;
+      }
+      if (((_ref = req.files) != null ? (_ref1 = _ref.data) != null ? _ref1.path : void 0 : void 0) != null) {
+        job.dataPath = req.files.data.path;
+      }
       return this.queue(job).then(function(meta) {
         var pdf;
         if (meta[0].fail != null) {
-          return res.send('fuck');
+          return res.send(meta[0].fail);
         } else {
           pdf = Path.resolve(meta[0].outputPath);
           return res.download(pdf);

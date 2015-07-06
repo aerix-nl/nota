@@ -222,7 +222,7 @@ module.exports  = class NotaServer
     # Load dependencies only needed for wendering service
     mkdirp     = require('mkdirp')
     bodyParser = require('body-parser')
-    Handlebars = require('handlebars')
+    @Handlebars = require('handlebars')
     multer     = require('multer')
 
     # PhantomJS page renderBase64 isn't available for PDF, so we can't render
@@ -316,7 +316,7 @@ module.exports  = class NotaServer
 
   webRenderInterface: (req, res)=>
     html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
-    template = Handlebars.compile html
+    template = @Handlebars.compile html
     definition = @helper.getTemplateDefinition(@templatePath)
     webRenderHTML = template({
       template:     definition
@@ -326,17 +326,15 @@ module.exports  = class NotaServer
     res.send webRenderHTML
 
   webRender: (req, res)=>
-    console.log req.body
-
-    return 
     job = {
-      data:           req.body
       outputPath:     @options.webrenderPath
     }
+    job.data =        req.body if req.body?
+    job.dataPath =    req.files.data.path if req.files?.data?.path?
 
     @queue(job).then (meta)->
       if meta[0].fail?
-        res.send 'fuck' # profane Nota fuck yeah!
+        res.send meta[0].fail # profane Nota fuck yeah!
       else
         pdf = Path.resolve meta[0].outputPath
         res.download pdf
