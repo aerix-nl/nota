@@ -62,9 +62,8 @@ You will need the following things properly installed on your computer.
 * [PhantomJS v1.9.8](http://phantomjs.org/)
 
 ## Setup
-
-Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-
-problems)) in the depencencies that are still being worked out, Nota is a bit
+Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems))
+in the depencencies that are still being worked out, Nota is a bit
 picky on it's environment and dependencies. We recommend running Nota under
 Linux, and we've made a provisioning script that sets up all dependencies for
 Linux (and unverified support for Mac and Windows under cywin).
