@@ -42,7 +42,7 @@
     "nomnom": "~1.8.1",
     "open": "0.0.3",
     "optimist": "0.6.0",
-    "phantom": "sgentle/phantomjs-node",
+    "phantom": "^0.7.2",
     "q": "~1.0.1",
     "underscore": "1.6.0",
     "underscore.string": "3.0.2"
