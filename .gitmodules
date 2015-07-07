@@ -1,7 +1,7 @@
 [submodule "templates/example-invoice"]
 	path = templates/example-invoice
-	url = https://FelixAkk@github.com/aerix-nl/nota-invoice-template.git
+	url = https://github.com/aerix-nl/nota-invoice-template.git
 
 [submodule "templates/example-doc"]
   path = templates/example-doc
-  url = https://FelixAkk@github.com/aerix-nl/nota-doc-template.git
+  url = https://github.com/aerix-nl/nota-doc-template.git
