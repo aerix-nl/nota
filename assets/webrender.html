@@ -1,0 +1,92 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Nota - template: {{ template.name }}</title>
+
+  <link href="assets/stylesheets/webrender.css" rel="stylesheet" type="text/css" media="all">
+  <link rel="icon" type="image/png" href="/assets/images/icon.png">
+  <script data-main='lib/webrender' src='/vendor/requirejs/require.js'></script>
+</head>
+<body>
+	
+	<img id="logo" src="assets/images/logo.svg" alt="Nota logo" />
+	
+	<div class="container">
+		<section class="main">
+			<h1>Webrender service</h1>
+
+			<div class="jumbotron loading hidden">
+				<p>
+					Rendering <code id="data-filename"></code>
+					<img src="/vendor/svg-spinners/loading-spin.svg" alt="Loading icon" />
+				</p>
+				<button id="cancel" class="btn btn-default">New request</button>
+			</div>
+			<div class="jumbotron done hidden">
+				<p>yay</p>
+			</div>
+			<div class="jumbotron fail hidden">
+				<p>Error while rendering:</p>
+				<code></code>
+			</div>
+
+			<p>
+				Upload your JSON data file and get a pretty rendered PDF in return.<br>
+				Currently selected template: <code>{{template.name }}@{{ template.version }}</code>
+			</p>
+			
+
+			<form method="post" enctype="application/x-www-form-urlencoded">
+				<div class="btn-group">
+				<a href="/" id="preview" class="btn btn-default">Preview template</a>
+				<a href="/data" id="example" class="btn btn-default">Show current data</a>
+				</div>
+				<input id="data" type="file" class="hidden" />
+				<button id="upload" class="btn btn-primary">Upload and render data</button>
+				<p>Or drag and drop a file here!</p>
+			</form>
+
+		</section>
+
+
+		<a name="rest-api"><h3>REST API</h3></a>
+		<p>
+		Alternatively, you can use the REST API. In matter of fact, this page is a simple app that uses that API. Send a POST request with data to the following URL, ad get the PDF download offer in the response header:
+		<ul>
+			<li>Locally: 	<code>http://localhost:{{serverPort}}/render</code></li>
+			{{#if ip.lan }}
+			<li>LAN: 			<code>http://{{ip.lan}}:{{serverPort}}/render</code></li>
+			{{/if}}
+			{{#if ip.wan }}
+			<li>WAN: 			<code>http://{{ip.wan}}:{{serverPort}}/render</code></li>
+			{{/if}}
+		</ul>
+		</p>
+
+		<h4>Supported request content-type headers:</h4>
+		<ul>
+			<li>JSON string: 						<code>application/json</code></li>
+			<li>Form key-value pairs: 	<code>application/x-www-form-urlencoded</code></li>
+		</ul>
+
+		<h4>Request content formats</h4>
+		<p>
+		For <code>application/json</code> send a request with the following JSON object
+		<code>
+			{
+				data: {
+					&lt;template-model-instance&gt;
+				}
+			}
+		</code>. Like wise for <code>application/x-www-form-urlencoded</code> send a single <code>data</code> field that has a JSON stringified template model instance.
+		</p>
+
+		<p>Parsing implementation by <a href="https://www.npmjs.com/package/body-parser">bodyparser</a>. For testing we recommend <a href="https://addons.mozilla.org/en-US/firefox/addon/restclient/">RESTClient</a> for Firefox or <a href="https://chrome.google.com/webstore/detail/fdmmgilgnpjigdojojpjoooidkmcomcm">Postman</a> for Chrome (<a href="http://stackoverflow.com/questions/4797534/how-do-i-manually-fire-http-post-requests-with-firefox-or-chrome">source</a>).</p>
+
+		<h3>Support and feedback</h3>
+		<p>Any feedback would be much obliged, and support queries can be posted at the <a
+		href="https://github.com/aerix-nl/nota">Nota GitHub repository</a>.</p>
+	</div>
+</body>
+</html>

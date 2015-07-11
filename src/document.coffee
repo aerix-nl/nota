@@ -4,7 +4,7 @@ phantom       = require('phantom')
 _             = require('underscore')._
 Backbone      = require('backbone')
 
-TemplateUtils = require('./template_utils')
+TemplateHelper = require('./template_helper')
 
 # This class is basically a wrapper of a PhantomJS instance
 module.exports = class Document
@@ -24,7 +24,7 @@ module.exports = class Document
 
   constructor: ( @server, @options ) ->
     _.extend(@, Backbone.Events)
-    @helper = new TemplateUtils()
+    @helper = new TemplateHelper()
 
     @on 'all', @setState, @
 
@@ -40,13 +40,22 @@ module.exports = class Document
         }
 
         @page.set 'paperSize', @options.paperSize
+        @page.set 'zoomFactor', @options.zoomFactor
+        # workaround for phantomJS2 rendering pages too large:
+        # https://github.com/ariya/phantomjs/issues/12685
+        @page.evaluate ->
+          html = document.getElementsByTagName('html').item(0)
+          html.style['transform-origin'] =          '0 0'
+          html.style['-webkit-transform-origin'] =  '0 0'
+          html.style['transform'] =                 'scale(0.68)'
+          html.style['-webkit-transform'] =         'scale(0.68)'
 
         # TODO: Find for a fix that makes the zoomFactor work again, and after
         # find a real fix for this workaround to counter a strange zoom factor.
         # @page.zoomFactor = 0.9360
 
-        @page.onConsoleMessage  ( msg ) -> console.log   msg
-        @page.set 'onError',    ( msg ) -> console.error msg
+        @page.onConsoleMessage  ( msg ) => @server.logClient msg
+        @page.set 'onError',    ( msg ) => @onClientError msg
         @page.set 'onCallback', ( msg ) => @trigger("client:#{msg}")
         @page.set 'onResourceRequested', @onResourceRequested
         @page.set 'onResourceReceived',  @onResourceReceived
@@ -111,12 +120,21 @@ module.exports = class Document
   # The callback will receive the meta data as it's argument when done
   getMeta: ->
     deferred = Q.defer()
-    metaRequest = -> Nota?.getDocumentMeta()
+    
+    metaRequest = ->
+      # Try and get meta data if Nota client is present (i.e. template loaded it)
+      Nota?.getDocumentMeta()
+
     @page.evaluate metaRequest, deferred.resolve
     deferred.promise
 
-  capture: (captureOptions = {})->
+  capture: (job = {})->
     deferred = Q.defer()
+
+    # We're going to augment the job object into the job meta data object, better make a
+    # copy to prevent side effects.
+    job = _.extend {}, job
+
     # TODO: Remove this fix when hyperlinks are being rendered properly:
     # https://github.com/ariya/phantomjs/issues/10196
     @page.evaluate ->
@@ -131,14 +149,14 @@ module.exports = class Document
 
       outputPath = @helper.findOutputPath
         defaultFilename:  @options.defaultFilename
-        preserve:         captureOptions.preserve
-        outputPath:       captureOptions.outputPath
+        preserve:         job.preserve
+        outputPath:       job.outputPath
         meta:             meta
       
       # Update the meta data with the final output path and options passed to
       # this render call.
-      captureOptions.outputPath = outputPath
-      meta = _.extend {}, meta, captureOptions
+      job.outputPath = outputPath
+      meta = _.extend meta, job
 
       @trigger 'render:init'
       # This is where the real PDF making magic happens. Credits to PhantomJS
@@ -179,6 +197,19 @@ module.exports = class Document
         @trigger 'page:ready'
       , @options.resourceTimeout
 
+  onClientError: (msg)->
+    @server.logClientError? msg
+    if @options.errorTimeout?
+      # After the error timeout we trigger an event to signal that the job
+      # has crashed.
+      @timers['error'] = setTimeout =>
+        @trigger 'error-timeout', msg
+      , @options.errorTimeout
+
+      # On any sign of progress, cancel the timeout, because the job might
+      # continue after all.
+      @once 'all', => clearTimeout(@timers['error'])
+
   isReady: ->
     # Which ever comes first
     @state is 'page:ready'
@@ -186,7 +217,8 @@ module.exports = class Document
   injectData: (data)->
     deferred = Q.defer()
     inject = (data)->
-      Nota.injectData(data)
+      # Try and inject data if Nota client is present (i.e. template loaded it)
+      Nota?.injectData(data)
     @page.evaluate inject, deferred.resolve, data
     deferred.promise
 

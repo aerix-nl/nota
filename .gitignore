@@ -17,3 +17,5 @@ aerix-environment.json
 .vagrant/
 /*.pdf
 npm-debug.log
+templates-old
+webrender

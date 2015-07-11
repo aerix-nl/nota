@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Path, TemplateUtils, chalk, cheerio, fs, s, _;
+  var Backbone, Path, TemplateHelper, chalk, cheerio, fs, s, _;
 
   fs = require('fs');
 
@@ -15,29 +15,29 @@
 
   cheerio = require('cheerio');
 
-  module.exports = TemplateUtils = (function() {
-    function TemplateUtils(logWarning) {
+  module.exports = TemplateHelper = (function() {
+    function TemplateHelper(logWarning) {
       this.logWarning = logWarning;
       _.extend(this, Backbone.Events);
     }
 
-    TemplateUtils.prototype.isFile = function(path) {
+    TemplateHelper.prototype.isFile = function(path) {
       return fs.existsSync(path) && fs.statSync(path).isFile();
     };
 
-    TemplateUtils.prototype.isDirectory = function(path) {
+    TemplateHelper.prototype.isDirectory = function(path) {
       return fs.existsSync(path) && fs.statSync(path).isDirectory();
     };
 
-    TemplateUtils.prototype.isData = function(path) {
+    TemplateHelper.prototype.isData = function(path) {
       return this.isFile(path);
     };
 
-    TemplateUtils.prototype.isTemplate = function(path) {
+    TemplateHelper.prototype.isTemplate = function(path) {
       return this.isDirectory(path);
     };
 
-    TemplateUtils.prototype.getTemplatesIndex = function(basePath, logWarnings) {
+    TemplateHelper.prototype.getTemplatesIndex = function(basePath, logWarnings) {
       var definition, dir, index, templateDirs, warningMsg, _i, _len;
       if (logWarnings == null) {
         logWarnings = true;
@@ -69,8 +69,8 @@
       return index;
     };
 
-    TemplateUtils.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var definitionPath, isDefined, templateDefinition, warningMsg;
+    TemplateHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
+      var definitionPath, isDefined, template, warningMsg;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -85,26 +85,28 @@
             this.logWarning(warningMsg);
           }
         }
-        templateDefinition = {
-          name: Path.basename(dir),
+        template = {
           meta: 'not found'
         };
       } else {
         definitionPath = Path.join(dir, "bower.json");
-        templateDefinition = JSON.parse(fs.readFileSync(definitionPath));
-        templateDefinition.meta = 'read';
+        template = JSON.parse(fs.readFileSync(definitionPath));
+        template.meta = 'read';
         if (logWarnings) {
           this.checkDependencies(dir);
         }
       }
-      if (!fs.existsSync(Path.join(dir, "template.html"))) {
-        templateDefinition.meta = 'not template';
+      if (template.name == null) {
+        template.name = Path.basename(dir);
       }
-      templateDefinition.dir = Path.basename(dir);
-      return templateDefinition;
+      if (!fs.existsSync(Path.join(dir, "template.html"))) {
+        template.meta = 'not template';
+      }
+      template.dir = Path.basename(dir);
+      return template;
     };
 
-    TemplateUtils.prototype.checkDependencies = function(templateDir) {
+    TemplateHelper.prototype.checkDependencies = function(templateDir) {
       var bower, bowerPath, checknwarn, node, nodePath;
       checknwarn = (function(_this) {
         return function(args) {
@@ -112,8 +114,8 @@
           if (args[2] == null) {
             return;
           }
-          depsDir = Path.join(templateDir, args[0] + '_' + args[1]);
           defType = s.capitalize(args[0]);
+          depsDir = Path.join(templateDir, args[0] + '_' + args[1]);
           deps = (args[2].dependencies != null) && _.keys(args[2].dependencies).length > 0;
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
@@ -134,7 +136,7 @@
       return checknwarn(['node', 'modules', node]);
     };
 
-    TemplateUtils.prototype.getExampleDataPath = function(templatePath) {
+    TemplateHelper.prototype.getExampleDataPath = function(templatePath) {
       var definition, exampleDataPath, _ref;
       definition = this.getTemplateDefinition(templatePath, false);
       if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
@@ -147,7 +149,7 @@
       }
     };
 
-    TemplateUtils.prototype.getTemplateType = function(templatePath) {
+    TemplateHelper.prototype.getTemplateType = function(templatePath) {
       var $, html, type;
       html = fs.readFileSync(Path.join(templatePath, 'template.html'), {
         encoding: 'utf8'
@@ -156,7 +158,7 @@
       return type = $('script').length === 0 ? 'static' : 'scripted';
     };
 
-    TemplateUtils.prototype.findTemplatePath = function(options) {
+    TemplateHelper.prototype.findTemplatePath = function(options) {
       var match, templatePath, templatesPath, _templatePath;
       templatePath = options.templatePath, templatesPath = options.templatesPath;
       if (templatePath == null) {
@@ -172,13 +174,13 @@
         })) != null) {
           throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
         } else {
-          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ".");
+          throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ". Try " + (chalk.cyan('--list')) + " for an overview of available templates.");
         }
       }
       return templatePath;
     };
 
-    TemplateUtils.prototype.findDataPath = function(options) {
+    TemplateHelper.prototype.findDataPath = function(options) {
       var dataPath, required, templatePath, _dataPath, _ref;
       dataPath = options.dataPath, templatePath = options.templatePath;
       required = (_ref = options.document) != null ? _ref.modelDriven : void 0;
@@ -209,13 +211,13 @@
       return dataPath;
     };
 
-    TemplateUtils.prototype.findOutputPath = function(options) {
+    TemplateHelper.prototype.findOutputPath = function(options) {
       var defaultFilename, meta, outputPath, preserve;
       outputPath = options.outputPath, meta = options.meta, defaultFilename = options.defaultFilename, preserve = options.preserve;
       if (outputPath != null) {
         if (this.isDirectory(outputPath)) {
-          if ((meta != null ? meta.filesystemName : void 0) != null) {
-            outputPath = Path.join(outputPath, meta.filesystemName);
+          if ((meta != null ? meta.filename : void 0) != null) {
+            outputPath = Path.join(outputPath, meta.filename);
           } else {
             outputPath = Path.join(outputPath, defaultFilename);
           }
@@ -226,8 +228,8 @@
           }
         }
       } else {
-        if ((meta != null ? meta.filesystemName : void 0) != null) {
-          outputPath = meta.filesystemName;
+        if ((meta != null ? meta.filename : void 0) != null) {
+          outputPath = meta.filename;
         } else {
           outputPath = defaultFilename;
         }
@@ -235,7 +237,7 @@
       return outputPath;
     };
 
-    return TemplateUtils;
+    return TemplateHelper;
 
   })();
 

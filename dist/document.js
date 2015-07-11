@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, Path, Q, TemplateUtils, phantom, _,
+  var Backbone, Document, Path, Q, TemplateHelper, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Q = require('q');
@@ -12,7 +12,7 @@
 
   Backbone = require('backbone');
 
-  TemplateUtils = require('./template_utils');
+  TemplateHelper = require('./template_helper');
 
   module.exports = Document = (function() {
     Document.prototype.pagePhases = ['page:init', 'page:opened', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded', 'page:ready', 'client:template:render:init', 'client:template:render:done', 'page:rendered'];
@@ -23,7 +23,7 @@
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       _.extend(this, Backbone.Events);
-      this.helper = new TemplateUtils();
+      this.helper = new TemplateHelper();
       this.on('all', this.setState, this);
       phantom.create((function(_this) {
         return function(phantomInstance) {
@@ -38,11 +38,20 @@
               'extrender': null
             };
             _this.page.set('paperSize', _this.options.paperSize);
+            _this.page.set('zoomFactor', _this.options.zoomFactor);
+            _this.page.evaluate(function() {
+              var html;
+              html = document.getElementsByTagName('html').item(0);
+              html.style['transform-origin'] = '0 0';
+              html.style['-webkit-transform-origin'] = '0 0';
+              html.style['transform'] = 'scale(0.68)';
+              return html.style['-webkit-transform'] = 'scale(0.68)';
+            });
             _this.page.onConsoleMessage(function(msg) {
-              return console.log(msg);
+              return _this.server.logClient(msg);
             });
             _this.page.set('onError', function(msg) {
-              return console.error(msg);
+              return _this.onClientError(msg);
             });
             _this.page.set('onCallback', function(msg) {
               return _this.trigger("client:" + msg);
@@ -120,12 +129,13 @@
       return deferred.promise;
     };
 
-    Document.prototype.capture = function(captureOptions) {
+    Document.prototype.capture = function(job) {
       var deferred;
-      if (captureOptions == null) {
-        captureOptions = {};
+      if (job == null) {
+        job = {};
       }
       deferred = Q.defer();
+      job = _.extend({}, job);
       this.page.evaluate(function() {
         if (typeof $ !== "undefined" && $ !== null) {
           return $('a').each(function(idx, a) {
@@ -143,12 +153,12 @@
           }
           outputPath = _this.helper.findOutputPath({
             defaultFilename: _this.options.defaultFilename,
-            preserve: captureOptions.preserve,
-            outputPath: captureOptions.outputPath,
+            preserve: job.preserve,
+            outputPath: job.outputPath,
             meta: meta
           });
-          captureOptions.outputPath = outputPath;
-          meta = _.extend({}, meta, captureOptions);
+          job.outputPath = outputPath;
+          meta = _.extend(meta, job);
           _this.trigger('render:init');
           return _this.page.render(outputPath, function() {
             _this.trigger('render:done', meta);
@@ -193,6 +203,25 @@
       }
     };
 
+    Document.prototype.onClientError = function(msg) {
+      var _base;
+      if (typeof (_base = this.server).logClientError === "function") {
+        _base.logClientError(msg);
+      }
+      if (this.options.errorTimeout != null) {
+        this.timers['error'] = setTimeout((function(_this) {
+          return function() {
+            return _this.trigger('error-timeout', msg);
+          };
+        })(this), this.options.errorTimeout);
+        return this.once('all', (function(_this) {
+          return function() {
+            return clearTimeout(_this.timers['error']);
+          };
+        })(this));
+      }
+    };
+
     Document.prototype.isReady = function() {
       return this.state === 'page:ready';
     };
@@ -201,7 +230,7 @@
       var deferred, inject;
       deferred = Q.defer();
       inject = function(data) {
-        return Nota.injectData(data);
+        return typeof Nota !== "undefined" && Nota !== null ? Nota.injectData(data) : void 0;
       };
       this.page.evaluate(inject, deferred.resolve, data);
       return deferred.promise;

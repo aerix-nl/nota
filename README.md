@@ -1,31 +1,65 @@
 # Nota
 <img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
 
-Nota eats your template (HTML5+CSS3+optionally JS) + optionally your data
-(JSON) and excretes pretty PDF documents. Perfect for things like automating
-invoice or ticket generation, but also simply compiling a static document to
-PDF. Nota can be used for any kind of document typesetting, layout and markup
-jobs, especially those that require automation and custom
-processing/presentation of data.
+Nota eats your HTML based static or scripted template, allows you to mix in
+your data and excretes pretty PDF documents. Perfect for automating things
+like invoice or ticket generation, but also a convenient tool rendering a
+simple static document to PDF.
 
+
+## Features
+
+#### Web interface
+Run Nota as a webservice, and create your PDF's though a friendly UI where you can upload a JSON file and get a PDF in return. Or use the REST API to expose Nota over your the interwebs or LAN (or VPN). Send a POST request with JSON, and get a PDF download in return. Try in your shell:
+```bash
+nota --template=example-invoice --listen
+```
+
+#### Shell interface
+Nota has lot of handy CLI options. Try running in the root:
+```bash
+nota --list
+```
+You'll see Nota comes with a few example templates out of the box. Try:
+```bash
+nota --template=example-invoice
+```
+When finished Nota has rendered a simple PDF page, consisting of some custom
+rendering of preview data as declared in the template `bower.json`. Change the
+company logo image and try modifing the example data to see how easy it is to
+customise it and create your own invoice. Then render your own data with
+`--data=<path>` and set the PDF destination with `--output=<path>` and you're
+creating your own invoices!
+
+#### Development ease
 Develop and debug while feeling right at home in your favorite browser, with a
-1:1 preview of what Nota turns into a .PDF for you. Nota makes designing and
-programming your documents a breeze with `--preview`.
+1:1 preview of what Nota turns into a PDF for you. Nota makes designing and
+programming your documents a breeze with some ready examples that
+automagically compile CoffeeScript and SASS. Try in your shell:
+```bash
+cd templates/examples-invoice && grunt
+nota --template=example-invoice --preview
+```
+And you're ready to start customizing!
 
+#### API
 Spare yourself the mind numbing routine of creating series of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
-intellectual slave labour.
+intellectual slave labour. Try in your Node CoffeeScript:
+```coffeescript
+nota = require('nota')
+nota.queue [job1, job2, job3]
 ```
-jobs = [{
-  data:       'data1.json'
-  outputPath: 'output1.pdf'
-}, {
-  data:       'data2.json'
-  outputPath: 'output2.pdf'
-}]
-server.render jobs
-```
+
+## Prerequisites
+
+You will need the following things properly installed on your computer.
+
+* [Git](http://git-scm.com/)
+* [Node.js](http://nodejs.org/) (with NPM)
+* [Bower](http://bower.io/)
+* [PhantomJS v1.9.8](http://phantomjs.org/)
 
 ## Setup
 Due to kinks (see [Known problems](https://github.com/FelixAkk/nota#known-problems))
@@ -33,78 +67,58 @@ in the depencencies that are still being worked out, Nota is a bit
 picky on it's environment and dependencies. We recommend running Nota under
 Linux, and we've made a provisioning script that sets up all dependencies for
 Linux (and unverified support for Mac and Windows under cywin).
-```
+```bash
+chmod +x provision.sh
 ./provision.sh
 ```
 
 ## Architecture
-
 Technically this primarily consists out of a pipeline of
 [PhantomJS](http://phantomjs.org/) (headless WebKit browser for rendering HTML
 and capturing PDF) with the [phantomjs-node](https://github.com/sgentle
 /phantomjs-node) bindings for interfacing using
 [Node.js](https://nodejs.org/). So all the credits really go out to them. This
-package is mostly some frameworking and task automation around the
-beforementioned, to make the job of crafting and rendering templates easier.
-
-## Usage
-
-To get a feel of Nota, run the following line in the package root:
-````
-./nota --template=example-aerix
-````
-
-When finished Nota has rendered a simple PDF page, consisting of some custom
-rendering of preview data as declared in the template `bower.json`. Change the
-company logo image and try modifing the example data to see how easy it is to
-customise it and create your own invoice.
-
-Try `./nota --list` for a list of example templates. Some of the simpler
-static "Hello World" templates can be extended with any inline CSS, linked
-stylesheets or JavaScript. You can also write in SASS and CoffeeScript and
-have it automagically compiled by running `grunt` in the template root.
-
-Add the switch `--template=<dir>` to select a template by directory. Add the
-switch `--data=<path>` with a path if any JSON should rendered. Add the switch
-`--port=<port>` with a port (larger than 1024) to select which port to use.
-This is useful for situations in which you are working on lots of PDFs
-simultaneously.
-
-By default Nota will output the PDF in the root rolder of itself, in a file
-called `output.pdf`. When this is not want you want, simply add
-`--output=x.pdf` (which will save the file in the Nota root folder) or
-`--output=/tmp/x.pdf` (which saves the file on the absolute path).
+package is mostly some CoffeeScript based API en UI frameworking around
+the beforementioned, to make the job of crafting and rendering templates
+easier.
 
 
 ## Creating templates
-Right now we recommend copying and adapting either one of the following
+For now we recommend copying and adapting either one of the following
 example templates:
 
 * Static template example: `example-doc`
-* Model driven scripted template example: `example-invoice`
+* (Model driven) scripted template example: `example-invoice`
 
-#### About static templates
-Nota will scan the `template.html` for any `<script>` tag, and if there are
-none, it automatically assume it's stand-alone: `static`. This will make it
-wait for all page resources to have finished loading and then perform the
-capture automatically. This makes Nota a luxury equivalent of [rasterize.js](h
-ttps://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
+They are extensively commented and should help you give an idea of teh
+template structure.
 
-#### About dynamic templates 
-If there are script tags found Nota will also wait for all resources to finish
-loading before injecting data and capturing. After the resources have been
-loading it allows for some time for the template and other things to set up
-and initialize. This timeout is defined in `default-config.json`. After that
-timeout `page:loaded` is triggered internally, and if data has been provided
-for the job, the data is made available and your template can query it from
-`/data.json`. Nota will wait the same timeout again so the template and other
-stuffs have time to render the data, after that the capture is performed.
+#### Static templates
+The most simple template is a static template. Nota will scan the
+`template.html` for any `<script>` tag. If there are none, it automatically
+assumes the template is `static`. When rendering in this mode Nota will wait
+for all the template's page resources like images to have finished loading and
+then perform the capture automatically. This makes Nota a luxury equivalent of
+[rasterize.js](https://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-#### About Nota client API for dynamic templates
+#### Scripted templates 
+If there are script tags found Nota will also wait for all page resources to
+finish loading before injecting data and capturing. After the resources have
+been loaded Nota will allow the template some time set up and allow possible
+template code to initialize. This timeout duration is defined in `default-
+config.json` at `document.templateTimeout`.
+
+After that timeout the `page:ready` event is automatically triggered
+internally, and after the `document.renderTimeout` period the capture is
+performed. If data has been provided for the job, the data is made available
+and your template at the URI `/data.json`.
+
+#### Nota client API for scripted and model driven templates
 If twice this timeout is way more than you need, you can skip this wait by
 talking to the Nota client API. Require the Nota client from the address
 `/nota.js`, which will expose the `Nota` client object which exposes
-`Nota.trigger` to send events over as strings.
+`Nota.trigger` to send string events to the backend. The events are namespaced
+with a semicolon as you'll see futher on.
 
 By triggering `'template:loaded'` you can signal the template has finished
 setup and initialization, and skip the remainder of the timeout.
@@ -124,22 +138,36 @@ performed.
 If instead you need more time, you can cancel the timeout by triggering
 `'template:render:start'`.
 
-Per job you can provide Nota with meta data about the current document
-capture. This also provides a way. Just before capture Nota 'asks' for the
-meta data. You can also use this to let your template suggest a file name.
+Per job your template can provide Nota with meta data about the current document
+capture. During the caputure the Nota backend will request the meta data from the `Nota.getDocumentMeta` interface.
 
 Use `Nota.setDocumentMeta` to set a object (or function that yields such an
 object) like:
 ```
 meta = {
-  id: '42'
-  documentName: 'Invoice 2013.0042'
-  filesystemName: 'Invoice_2014.0042-Client_Name.pdf'
+  filename:       'Invoice_2014.0042-Client_Name.pdf'
+  id:             '42'
+  documentTitle:  'Invoice 2013.0042'
 ````
+Currently only the `filename` is used by Nota, but you can supplement it with
+whatever data you like, and have you application that builds on Nota use that.
+
+The `filename` property provides a way for the Nota backend to 'asks' your
+template for a suggested filename. If no output filename is provided, or the
+output path is a directory, then this filename will be used.
+
+
+## Scalability
+On a MacBook Pro mid-2012 Core i7, 16GB RAM rendering the `example- invoice`
+template with preview data takes about 0.37 seconds. Performance
+degradations haven't been noticed for queues up to a 100 jobs. Testing beyond
+that is still needed. Scability might be hindered because job queues are
+rendered using recursion. This is because of the asynchronous nature
+of libraries required for rendering. Some investigation on space and time
+complexity is still need.
 
 
 ## Known problems
-
 Nota is young, experimental, and built on a still developing tech stack. There
 are still quite some shortcomings and bugs (none that aren't likely to be
 fixed in the near future). That said, we've been able to use Nota in
@@ -149,12 +177,26 @@ the current version a showcase of the potential of this tech stack and the
 future of Nota. Here's some things to take into account:
 
 #### No clickable hyperlinks
-Even though WebKit supports this, due to a
-[bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
+Even though WebKit supports this, due to
+[a bug](https://github.com/ariya/phantomjs/issues/10196) in QtWebKit which
 PhantomJS builts on the current output PDFs have no clickable links. This has
-quite some pressing attention, so it's likely to be fixed soon, but no fix
-committed yet. For now we recommend making links that have URL as the text so
-users can copy-paste that, or avoid them.
+quite some [pressing attention](https://www.bountysource.com/issues/303463
+-suggestion-include-hyperlink-action-in-pdf-output-for-hyperlinks-in-
+webpage/backers), so it's likely to be [fixed
+soon](https://github.com/ariya/phantomjs/pull/13171), but no fix committed
+yet. For now we recommend making links that have the URL as the text so users
+can copy-paste that.
+
+#### Hyperlink expansion
+It seems that as an attempt to compensate for the lack of links, PhantomJS takes
+the `href` value of a link and suffixes it to the link's inner HTML, rendering
+a link like `<a href="www.somewhere.com">link</a>` into `<a
+href="somewhere.com">link (www.somewhere.com)</a>`. This also causes a flow
+expansion that breaks 1:1 correspondence of screen to print output, and can
+even break layouts when context flow it lightly fitted. To prevent this, for
+now Nota subsitutes all `<a>` tags with `<span class="hyperlink">` tags with
+equal inner HTML. For identical styling, we recommend a selector like `a,
+span.hyperlink` in your template CSS.
 
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a
@@ -177,14 +219,15 @@ other solutions.
 
 #### Paper size and zoom factor
 It looks like when rendering with PhantomJS 1.9.x the page receives a zoom
-factor of about 1.068 is applied, causing the content flow to run longer than
+factor of about 1.068, causing the content flow to run longer than
 what is seen when rendered in the web browser. This is likely to be fixed, or
 at least allow for a compensating counter zoomfactor in PhantomJS 2 according
 to [this bug](https://github.com/ariya/phantomjs/issues/12685). But at the
 time of writing PhantomJS 2 has an even larger zoom factor, and a broken
 zoomfactor setter. For now we recommend either creating extra space for
-content flow or making some seperate CSS declarations for print, like a
-smaller font size to counter this.
+content flow or making a CSS stylesheet for print, with a smaller font size to
+counter this.
+
 
 ## Meta
 

@@ -1,4 +1,5 @@
 module.exports = ( grunt ) ->
+  require('load-grunt-tasks')(grunt)
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
 
@@ -15,22 +16,21 @@ module.exports = ( grunt ) ->
     sass:
       source:
         options:
-          compass: true
+          sourceMap: true
         files: [
           expand: true
           cwd: 'assets/stylesheets'
-          src: ['**/*.scss']
+          src: ['**/*.sass', '**/*.scss']
           dest: 'assets/stylesheets'
           ext: '.css'
         ]
 
     watch:
       all:
-        files: ['src/**/*.coffee', 'assets/stylesheets/**/*.scss']
+        files: ['src/**/*.coffee', 'assets/stylesheets/**/*.sass', 'assets/stylesheets/**/*.scss']
         tasks: ['build']
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
-  grunt.loadNpmTasks 'grunt-contrib-sass'
   grunt.loadNpmTasks 'grunt-contrib-watch'
 
   grunt.registerTask 'default', ['watch']

@@ -1,5 +1,5 @@
 (function() {
-  var JobQueue, Nota, NotaServer, Path, TemplateUtils, chalk, fs, nomnom, notifier, open, s, _,
+  var JobQueue, NotaCLI, NotaServer, Path, TemplateHelper, chalk, fs, nomnom, notaCLI, notifier, open, s, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   nomnom = require('nomnom');
@@ -22,20 +22,29 @@
 
   JobQueue = require('./queue');
 
-  TemplateUtils = require('./template_utils');
+  TemplateHelper = require('./template_helper');
 
-  Nota = (function() {
-    Nota.prototype.defaults = require('../config-default.json');
+  NotaCLI = (function() {
+    NotaCLI.prototype.defaults = require('../config-default.json');
 
-    Nota.prototype.meta = require('../package.json');
+    NotaCLI.prototype.meta = require('../package.json');
 
-    function Nota(logging) {
+    NotaCLI.prototype.logPrefix = chalk.gray('nota ');
+
+    NotaCLI.prototype.clientPrefix = chalk.gray('nota-client ');
+
+    function NotaCLI(logChannels) {
+      this.logClientError = __bind(this.logClientError, this);
+      this.logClient = __bind(this.logClient, this);
+      this.logEvent = __bind(this.logEvent, this);
+      this.logError = __bind(this.logError, this);
+      this.logWarning = __bind(this.logWarning, this);
+      this.log = __bind(this.log, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      var definition, e;
-      if (logging != null) {
-        this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      if (logChannels != null) {
+        this.log = logChannels.log, this.logEvent = logChannels.logEvent, this.logError = logChannels.logError, this.logWarning = logChannels.logWarning;
       }
-      this.helper = new TemplateUtils(this.logWarning);
+      this.helper = new TemplateHelper(this.logWarning);
       nomnom.options({
         template: {
           position: 0,
@@ -52,21 +61,37 @@
         preview: {
           abbr: 'p',
           flag: true,
-          help: 'Preview in the browser'
+          help: 'Preview template in the browser'
+        },
+        listen: {
+          abbr: 's',
+          flag: true,
+          help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
         },
         list: {
           abbr: 'l',
           flag: true,
           help: 'List all templates',
-          callback: this.listTemplatesIndex
+          callback: (function(_this) {
+            return function() {
+              return _this.listTemplatesIndex();
+            };
+          })(this)
+        },
+        verbove: {
+          abbr: 'b',
+          flag: true,
+          help: 'More detailed console output on errors'
         },
         version: {
           abbr: 'v',
           flag: true,
           help: 'Print version',
-          callback: function() {
-            return this.meta.version;
-          }
+          callback: (function(_this) {
+            return function() {
+              return _this.meta.version;
+            };
+          })(this)
         },
         resources: {
           flag: true,
@@ -77,41 +102,48 @@
           help: 'Prevent overwriting when output path is already occupied'
         }
       });
+    }
+
+    NotaCLI.prototype.start = function() {
+      var e, logChannels;
       try {
-        this.options = this.settleOptions(nomnom.nom(), this.defaults);
+        this.options = this.parseOptions(nomnom.nom(), this.defaults);
       } catch (_error) {
         e = _error;
         this.logError(e);
         return;
       }
-      definition = this.helper.getTemplateDefinition(this.options.templatePath, false);
-      if (definition.meta === "not template") {
-        this.logError("Template " + (chalk.cyan(definition.name)) + " has no mandatory " + (chalk.cyan('template.html')) + " file");
-        return;
-      }
-      logging = {
+      logChannels = {
         log: this.log,
         logEvent: this.logEvent,
         logWarning: this.logWarning,
-        logError: this.logError
+        logError: this.logError,
+        logClient: this.logClient,
+        logClientError: this.logClientError
       };
-      this.server = new NotaServer(this.options, logging);
-      this.server.start();
-      if (this.options.preview) {
-        open(this.server.url());
-      } else {
-        this.render(this.options);
-      }
-    }
+      this.server = new NotaServer(this.options, logChannels);
+      return this.server.start().then((function(_this) {
+        return function() {
+          if (_this.options.preview) {
+            open(_this.server.url());
+          }
+          if (_this.options.listen) {
+            return open(_this.server.webrenderUrl());
+          } else {
+            return _this.render(_this.options);
+          }
+        };
+      })(this));
+    };
 
-    Nota.prototype.render = function(options) {
+    NotaCLI.prototype.render = function(options) {
       var job;
       job = {
         dataPath: options.dataPath,
         outputPath: options.outputPath,
         preserve: options.preserve
       };
-      return this.server.queue([job]).then((function(_this) {
+      return this.server.queue(job).then((function(_this) {
         return function(meta) {
           if (options.logging.notify) {
             notifier.on('click', function() {
@@ -136,8 +168,8 @@
       })(this));
     };
 
-    Nota.prototype.settleOptions = function(args, defaults) {
-      var e, options;
+    NotaCLI.prototype.parseOptions = function(args, defaults) {
+      var definition, e, options;
       options = _.extend({}, defaults);
       options = _.extend(options, {
         templatePath: args.template,
@@ -146,6 +178,9 @@
       });
       if (args.preview != null) {
         options.preview = args.preview;
+      }
+      if (args.listen != null) {
+        options.listen = args.listen;
       }
       if (args.port != null) {
         options.port = args.port;
@@ -159,9 +194,13 @@
       if (args.preserve != null) {
         options.preserve = args.preserve;
       }
+      if (args.verbose != null) {
+        options.verbose = args.verbose;
+      }
       options.templatePath = this.helper.findTemplatePath(options);
       try {
-        _.extend(options.document, this.helper.getTemplateDefinition(options.templatePath).nota);
+        definition = this.helper.getTemplateDefinition(options.templatePath);
+        _.extend(options.document, definition.nota);
       } catch (_error) {
         e = _error;
         this.logWarning(e);
@@ -170,7 +209,7 @@
       return options;
     };
 
-    Nota.prototype.listTemplatesIndex = function() {
+    NotaCLI.prototype.listTemplatesIndex = function() {
       var definition, dir, fold, headerDir, headerName, headerVersion, index, lengths, name, templates, version;
       templates = [];
       index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
@@ -189,7 +228,7 @@
         };
         headerDir = s.pad(headerDir, lengths.dirName, ' ', 'right');
         headerName = s.pad(headerName, lengths.name + 8, ' ', 'left');
-        console.log("nota " + chalk.gray(headerDir + headerName + ' ' + headerVersion));
+        this.log(chalk.gray(headerDir + headerName + ' ' + headerVersion));
         templates = (function() {
           var _results;
           _results = [];
@@ -198,34 +237,48 @@
             dir = s.pad(definition.dir, lengths.dirName, ' ', 'right');
             name = s.pad(definition.name, lengths.name + 8, ' ', 'left');
             version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(console.log("nota " + chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
+            _results.push(this.log(chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
           }
           return _results;
-        })();
+        }).call(this);
       }
       return '';
     };
 
-    Nota.prototype.log = function(msg) {
-      return console.log('nota ' + msg);
+    NotaCLI.prototype.log = function(msg) {
+      return console.log(this.logPrefix + msg);
     };
 
-    Nota.prototype.logWarning = function(warningMsg) {
-      return console.warn('nota ' + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
+    NotaCLI.prototype.logWarning = function(warningMsg) {
+      return console.warn(this.logPrefix + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
     };
 
-    Nota.prototype.logError = function(errorMsg) {
-      return console.error('nota ' + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
+    NotaCLI.prototype.logError = function(errorMsg) {
+      var _ref;
+      console.error(this.logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
+      if (((_ref = this.options) != null ? _ref.verbose : void 0) && (errorMsg.toSource != null)) {
+        return console.error(this.logPrefix + errorMsg.toSource());
+      }
     };
 
-    Nota.prototype.logEvent = function(event) {
-      return console.info('nota ' + chalk.bgBlue.black('EVENT') + ' ' + event);
+    NotaCLI.prototype.logEvent = function(event) {
+      return console.info(this.logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event);
     };
 
-    return Nota;
+    NotaCLI.prototype.logClient = function(msg) {
+      return console.log(this.clientPrefix + msg);
+    };
+
+    NotaCLI.prototype.logClientError = function(msg) {
+      return console.error(this.clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg);
+    };
+
+    return NotaCLI;
 
   })();
 
-  Nota = new Nota();
+  notaCLI = new NotaCLI();
+
+  notaCLI.start();
 
 }).call(this);

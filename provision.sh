@@ -2,7 +2,7 @@
 
 # Require sudo for package manager commands
 if [[ $UID != 0 ]]; then
-    echo "Please run this script with sudo:"
+    echo "This script needs root permissions to install some packages. Please run with sudo:"
     echo "sudo $0 $*"
     exit 1
 fi
@@ -19,20 +19,21 @@ fi
 
 
 # Start provisioning
-echo "Installing Nota dependencies (needs root permission)"
-echo " - Updating package manager index"
-$PCKMNGR update > /dev/null 2>&1
+echo "Installing Nota dependencies"
 
-echo " - Upgrading all current packages"
-$PCKMNGR upgrade -y > /dev/null 2>&1
+# echo " - Updating package manager index"
+# $PCKMNGR update > /dev/null 2>&1
 
-echo " - Installing new packages"
-$PCKMNGR install git curl unzip npm nodejs phantomjs -y > /dev/null 2>&1
-[ -f /usr/bin/node ] || ln -s /usr/bin/nodejs /usr/bin/node
+# echo " - Upgrading all current packages"
+# $PCKMNGR upgrade -y > /dev/null 2>&1
 
-echo " - Installing SASS"
-\curl -sSL https://get.rvm.io | bash -s stable --ruby > /dev/null 2>&1
-gem install sass > /dev/null 2>&1
+# echo " - Installing new packages"
+# $PCKMNGR install git curl unzip npm nodejs phantomjs -y > /dev/null 2>&1
+# [ -f /usr/bin/node ] || ln -s /usr/bin/nodejs /usr/bin/node
+
+# echo " - Installing SASS"
+# \curl -sSL https://get.rvm.io | bash -s stable --ruby > /dev/null 2>&1
+# gem install sass > /dev/null 2>&1
 
 echo " - Installing NPM"  
 npm install -g npm > /dev/null 2>&1
@@ -51,7 +52,9 @@ bower install --allow-root > /dev/null 2>&1
 
 echo " - Installing example templates"
 git submodule update --init --recursive > /dev/null 2>&1
-for dir in $(ls templates); do `cd "templates/$dir"; npm install; bower install`; done
+
+echo " - Installing example template dependencies"
+for dir in $(ls templates); do `cd "templates/$dir"; npm install; bower install --allow-root; cd ../..`; done
 
 echo " "
 echo "Provisioning finished."
