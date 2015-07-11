@@ -70,40 +70,45 @@
     };
 
     TemplateHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var definitionPath, isDefined, template, warningMsg;
+      var bower, bowerPath, definition, definitionPath, isDefined, warningMsg;
       if (logWarnings == null) {
         logWarnings = true;
       }
       if (!this.isDirectory(dir)) {
         throw new Error("Template '" + dir + "' not found");
       }
-      isDefined = this.isFile(Path.join(dir, "bower.json"));
+      isDefined = this.isFile(Path.join(dir, "nota.json"));
       if (!isDefined) {
-        warningMsg = "Template " + (chalk.cyan(dir)) + " has no " + (chalk.cyan('bower.json')) + " definition " + (chalk.gray('(optional, but recommended)'));
+        warningMsg = "Template " + (chalk.cyan(dir)) + " has no " + (chalk.cyan('nota.json')) + " definition " + (chalk.gray('(optional, but recommended)'));
         if (logWarnings) {
           if (typeof this.logWarning === "function") {
             this.logWarning(warningMsg);
           }
         }
-        template = {
+        if (this.isFile(Path.join(dir, "bower.json"))) {
+          bowerPath = Path.join(dir, "bower.json");
+          bower = JSON.parse(fs.readFileSync(definitionPath));
+          definition = _;
+        }
+        definition = {
           meta: 'not found'
         };
       } else {
-        definitionPath = Path.join(dir, "bower.json");
-        template = JSON.parse(fs.readFileSync(definitionPath));
-        template.meta = 'read';
+        definitionPath = Path.join(dir, "nota.json");
+        definition = JSON.parse(fs.readFileSync(definitionPath));
+        definition.meta = 'read';
         if (logWarnings) {
           this.checkDependencies(dir);
         }
       }
-      if (template.name == null) {
-        template.name = Path.basename(dir);
+      if (definition.name == null) {
+        definition.name = Path.basename(dir);
       }
       if (!fs.existsSync(Path.join(dir, "template.html"))) {
-        template.meta = 'not template';
+        definition.meta = 'not template';
       }
-      template.dir = Path.basename(dir);
-      return template;
+      definition.dir = Path.basename(dir);
+      return definition;
     };
 
     TemplateHelper.prototype.checkDependencies = function(templateDir) {

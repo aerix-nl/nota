@@ -169,13 +169,17 @@
     };
 
     NotaCLI.prototype.parseOptions = function(args, defaults) {
-      var definition, e, options;
+      var definition, e, options, template;
       options = _.extend({}, defaults);
-      options = _.extend(options, {
-        templatePath: args.template,
-        dataPath: args.data,
-        outputPath: args.output
-      });
+      if (args.template != null) {
+        options.templatePath = args.template;
+      }
+      if (args.data != null) {
+        options.dataPath = args.data;
+      }
+      if (args.output != null) {
+        options.outputPath = args.output;
+      }
       if (args.preview != null) {
         options.preview = args.preview;
       }
@@ -197,20 +201,25 @@
       if (args.verbose != null) {
         options.verbose = args.verbose;
       }
-      options.templatePath = this.helper.findTemplatePath(options);
+      template = this.helper.findTemplatePath(options);
       try {
-        definition = this.helper.getTemplateDefinition(options.templatePath);
-        _.extend(options.document, definition.nota);
+        definition = this.helper.getTemplateDefinition(template);
+        _.extend(options.template, definition);
       } catch (_error) {
         e = _error;
         this.logWarning(e);
+        options.template = {
+          name: options.templatePath,
+          path: templatePath
+        };
+        delete options.templatePath;
       }
       options.dataPath = this.helper.findDataPath(options);
       return options;
     };
 
     NotaCLI.prototype.listTemplatesIndex = function() {
-      var definition, dir, fold, headerDir, headerName, headerVersion, index, lengths, name, templates, version;
+      var definition, dir, fold, headerDir, headerName, index, lengths, name, templates;
       templates = [];
       index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
       if (_.size(index) === 0) {
@@ -218,7 +227,6 @@
       } else {
         headerDir = 'Directory';
         headerName = 'Template name';
-        headerVersion = 'Version';
         fold = function(memo, str) {
           return Math.max(memo, str.length);
         };
@@ -228,7 +236,7 @@
         };
         headerDir = s.pad(headerDir, lengths.dirName, ' ', 'right');
         headerName = s.pad(headerName, lengths.name + 8, ' ', 'left');
-        this.log(chalk.gray(headerDir + headerName + ' ' + headerVersion));
+        this.log(chalk.gray(headerDir + headerName));
         templates = (function() {
           var _results;
           _results = [];
@@ -236,8 +244,7 @@
             definition = index[dir];
             dir = s.pad(definition.dir, lengths.dirName, ' ', 'right');
             name = s.pad(definition.name, lengths.name + 8, ' ', 'left');
-            version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(this.log(chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
+            _results.push(this.log(chalk.cyan(dir) + chalk.green(name)));
           }
           return _results;
         }).call(this);

@@ -93,7 +93,7 @@ class NotaCLI
     @server.start()
     # We'll need to wait till all of it's components have loaded and setup is done
     .then =>
-      
+
       if @options.preview
         # If we want a template preview, open the web page
         open(@server.url())
@@ -141,12 +141,11 @@ class NotaCLI
   # Settling options from parsed CLI arguments over defaults
   parseOptions: ( args, defaults ) ->
     options = _.extend {}, defaults
-    # Extend with mandatory arguments
-    options = _.extend options,
-      templatePath: args.template
-      dataPath:     args.data
-      outputPath:   args.output
+
     # Extend with optional arguments
+    options.templatePath = args.template              if args.template?
+    options.dataPath = args.data                      if args.data?
+    options.outputPath = args.output                  if args.output?
     options.preview = args.preview                    if args.preview?
     options.listen = args.listen                      if args.listen?
     options.port = args.port                          if args.port?
@@ -154,14 +153,23 @@ class NotaCLI
     options.logging.pageResources = args.resources    if args.resources?
     options.preserve = args.preserve                  if args.preserve?
     options.verbose = args.verbose                    if args.verbose?
-    
-    # Template
-    options.templatePath =          @helper.findTemplatePath(options)
-    # Template document config
-    try # We can do without them though
-      definition = @helper.getTemplateDefinition options.templatePath
-      _.extend options.document, definition.nota
-    catch e then @logWarning e
+
+    # Template definition
+    template = @helper.findTemplatePath(options)
+
+    try # to get the definition (we can do without it though)
+      definition = @helper.getTemplateDefinition template
+      _.extend options.template, definition
+    catch e
+      @logWarning e
+      # Fill the definition in with what we do know
+      options.template = {
+        name: options.templatePath
+        path: templatePath
+      }
+      # Delete all the old temporary data
+      delete options.templatePath
+      # And use the
     # Data
     options.dataPath =              @helper.findDataPath(options)
 
@@ -177,8 +185,7 @@ class NotaCLI
     else
       headerDir     = 'Directory'
       headerName    = 'Template name'
-      headerVersion = 'Version'
-      
+
       fold = (memo, str)->
         Math.max(memo, str.length)
       lengths =
@@ -189,12 +196,11 @@ class NotaCLI
       headerName    = s.pad headerName, lengths.name + 8, ' ', 'left'
       # List them all in a format of: templates/hello_world 'Hello World' v1.0
 
-      @log chalk.gray(headerDir + headerName + ' ' + headerVersion)
+      @log chalk.gray(headerDir + headerName)
       templates = for dir, definition of index
         dir     = s.pad definition.dir,  lengths.dirName, ' ', 'right'
         name    = s.pad definition.name, lengths.name + 8, ' ', 'left'
-        version = if definition.version? then 'v'+definition.version else ''
-        @log chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
+        @log chalk.cyan(dir) + chalk.green(name)
     return '' # Somehow needed to make execution stop here with --list
 
   # Server origin logging channels
