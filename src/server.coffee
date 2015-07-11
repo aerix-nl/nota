@@ -16,10 +16,10 @@ JobQueue        = require('./queue')
 
 module.exports  = class NotaServer
 
-  constructor: ( @options, logging ) ->
+  constructor: ( @options, logChannels ) ->
     _.extend(@, Backbone.Events)
 
-    { @log, @logEvent, @logError, @logWarning, @logClient, @logClientError } = logging
+    { @log, @logEvent, @logError, @logWarning, @logClient, @logClientError } = logChannels
 
     { @serverAddress, @serverPort, @templatePath, @dataPath } = @options
 
@@ -64,13 +64,10 @@ module.exports  = class NotaServer
       # Start up the virtual document
       @document = new Document(@, @options.document)
       @document.on 'all', @logEvent
-
-      if @options.listen
-        @document.once 'page:ready', =>
-          @listen().then deferred.resolve()
-      else
-        @document.once 'page:ready', =>
-          deferred.resolve()
+      @document.once 'page:ready', =>
+        if @options.listen
+          @listen()
+        deferred.resolve()
 
     deferred.promise
 
@@ -217,13 +214,11 @@ module.exports  = class NotaServer
 
   # Start listening for HTTP render requests
   listen: ->
-    deferred = Q.defer()
 
     # Load dependencies only needed for wendering service
     mkdirp     = require('mkdirp')
     bodyParser = require('body-parser')
     @Handlebars = require('handlebars')
-    multer     = require('multer')
 
     # PhantomJS page renderBase64 isn't available for PDF, so we can't render
     # to memory and buffer it there before sending it over to the client. So
@@ -231,15 +226,13 @@ module.exports  = class NotaServer
     # dir, and then upload that file with the response. We need to be able to
     # create this dir (or it has to already exist) to continue.
     mkdirp @options.webrenderPath, (err)=> if err
-      deferred.reject "Unable to create render output path 
+      throw new Error "Unable to create render output path 
       #{chalk.cyan options.webrenderPath}. Error: #{err}"
 
     # For parsing request bodies to 'application/json'
     @app.use bodyParser.json()
     # For parsing request bodies to 'application/x-www-form-urlencoded'
     @app.use bodyParser.urlencoded extended: true
-    # For parsing request bodies to 'multipart/form-data'
-    @app.use multer()
     
     @app.post '/render', @webRender
     @app.get  '/render', @webRenderInterface
@@ -247,26 +240,23 @@ module.exports  = class NotaServer
     @log? "Listening at #{chalk.cyan 'http://localhost:'+@serverPort+'/render'} for POST requests"
 
     # For convenience try to do a local and external IP lookup (LAN and WAN)
-    @ipLookups().then (@ip)=>
-      if @ip.lan? then @log? "LAN: http://#{ip.lan}:#{@serverPort}/render"
-      if @ip.wan? then @log? "WAN: http://#{ip.wan}:#{@serverPort}/render"
-
-      deferred.resolve @ip
+    if @options.logging.webrenderAddress then @ipLookups().then (@ip)=>
+      if @ip.lan? then @log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
+      if @ip.wan? then @log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
 
     .catch (err)=>
       # Don't log whatever error gets caught here as an error, because the LAN
       # and WAN IP lookups where are purely a convenience and optional.
       @log? err
-      deferred.resolve {}
 
-    # .finally ()=>
-    #   global.webRenderHTML = template {
-    #     template:     definition
-    #     serverPort:   @serverPort
-    #     ip:           @ip
-    #   }
-
-    deferred.promise
+    # html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    # template = @Handlebars.compile html
+    # definition = @helper.getTemplateDefinition(@templatePath)
+    # webRenderHTML = template({
+    #   template:     definition
+    #   serverPort:   @serverPort
+    #   ip:           @ip
+    # })
 
   ipLookups: ->
     deferred = Q.defer()
@@ -326,18 +316,41 @@ module.exports  = class NotaServer
     res.send webRenderHTML
 
   webRender: (req, res)=>
+    if not @reqPreconditions(req, res) then return
+
+    # We got the data and we're ready to give it a try
     job = {
-      outputPath:     @options.webrenderPath
+      data:         req.body.data
+      outputPath:   @options.webrenderPath
     }
-    job.data =        req.body if req.body?
-    job.dataPath =    req.files.data.path if req.files?.data?.path?
 
     @queue(job).then (meta)->
       if meta[0].fail?
-        res.send meta[0].fail # profane Nota fuck yeah!
+        res.status(500).send "An error occured while rendering: #{meta[0].fail}"
       else
         pdf = Path.resolve meta[0].outputPath
         res.download pdf
+
+  reqPreconditions: (req, res)->
+    if not req.body.data?
+      res.status(400).send("The <code>data</code> field of the request was undefined. Please
+      provide a template model instance that you'd like to render into your template. See the <a
+      href='/render#rest-api'>REST-API documentation</a> of the webrender service.").end()
+      return false
+    else if typeof req.body.data is 'string'
+      try 
+        req.body.data = JSON.parse req.body.data
+      catch e
+        res.status(400).send("Could not parse data string. Server expects a JSON string as the data
+        field. Error: #{e}").end()
+        return false 
+
+    if req.body.data is {}
+      res.status(400).send("Empty data object received")
+      return false
+
+    return true
+
 
   after: (event, callback, context)->
     if @document.state is event then callback.apply(context or @)

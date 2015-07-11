@@ -19,13 +19,13 @@ class NotaCLI
   # Load the package definition so we may know ourselves (version etc.)
   meta: require '../package.json'
 
-  # Some strings that go before all logging (server origin and client origin respectively)
+  # Some strings that go before all logChannels (server origin and client origin respectively)
   logPrefix:    chalk.gray('nota ')
   clientPrefix: chalk.gray('nota-client ')
 
-  constructor: ( logging ) ->
-    # Allow redirecting of logging output through dependency injection
-    if logging? then { @log, @logEvent, @logError, @logWarning } = logging
+  constructor: ( logChannels ) ->
+    # Allow redirecting of logging output to channels through dependency injection
+    if logChannels? then { @log, @logEvent, @logError, @logWarning } = logChannels
 
     # Instantiate our thrusty helping hand in template and job tasks
     @helper = new TemplateHelper(@logWarning)
@@ -78,8 +78,8 @@ class NotaCLI
       @logError e
       return
 
-
-    logging = {
+    # Sum the current (command line interface) logging channels
+    logChannels = {
       log:              @log
       logEvent:         @logEvent
       logWarning:       @logWarning
@@ -88,7 +88,7 @@ class NotaCLI
       logClientError:   @logClientError
     }
 
-    @server = new NotaServer @options, logging
+    @server = new NotaServer @options, logChannels
 
     @server.start()
     # We'll need to wait till all of it's components have loaded and setup is done
@@ -197,7 +197,7 @@ class NotaCLI
         @log chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
     return '' # Somehow needed to make execution stop here with --list
 
-  # Server origin logging
+  # Server origin logging channels
   log: ( msg )=>
     console.log   @logPrefix + msg
 
@@ -212,7 +212,7 @@ class NotaCLI
   logEvent: ( event )=>
     console.info  @logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event
 
-  # Client origin logging
+  # Client origin logging channels
   logClient: ( msg )=>
     console.log   @clientPrefix + msg
 

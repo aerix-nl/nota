@@ -14,11 +14,11 @@ requirejs.config {
 }
 
 define ['backbone', 'json'], ->
-  $upload   = $('#upload')
-  $data     = $('#data')
-  $filename = $('#data-filename')
-  $form     = $('section.main form')
-  $cancel   = $('#cancel')
+  $upload     = $('#upload')
+  $dataProto  = $('#data').remove()
+  $filename   = $('#data-filename')
+  $form       = $('section.main form')
+  $cancel     = $('#cancel')
 
   showBlock = (block)->
     $('section.main form').toggleClass      'hidden', block isnt 'form'
@@ -28,12 +28,33 @@ define ['backbone', 'json'], ->
 
   $upload.on 'click', (e)->
     e.preventDefault()
-    $data.click()
 
-  $data.on 'change', (e)->
-    $filename.html e.target.files[0].name
-    showBlock('loading')
-    $form.submit()
+    # Create new clean file input from the prototype
+    $data = $dataProto.clone()
+    $form.append $data
+
+    # Wait till user selects file
+    $data.on 'change', (e)->
+      jsonFile = e.target.files[0]
+      $filename.html jsonFile.name
+      reader = new FileReader
+
+      # Wait till file is read, then send request
+      reader.onload = (err)->
+        # Create a 'data' form field with the data JSON string
+        $dataRead = $("<input name='data'>").val(reader.result).hide()
+        $form.append $dataRead
+        $form.submit()
+
+        # Cleanup for next time
+        $data.remove()
+        $dataRead.remove()
+
+      reader.readAsText(jsonFile)
+      showBlock('loading')
+
+    # Prompt user with file chooser dialog
+    $data.click()
 
   $cancel.on 'click', (e)->
     showBlock('form')

@@ -1,27 +1,27 @@
 {
-  "serverAddress":      "localhost",
-  "serverPort":         7483,
-  "templatesPath":      "templates",
-  "webrenderPath":      "webrender",
-
+  "serverAddress":            "localhost",
+  "serverPort":               7483,
+  "templatesPath":            "templates",
+  "webrenderPath":            "webrender",
 
   "logging": {
-    "notify":           true,
-    "pageResources":    false
+    "notify":                 true,
+    "pageResources":          false,
+    "webrenderAddress":       true
   },
 
   "document": {
-    "resourceTimeout":    1500,
-    "templateTimeout":    8000,
-    "renderTimeout":      1500,
-    "extRenderTimeout":   8000,
-    "errorTimeout":       2000,
-    "defaultFilename":    "output.pdf",
-    "zoomFactor":         1,
+    "resourceTimeout":        1500,
+    "templateTimeout":        8000,
+    "renderTimeout":          1500,
+    "extRenderTimeout":       8000,
+    "errorTimeout":           2000,
+    "defaultFilename":        "output.pdf",
+    "zoomFactor":             1,
     "paperSize": {
-      "format":           "A4",
-      "orientation":      "portrait",
-      "margin":           "0cm"
+      "format":               "A4",
+      "orientation":          "portrait",
+      "margin":               "0cm"
     }
   }
 }

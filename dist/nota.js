@@ -33,7 +33,7 @@
 
     NotaCLI.prototype.clientPrefix = chalk.gray('nota-client ');
 
-    function NotaCLI(logging) {
+    function NotaCLI(logChannels) {
       this.logClientError = __bind(this.logClientError, this);
       this.logClient = __bind(this.logClient, this);
       this.logEvent = __bind(this.logEvent, this);
@@ -41,8 +41,8 @@
       this.logWarning = __bind(this.logWarning, this);
       this.log = __bind(this.log, this);
       this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      if (logging != null) {
-        this.log = logging.log, this.logEvent = logging.logEvent, this.logError = logging.logError, this.logWarning = logging.logWarning;
+      if (logChannels != null) {
+        this.log = logChannels.log, this.logEvent = logChannels.logEvent, this.logError = logChannels.logError, this.logWarning = logChannels.logWarning;
       }
       this.helper = new TemplateHelper(this.logWarning);
       nomnom.options({
@@ -105,7 +105,7 @@
     }
 
     NotaCLI.prototype.start = function() {
-      var e, logging;
+      var e, logChannels;
       try {
         this.options = this.parseOptions(nomnom.nom(), this.defaults);
       } catch (_error) {
@@ -113,7 +113,7 @@
         this.logError(e);
         return;
       }
-      logging = {
+      logChannels = {
         log: this.log,
         logEvent: this.logEvent,
         logWarning: this.logWarning,
@@ -121,7 +121,7 @@
         logClient: this.logClient,
         logClientError: this.logClientError
       };
-      this.server = new NotaServer(this.options, logging);
+      this.server = new NotaServer(this.options, logChannels);
       return this.server.start().then((function(_this) {
         return function() {
           if (_this.options.preview) {

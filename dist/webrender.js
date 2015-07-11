@@ -11,9 +11,9 @@
   });
 
   define(['backbone', 'json'], function() {
-    var $cancel, $data, $filename, $form, $upload, showBlock;
+    var $cancel, $dataProto, $filename, $form, $upload, showBlock;
     $upload = $('#upload');
-    $data = $('#data');
+    $dataProto = $('#data').remove();
     $filename = $('#data-filename');
     $form = $('section.main form');
     $cancel = $('#cancel');
@@ -24,13 +24,27 @@
       return $('div.done').toggleClass('hidden', block !== 'done');
     };
     $upload.on('click', function(e) {
+      var $data;
       e.preventDefault();
+      $data = $dataProto.clone();
+      $form.append($data);
+      $data.on('change', function(e) {
+        var jsonFile, reader;
+        jsonFile = e.target.files[0];
+        $filename.html(jsonFile.name);
+        reader = new FileReader;
+        reader.onload = function(err) {
+          var $dataRead;
+          $dataRead = $("<input name='data'>").val(reader.result).hide();
+          $form.append($dataRead);
+          $form.submit();
+          $data.remove();
+          return $dataRead.remove();
+        };
+        reader.readAsText(jsonFile);
+        return showBlock('loading');
+      });
       return $data.click();
-    });
-    $data.on('change', function(e) {
-      $filename.html(e.target.files[0].name);
-      showBlock('loading');
-      return $form.submit();
     });
     return $cancel.on('click', function(e) {
       return showBlock('form');
