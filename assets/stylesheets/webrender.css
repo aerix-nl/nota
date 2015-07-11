@@ -16,15 +16,16 @@ a, .hyperlink {
 
 img#logo {
   width: 14em;
-  margin: 5% auto;
+  margin: 5% auto 3%;
   display: block; }
 
 div.container {
   max-width: 800px;
-  padding: 3em 5em;
+  padding: 2% 6%;
   background-color: white;
   border-radius: 6px;
-  box-shadow: 0 4px rgba(0, 0, 0, 0.2); }
+  box-shadow: 0 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 4em; }
   div.container section.main {
     text-align: center;
     border-bottom: solid 1px rgba(13, 53, 66, 0.1);
