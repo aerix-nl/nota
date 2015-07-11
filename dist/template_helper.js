@@ -88,12 +88,12 @@
         if (this.isFile(Path.join(dir, "bower.json"))) {
           bowerPath = Path.join(dir, "bower.json");
           bower = JSON.parse(fs.readFileSync(bowerPath));
-          definition = _.pluck(bower, ['name']);
+          definition = _.pick(bower, ['name']);
           definition.meta = 'fallback';
         } else if (this.isFile(Path.join(dir, "package.json"))) {
           npmPath = Path.join(dir, "package.json");
           npm = JSON.parse(fs.readFileSync(npmPath));
-          definition = _.pluck(npm, ['name']);
+          definition = _.pick(npm, ['name']);
           definition.meta = 'fallback';
         } else {
           definition = {
