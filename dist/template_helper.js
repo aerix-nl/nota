@@ -70,7 +70,7 @@
     };
 
     TemplateHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var bower, bowerPath, definition, definitionPath, isDefined, warningMsg;
+      var bower, bowerPath, definition, definitionPath, isDefined, npm, npmPath, warningMsg;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -87,12 +87,19 @@
         }
         if (this.isFile(Path.join(dir, "bower.json"))) {
           bowerPath = Path.join(dir, "bower.json");
-          bower = JSON.parse(fs.readFileSync(definitionPath));
-          definition = _;
+          bower = JSON.parse(fs.readFileSync(bowerPath));
+          definition = _.pluck(bower, ['name']);
+          definition.meta = 'fallback';
+        } else if (this.isFile(Path.join(dir, "package.json"))) {
+          npmPath = Path.join(dir, "package.json");
+          npm = JSON.parse(fs.readFileSync(npmPath));
+          definition = _.pluck(npm, ['name']);
+          definition.meta = 'fallback';
+        } else {
+          definition = {
+            meta: 'not found'
+          };
         }
-        definition = {
-          meta: 'not found'
-        };
       } else {
         definitionPath = Path.join(dir, "nota.json");
         definition = JSON.parse(fs.readFileSync(definitionPath));
@@ -107,7 +114,7 @@
       if (!fs.existsSync(Path.join(dir, "template.html"))) {
         definition.meta = 'not template';
       }
-      definition.dir = Path.basename(dir);
+      definition.path = dir;
       return definition;
     };
 
@@ -142,10 +149,10 @@
     };
 
     TemplateHelper.prototype.getExampleDataPath = function(templatePath) {
-      var definition, exampleDataPath, _ref;
+      var definition, exampleDataPath;
       definition = this.getTemplateDefinition(templatePath, false);
-      if (((_ref = definition['nota']) != null ? _ref['exampleData'] : void 0) != null) {
-        exampleDataPath = Path.join(templatePath, definition['nota']['exampleData']);
+      if ((definition != null ? definition['exampleData'] : void 0) != null) {
+        exampleDataPath = Path.join(templatePath, definition['exampleData']);
         if (this.isData(exampleDataPath)) {
           return exampleDataPath;
         } else if (logWarnings) {
@@ -164,8 +171,9 @@
     };
 
     TemplateHelper.prototype.findTemplatePath = function(options) {
-      var match, templatePath, templatesPath, _templatePath;
-      templatePath = options.templatePath, templatesPath = options.templatesPath;
+      var match, template, templatePath, templatesPath, _templatePath;
+      templatesPath = options.templatesPath, template = options.template;
+      templatePath = template.path;
       if (templatePath == null) {
         throw new Error("Please provide a template with " + (chalk.cyan('--template=<directory>')));
       }
@@ -186,31 +194,26 @@
     };
 
     TemplateHelper.prototype.findDataPath = function(options) {
-      var dataPath, required, templatePath, _dataPath, _ref;
-      dataPath = options.dataPath, templatePath = options.templatePath;
-      required = (_ref = options.document) != null ? _ref.modelDriven : void 0;
+      var dataPath, template, _dataPath;
+      dataPath = options.dataPath, template = options.template;
       if (dataPath != null) {
         if (this.isData(dataPath)) {
           dataPath;
         } else if (this.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
           dataPath = _dataPath;
-        } else if (this.isData(_dataPath = "" + templatePath + "/" + dataPath)) {
+        } else if (this.isData(_dataPath = "" + template.path + "/" + dataPath)) {
           dataPath = _dataPath;
         } else {
           throw new Error("Failed to find data '" + dataPath + "'.");
         }
-      } else if (_dataPath = this.getExampleDataPath(templatePath)) {
+      } else if (_dataPath = this.getExampleDataPath(template.path)) {
         if (typeof this.logWarning === "function") {
           this.logWarning("No data provided. Using example data at " + (chalk.cyan(_dataPath)) + " as found in template definition.");
         }
         dataPath = _dataPath;
       } else {
-        if (required === true) {
-          throw new Error("Please provide data with " + (chalk.cyan('--data=<file path>')));
-        } else if (required == null) {
-          if (typeof this.logWarning === "function") {
-            this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
-          }
+        if (typeof this.logWarning === "function") {
+          this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
         }
       }
       return dataPath;

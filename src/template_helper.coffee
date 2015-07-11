@@ -64,10 +64,10 @@ module.exports = class TemplateHelper
         definition = _.pluck bower, ['name']
         definition.meta = 'fallback'
 
-      else @isFile( Path.join dir, "package.json" )
-        packagePath = Path.join dir, "package.json"
-        package = JSON.parse fs.readFileSync packagePath
-        definition = _.pluck bower, ['name']
+      else if @isFile( Path.join dir, "package.json" )
+        npmPath = Path.join dir, "package.json"
+        npm = JSON.parse fs.readFileSync npmPath
+        definition = _.pluck npm, ['name']
         definition.meta = 'fallback'
 
       else
