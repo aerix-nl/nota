@@ -229,10 +229,10 @@
     };
 
     NotaServer.prototype.listen = function() {
-      var bodyParser, mkdirp;
+      var Handlebars, bodyParser, html, mkdirp;
       mkdirp = require('mkdirp');
       bodyParser = require('body-parser');
-      this.Handlebars = require('handlebars');
+      Handlebars = require('handlebars');
       mkdirp(this.options.webrenderPath, (function(_this) {
         return function(err) {
           if (err) {
@@ -250,7 +250,7 @@
         this.log("Listening at " + (chalk.cyan('http://localhost:' + this.serverPort + '/render')) + " for POST requests");
       }
       if (this.options.logging.webrenderAddress) {
-        return this.ipLookups().then((function(_this) {
+        this.ipLookups().then((function(_this) {
           return function(ip) {
             _this.ip = ip;
             if (_this.ip.lan != null) {
@@ -268,6 +268,10 @@
           };
         })(this));
       }
+      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
+        encoding: 'utf8'
+      });
+      return this.webrenderTemplate = Handlebars.compile(html);
     };
 
     NotaServer.prototype.ipLookups = function() {
@@ -330,13 +334,9 @@
     };
 
     NotaServer.prototype.webRenderInterface = function(req, res) {
-      var definition, html, template, webRenderHTML;
-      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
-        encoding: 'utf8'
-      });
-      template = this.Handlebars.compile(html);
+      var definition, webRenderHTML;
       definition = this.helper.getTemplateDefinition(this.templatePath);
-      webRenderHTML = template({
+      webRenderHTML = webrenderTemplate({
         template: definition,
         serverPort: this.serverPort,
         ip: this.ip

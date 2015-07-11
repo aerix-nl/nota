@@ -218,7 +218,7 @@ module.exports  = class NotaServer
     # Load dependencies only needed for wendering service
     mkdirp     = require('mkdirp')
     bodyParser = require('body-parser')
-    @Handlebars = require('handlebars')
+    Handlebars = require('handlebars')
 
     # PhantomJS page renderBase64 isn't available for PDF, so we can't render
     # to memory and buffer it there before sending it over to the client. So
@@ -228,6 +228,8 @@ module.exports  = class NotaServer
     mkdirp @options.webrenderPath, (err)=> if err
       throw new Error "Unable to create render output path 
       #{chalk.cyan options.webrenderPath}. Error: #{err}"
+
+
 
     # For parsing request bodies to 'application/json'
     @app.use bodyParser.json()
@@ -249,14 +251,9 @@ module.exports  = class NotaServer
       # and WAN IP lookups where are purely a convenience and optional.
       @log? err
 
-    # html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
-    # template = @Handlebars.compile html
-    # definition = @helper.getTemplateDefinition(@templatePath)
-    # webRenderHTML = template({
-    #   template:     definition
-    #   serverPort:   @serverPort
-    #   ip:           @ip
-    # })
+    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    @webrenderTemplate = Handlebars.compile html
+
 
   ipLookups: ->
     deferred = Q.defer()
@@ -305,14 +302,13 @@ module.exports  = class NotaServer
     deferred.promise
 
   webRenderInterface: (req, res)=>
-    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
-    template = @Handlebars.compile html
     definition = @helper.getTemplateDefinition(@templatePath)
-    webRenderHTML = template({
+    webRenderHTML = webrenderTemplate({
       template:     definition
       serverPort:   @serverPort
       ip:           @ip
     })
+
     res.send webRenderHTML
 
   webRender: (req, res)=>
