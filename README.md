@@ -6,51 +6,36 @@ your data and excretes pretty PDF documents. Perfect for automating things
 like invoice or ticket generation, but also a convenient tool rendering a
 simple static document to PDF.
 
+## Usage
+There are several ways to interface with Nota.
 
-## Features
+#### Web interface and REST API
+To create your PDF's though a friendly UI where you can upload a JSON file and
+get a PDF in return, try the webinterface. Or use the REST API to expose Nota
+over the interwebs, LAN or secure VPN. Send a POST request with JSON, and get
+a PDF download in return. Set up the
+[Nota CLI](https://github.com/aerix-nl /nota-cli) and try in your shell:
 
-#### Web interface
-Run Nota as a webservice, and create your PDF's though a friendly UI where you can upload a JSON file and get a PDF in return. Or use the REST API to expose Nota over your the interwebs or LAN (or VPN). Send a POST request with JSON, and get a PDF download in return. Try in your shell:
 ```bash
 nota --template=example-invoice --listen
 ```
 
-#### Shell interface
-Nota has lot of handy CLI options. Try running in the root:
-```bash
-nota --list
-```
-You'll see Nota comes with a few example templates out of the box. Try:
-```bash
-nota --template=example-invoice
-```
-When finished Nota has rendered a simple PDF page, consisting of some custom
-rendering of preview data as declared in the template `bower.json`. Change the
-company logo image and try modifing the example data to see how easy it is to
-customise it and create your own invoice. Then render your own data with
-`--data=<path>` and set the PDF destination with `--output=<path>` and you're
-creating your own invoices!
-
-#### Development ease
-Develop and debug while feeling right at home in your favorite browser, with a
-1:1 preview of what Nota turns into a PDF for you. Nota makes designing and
-programming your documents a breeze with some ready examples that
-automagically compile CoffeeScript and SASS. Try in your shell:
-```bash
-cd templates/examples-invoice && grunt
-nota --template=example-invoice --preview
-```
-And you're ready to start customizing!
+#### CLI
+Alternatively you can use the command line to directly interface with Nota
+using the [Nota CLI](https://github.com/aerix-nl/nota-cli) package. See there
+readme on the repository for usage options.
 
 #### API
-Spare yourself the mind numbing routine of creating series of
+Spare yourself the mind numbing routine of creating large batches of
 documents in Microsoft Word, Adobe CS, LaTeX or whatever ancient means of
 getting your PDF fix. Use the Nota API to process your bulk jobs and banish
 intellectual slave labour. Try in your Node CoffeeScript:
+
 ```coffeescript
 nota = require('nota')
 nota.queue [job1, job2, job3]
 ```
+
 
 ## Prerequisites
 
@@ -101,7 +86,7 @@ for all the template's page resources like images to have finished loading and
 then perform the capture automatically. This makes Nota a luxury equivalent of
 [rasterize.js](https://github.com/ariya/phantomjs/blob/master/examples/rasterize.js).
 
-#### Scripted templates 
+#### Scripted templates
 If there are script tags found Nota will also wait for all page resources to
 finish loading before injecting data and capturing. After the resources have
 been loaded Nota will allow the template some time set up and allow possible
