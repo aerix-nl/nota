@@ -1,6 +1,6 @@
 (function() {
-  var Backbone, Document, Express, JobQueue, NotaServer, Path, Q, TemplateHelper, chalk, fs, http, open, phantom, s, _,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Backbone, Document, Express, JobQueue, NotaServer, Path, Q, TemplateHelper, _, chalk, fs, http, open, phantom, s,
+    bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   _ = require('underscore')._;
 
@@ -32,10 +32,10 @@
 
   module.exports = NotaServer = (function() {
     function NotaServer(options, logging) {
-      var _ref;
+      var ref;
       this.options = options;
       this.logging = logging;
-      this.url = __bind(this.url, this);
+      this.url = bind(this.url, this);
       if (this.options == null) {
         throw new Error("Server requires an Nota options hash. See `/config-default.json` and the NotaCLI parseOptions function.");
       }
@@ -43,7 +43,7 @@
         this.logging = require('./logging')(this.options);
       }
       _.extend(this, Backbone.Events);
-      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort, this.templatePath = _ref.templatePath, this.dataPath = _ref.dataPath;
+      ref = this.options, this.serverAddress = ref.serverAddress, this.serverPort = ref.serverPort, this.templatePath = ref.templatePath, this.dataPath = ref.dataPath;
       this.helper = new Nota.TemplateHelper(this.logWarning);
       this.on('all', this.logEvent, this);
       this.app = Express();
@@ -55,10 +55,11 @@
       this.app.get('/', function(req, res) {
         return res.redirect("/template.html");
       });
-      this.app.use('/lib/', Express["static"]("" + __dirname + "/"));
-      this.app.use('/assets/', Express["static"]("" + __dirname + "/../assets/"));
-      this.app.use('/vendor/', Express["static"]("" + __dirname + "/../bower_components/"));
-      this.app.use('/nota.js', Express["static"]("" + __dirname + "/client.js"));
+      this.app.use('/lib/', Express["static"](__dirname + "/"));
+      this.app.use('/assets/', Express["static"](__dirname + "/../assets/"));
+      this.app.use('/vendor/', Express["static"](__dirname + "/../bower_components/"));
+      this.app.use('/nota.js', Express["static"](__dirname + "/client.js"));
+      this.app.use('/defer', Express["static"](__dirname + "/client/defer.js"));
       this.app.get('/data', (function(_this) {
         return function(req, res) {
           res.setHeader('Content-Type', 'application/json');

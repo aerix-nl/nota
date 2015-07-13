@@ -49,6 +49,7 @@ module.exports  = class NotaServer
     @app.use '/assets/',  Express.static("#{__dirname}/../assets/")
     @app.use '/vendor/',  Express.static("#{__dirname}/../bower_components/")
     @app.use '/nota.js',  Express.static("#{__dirname}/client.js")
+    @app.use '/defer',    Express.static("#{__dirname}/client/defer.js")
 
     @app.get '/data', ( req, res ) =>
       res.setHeader 'Content-Type', 'application/json'
@@ -66,4 +67,3 @@ module.exports  = class NotaServer
     @document.close()
     @server.close()
     @server.off 'all', @logEvent, @
-

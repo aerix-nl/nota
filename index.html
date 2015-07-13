@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <script type="text/plain" src="defer"></script>
+    <!-- // <script type="text/javascript" src="data"></script> -->
+    <script type="text/plain" src="resolve"></script>
+
+    <style type="text/css">
+      body {
+        background: red;
+      }
+
+    </style>
+<!--
+    <script>
+      // defer.reject()
+      // data
+
+      window.onload = function() {
+        document.body.innerHTML = "HOOOOI";
+        var xhr = new XMLHttpRequest();
+
+        xhr.onload = function() {
+          JSON.parse(xhr.responseText)
+        }
+
+        xhr.open("GET", "data");
+        xhr.send()
+
+
+      }
+    </script> -->
+
+  </head>
+  <body>
+    Hello there!
+  </body>
+</html>

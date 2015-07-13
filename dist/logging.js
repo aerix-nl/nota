@@ -1,6 +1,6 @@
 (function() {
   var LogginChannels, chalk,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+    bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   chalk = require('chalk');
 
@@ -12,12 +12,12 @@
 
     function LogginChannels(options, prefixes) {
       this.options = options;
-      this.logClientError = __bind(this.logClientError, this);
-      this.logClient = __bind(this.logClient, this);
-      this.logEvent = __bind(this.logEvent, this);
-      this.logError = __bind(this.logError, this);
-      this.logWarning = __bind(this.logWarning, this);
-      this.log = __bind(this.log, this);
+      this.logClientError = bind(this.logClientError, this);
+      this.logClient = bind(this.logClient, this);
+      this.logEvent = bind(this.logEvent, this);
+      this.logError = bind(this.logError, this);
+      this.logWarning = bind(this.logWarning, this);
+      this.log = bind(this.log, this);
       if (prefixes != null) {
         this.prefixes = prefixes;
       }
@@ -32,9 +32,9 @@
     };
 
     LogginChannels.prototype.logError = function(errorMsg) {
-      var _ref;
+      var ref;
       console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
-      if (((_ref = this.options) != null ? _ref.verbose : void 0) && (errorMsg.toSource != null)) {
+      if (((ref = this.options) != null ? ref.verbose : void 0) && (errorMsg.toSource != null)) {
         return console.error(this.prefixes.nota + errorMsg.toSource());
       }
     };

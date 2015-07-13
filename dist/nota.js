@@ -20,8 +20,8 @@
 
     Nota.meta = require(Path.join(__dirname, '../package.json'));
 
-    function Nota(options, logging) {
-      this.options = options;
+    function Nota(options1, logging) {
+      this.options = options1;
       this.logging = logging;
       if (this.options == null) {
         throw new Error("Server requires an Nota options hash. See `/config-default.json` and the NotaCLI parseOptions function.");
@@ -116,10 +116,10 @@
     };
 
     Nota.prototype.renderScripted = function(queue) {
-      var error, inProgressJobs, job, offerData, postRender, renderJob, start, _base;
+      var base, error, inProgressJobs, job, offerData, postRender, renderJob, start;
       if ((inProgressJobs = queue.inProgress())) {
-        if (typeof (_base = this.logging).logWarning === "function") {
-          _base.logWarning("Attempting to render while already occupied with jobs:\n\n" + inProgressJobs + "\n\nRejecting this render call.\n\nFor multithreaded rendering of a queue please create another server\ninstance (don't forget to provide it with an unoccupied port).");
+        if (typeof (base = this.logging).logWarning === "function") {
+          base.logWarning("Attempting to render while already occupied with jobs:\n\n" + inProgressJobs + "\n\nRejecting this render call.\n\nFor multithreaded rendering of a queue please create another server\ninstance (don't forget to provide it with an unoccupied port).");
         }
         return;
       }
@@ -158,7 +158,7 @@
       })(this);
       postRender = (function(_this) {
         return function(meta) {
-          var finished, _base1;
+          var base1, finished;
           finished = new Date();
           meta.duration = finished - start;
           if (meta.fail != null) {
@@ -166,8 +166,8 @@
           } else {
             queue.jobCompleted(job, meta);
           }
-          if (typeof (_base1 = _this.logging).log === "function") {
-            _base1.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
+          if (typeof (base1 = _this.logging).log === "function") {
+            base1.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
           }
           if (!queue.isFinished()) {
             return _this.renderScripted(queue);

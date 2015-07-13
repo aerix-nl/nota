@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Path, TemplateHelper, chalk, cheerio, fs, s, _;
+  var Backbone, Path, TemplateHelper, _, chalk, cheerio, fs, s;
 
   fs = require('fs');
 
@@ -38,7 +38,7 @@
     };
 
     TemplateHelper.prototype.getTemplatesIndex = function(basePath, logWarnings) {
-      var definition, dir, index, templateDirs, warningMsg, _i, _len;
+      var definition, dir, i, index, len, templateDirs, warningMsg;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -52,8 +52,8 @@
         };
       })(this));
       index = {};
-      for (_i = 0, _len = templateDirs.length; _i < _len; _i++) {
-        dir = templateDirs[_i];
+      for (i = 0, len = templateDirs.length; i < len; i++) {
+        dir = templateDirs[i];
         definition = this.getTemplateDefinition(Path.join(basePath, dir), logWarnings);
         if (definition.meta === 'not template') {
           warningMsg = "Template " + (chalk.cyan(dir)) + " has no mandatory " + (chalk.cyan('template.html')) + " file " + (chalk.gray('(omitting template)'));
@@ -171,16 +171,16 @@
     };
 
     TemplateHelper.prototype.findTemplatePath = function(options) {
-      var match, template, templatePath, templatesPath, _templatePath;
+      var _templatePath, match, template, templatePath, templatesPath;
       templatesPath = options.templatesPath, template = options.template;
       templatePath = template.path;
       if (templatePath == null) {
         throw new Error("Please provide a template with " + (chalk.cyan('--template=<directory>')));
       }
       if (!this.isTemplate(templatePath)) {
-        if (this.isTemplate(_templatePath = "" + (process.cwd()) + "/" + templatePath)) {
+        if (this.isTemplate(_templatePath = (process.cwd()) + "/" + templatePath)) {
           templatePath = _templatePath;
-        } else if (this.isTemplate(_templatePath = "" + templatesPath + "/" + templatePath)) {
+        } else if (this.isTemplate(_templatePath = templatesPath + "/" + templatePath)) {
           templatePath = _templatePath;
         } else if ((match = _(this.getTemplatesIndex(templatesPath, false)).findWhere({
           name: templatePath
@@ -194,14 +194,14 @@
     };
 
     TemplateHelper.prototype.findDataPath = function(options) {
-      var dataPath, template, _dataPath;
+      var _dataPath, dataPath, template;
       dataPath = options.dataPath, template = options.template;
       if (dataPath != null) {
         if (this.isData(dataPath)) {
           dataPath;
-        } else if (this.isData(_dataPath = "" + (process.cwd()) + "/" + dataPath)) {
+        } else if (this.isData(_dataPath = (process.cwd()) + "/" + dataPath)) {
           dataPath = _dataPath;
-        } else if (this.isData(_dataPath = "" + template.path + "/" + dataPath)) {
+        } else if (this.isData(_dataPath = template.path + "/" + dataPath)) {
           dataPath = _dataPath;
         } else {
           throw new Error("Failed to find data '" + dataPath + "'.");
