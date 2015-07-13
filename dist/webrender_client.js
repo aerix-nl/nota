@@ -3,10 +3,7 @@
     paths: {
       'backbone': '/vendor/backbone/backbone',
       'jquery': '/vendor/jquery/dist/jquery',
-      'underscore': '/vendor/underscore/underscore',
-      'json': '/vendor/requirejs-plugins/src/json',
-      'text': '/vendor/requirejs-text/text',
-      'requirejs': '/vendor/requirejs/require'
+      'underscore': '/vendor/underscore/underscore'
     }
   });
 
