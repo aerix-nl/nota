@@ -64,7 +64,7 @@
           }
           continue;
         }
-        index[definition.dir] = definition;
+        index[definition.path] = definition;
       }
       return index;
     };

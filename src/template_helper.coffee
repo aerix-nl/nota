@@ -44,7 +44,7 @@ module.exports = class TemplateHelper
         @logWarning? warningMsg if logWarnings
         continue
       # Save the definition in the index with it's name as the key
-      index[definition.dir] = definition
+      index[definition.path] = definition
     # We're done here
     return index
 
