@@ -25,16 +25,15 @@
           var context, deferred, nightmare, onResourceRequested, renderer;
           nightmare = Nightmare();
           renderer = function(n) {
-            console.log('smth');
-            if (deferred) {
-              return console.log("deferred");
-            }
+            if (deferred) return console.log("deferred");
+
             console.log('hold on, render incoming!');
             return n.screenshot(path).use(function(n) {
               console.log('render done!');
               resolve(context.path);
               return n;
             });
+            
           };
           deferred = false;
           path = "/tmp/" + (uuid.v4()) + ".pdf";

@@ -15,7 +15,6 @@ module.exports = class Document
       nightmare = Nightmare()
 
       renderer = (n) ->
-        console.log 'smth'
         return console.log("deferred") if deferred
         console.log('hold on, render incoming!')
         return n
