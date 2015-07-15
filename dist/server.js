@@ -336,7 +336,7 @@
     NotaServer.prototype.webRenderInterface = function(req, res) {
       var definition, webRenderHTML;
       definition = this.helper.getTemplateDefinition(this.templatePath);
-      webRenderHTML = webrenderTemplate({
+      webRenderHTML = this.webrenderTemplate({
         template: definition,
         serverPort: this.serverPort,
         ip: this.ip

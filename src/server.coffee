@@ -60,7 +60,7 @@ module.exports  = class NotaServer
     if @options.preview
       # Leave it at this ... just serving the web assets to the browser
       deferred.resolve()
-    else 
+    else
       # Start up the virtual document
       @document = new Document(@, @options.document)
       @document.on 'all', @logEvent
@@ -103,7 +103,7 @@ module.exports  = class NotaServer
       when 'scripted' then @after 'page:ready', =>  @renderScripted(@jobQueue)
 
     deferred.promise
-          
+
   # Parses the arguments of the queue call. Which could be either a single
   # queue argument, and array of jobs with and options hash, or a single job
   # object with an options hash.
@@ -226,7 +226,7 @@ module.exports  = class NotaServer
     # dir, and then upload that file with the response. We need to be able to
     # create this dir (or it has to already exist) to continue.
     mkdirp @options.webrenderPath, (err)=> if err
-      throw new Error "Unable to create render output path 
+      throw new Error "Unable to create render output path
       #{chalk.cyan options.webrenderPath}. Error: #{err}"
 
 
@@ -235,7 +235,7 @@ module.exports  = class NotaServer
     @app.use bodyParser.json()
     # For parsing request bodies to 'application/x-www-form-urlencoded'
     @app.use bodyParser.urlencoded extended: true
-    
+
     @app.post '/render', @webRender
     @app.get  '/render', @webRenderInterface
 
@@ -303,7 +303,7 @@ module.exports  = class NotaServer
 
   webRenderInterface: (req, res)=>
     definition = @helper.getTemplateDefinition(@templatePath)
-    webRenderHTML = webrenderTemplate({
+    webRenderHTML = @webrenderTemplate({
       template:     definition
       serverPort:   @serverPort
       ip:           @ip
@@ -334,12 +334,12 @@ module.exports  = class NotaServer
       href='/render#rest-api'>REST-API documentation</a> of the webrender service.").end()
       return false
     else if typeof req.body.data is 'string'
-      try 
+      try
         req.body.data = JSON.parse req.body.data
       catch e
         res.status(400).send("Could not parse data string. Server expects a JSON string as the data
         field. Error: #{e}").end()
-        return false 
+        return false
 
     if req.body.data is {}
       res.status(400).send("Empty data object received")
