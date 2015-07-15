@@ -7,7 +7,7 @@ module.exports = class LogginChannels
     nota:     chalk.gray('nota ')
     tempalte: chalk.gray('template ')
 
-  constructor: (@options, prefixes )->
+  constructor: ( @options, prefixes )->
     if prefixes? then @prefixes = prefixes
 
   # Server origin logging channels
@@ -19,8 +19,6 @@ module.exports = class LogginChannels
 
   logError: ( errorMsg )=>
     console.error     @prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + errorMsg
-    if @options?.verbose and errorMsg.toSource?
-      console.error   @prefixes.nota + errorMsg.toSource()
 
   logEvent: ( event )=>
     console.info      @prefixes.nota + chalk.bgBlue.black('EVENT') + ' ' + event

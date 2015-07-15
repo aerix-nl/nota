@@ -1,9 +1,9 @@
 (function() {
   requirejs.config({
     paths: {
-      'backbone': '/vendor/backbone/backbone',
-      'jquery': '/vendor/jquery/dist/jquery',
-      'underscore': '/vendor/underscore/underscore'
+      'backbone': '/nota/vendor/backbone/backbone',
+      'jquery': '/nota/vendor/jquery/dist/jquery',
+      'underscore': '/nota/vendor/underscore/underscore'
     }
   });
 

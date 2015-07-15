@@ -4,13 +4,13 @@
 	<meta charset="utf-8">
 	<title>Nota - template: {{ template.name }}</title>
 
-  <link href="assets/stylesheets/webrender.css" rel="stylesheet" type="text/css" media="all">
-  <link rel="icon" type="image/png" href="/assets/images/icon.png">
-  <script data-main='lib/webrender' src='/vendor/requirejs/require.js'></script>
+  <link href="nota/assets/stylesheets/webrender.css" rel="stylesheet" type="text/css" media="all">
+  <link rel="icon" type="image/png" href="/nota/assets/images/icon.png">
+  <script data-main='nota/lib/webrender' src='/nota/vendor/requirejs/require.js'></script>
 </head>
 <body>
 
-	<img id="logo" src="assets/images/logo.svg" alt="Nota logo" />
+	<img id="logo" src="/nota/assets/images/logo.svg" alt="Nota logo" />
 
 	<div class="container">
 		<section class="main">
@@ -19,7 +19,7 @@
 			<div class="jumbotron loading hidden">
 				<p>
 					Rendering <code id="data-filename"></code>
-					<img src="/vendor/svg-spinners/loading-spin.svg" alt="Loading icon" />
+					<img src="/nota/vendor/svg-spinners/loading-spin.svg" alt="Loading icon" />
 				</p>
 				<button id="cancel" class="btn btn-default">New request</button>
 			</div>
@@ -40,7 +40,7 @@
 			<form method="post" enctype="application/x-www-form-urlencoded">
 				<div class="btn-group">
 				<a href="/" id="preview" class="btn btn-default">Preview template</a>
-				<a href="/data" id="example" class="btn btn-default">Show current data</a>
+				<a href="/nota/data" id="example" class="btn btn-default">Show current data</a>
 				</div>
 				<input id="data" type="file" class="hidden" />
 				<button id="upload" class="btn btn-primary">Upload and render data</button>

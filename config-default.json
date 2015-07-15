@@ -5,12 +5,13 @@
   "webrenderPath":            "webrender",
 
   "logging": {
+    "verbose":                false,
     "notify":                 true,
     "pageResources":          false,
     "webrenderAddress":       true
   },
 
-  "document": {
+  "template": {
     "resourceTimeout":        1500,
     "templateTimeout":        8000,
     "renderTimeout":          1500,

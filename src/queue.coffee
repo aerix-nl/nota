@@ -8,11 +8,15 @@ module.exports = class JobQueue extends Array
   #   preserve:   'preserve'
   # }]
 
-  # options = {
+  # template: {
+  #   path: '/path/to/template'
   #   type: 'static' or 'scripted'
+  # }
+
+  # options = {
   #   deferFinish: deferred that exposes .resolve(returnValue)
   # }
-  constructor: (@jobs, @options) ->
+  constructor: (@jobs, @template, @options) ->
     if @jobs.length is 0 then throw new Error "Creating empty job queue"
     @push job for job in @jobs
     # JobQueue.__super__ = @jobs.slice() # Make a copy

@@ -1,12 +1,12 @@
 (function() {
   requirejs.config({
     paths: {
-      'backbone': '/vendor/backbone/backbone',
-      'jquery': '/vendor/jquery/dist/jquery',
-      'underscore': '/vendor/underscore/underscore',
-      'json': '/vendor/requirejs-plugins/src/json',
-      'text': '/vendor/requirejs-text/text',
-      'requirejs': '/vendor/requirejs/require'
+      'backbone': '/nota/vendor/backbone/backbone',
+      'jquery': '/nota/vendor/jquery/dist/jquery',
+      'underscore': '/nota/vendor/underscore/underscore',
+      'json': '/nota/vendor/requirejs-plugins/src/json',
+      'text': '/nota/vendor/requirejs-text/text',
+      'requirejs': '/nota/vendor/requirejs/require'
     }
   });
 
@@ -74,7 +74,7 @@
           return typeof callback === "function" ? callback(this.data) : void 0;
         }
         this.trigger('data:fetching');
-        return require(['json!/data'], (function(_this) {
+        return require(['json!/nota/data'], (function(_this) {
           return function(data) {
             _this.data = data;
             _this.trigger('data:loaded');

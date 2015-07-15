@@ -1,5 +1,5 @@
 (function() {
-  var Handlebars, Webrender, bodyParser, chalk, mkdirp,
+  var Handlebars, Q, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   mkdirp = require('mkdirp');
@@ -8,7 +8,13 @@
 
   Handlebars = require('handlebars');
 
-  chalk = require('handlebars');
+  chalk = require('chalk');
+
+  tmp = require('tmp');
+
+  Q = require('q');
+
+  fs = require('fs');
 
   module.exports = Webrender = (function() {
     function Webrender(app, options, logging) {
@@ -25,6 +31,14 @@
           }
         };
       })(this));
+      tmp.file(function(err, path, fd, cleanupCallback) {
+        if (err) {
+          throw err;
+        }
+        console.log("File: ", path);
+        console.log("Filedescriptor: ", fd);
+        return cleanupCallback();
+      });
     }
 
     Webrender.prototype.url = function() {

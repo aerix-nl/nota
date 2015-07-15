@@ -42,6 +42,7 @@
     "mustache": "^2.0.0",
     "phantom": "^0.7.2",
     "q": "~1.0.1",
+    "tmp": "raszi/node-tmp",
     "underscore": "1.6.0",
     "underscore.string": "3.0.2"
   },

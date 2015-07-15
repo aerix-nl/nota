@@ -22,9 +22,9 @@ module.exports = class Document
     'page:rendered'
   ]
 
-  constructor: ( @server, @options ) ->
+  constructor: ( templateUrl, @logging, @options ) ->
     _.extend(@, Backbone.Events)
-    @helper = new TemplateHelper()
+    @helper = new TemplateHelper(@logging)
 
     @on 'all', @setState, @
 
@@ -39,22 +39,14 @@ module.exports = class Document
           'extrender': null
         }
 
-        @page.set 'paperSize', @options.paperSize
-        @page.set 'zoomFactor', @options.zoomFactor
-        # workaround for phantomJS2 rendering pages too large:
-        # https://github.com/ariya/phantomjs/issues/12685
-        @page.evaluate ->
-          html = document.getElementsByTagName('html').item(0)
-          html.style['transform-origin'] =          '0 0'
-          html.style['-webkit-transform-origin'] =  '0 0'
-          html.style['transform'] =                 'scale(0.68)'
-          html.style['-webkit-transform'] =         'scale(0.68)'
+        @page.set 'paperSize',  @options.template.paperSize
+        @page.set 'zoomFactor', @options.template.zoomFactor
 
         # TODO: Find for a fix that makes the zoomFactor work again, and after
         # find a real fix for this workaround to counter a strange zoom factor.
         # @page.zoomFactor = 0.9360
 
-        @page.onConsoleMessage  ( msg ) => @server.logClient msg
+        @page.onConsoleMessage  ( msg ) => @logging.logClient msg
         @page.set 'onError',    ( msg ) => @onClientError msg
         @page.set 'onCallback', ( msg ) => @trigger("client:#{msg}")
         @page.set 'onResourceRequested', @onResourceRequested
@@ -63,7 +55,7 @@ module.exports = class Document
 
         @trigger 'page:init'
 
-        @page.open @server.url(), ( status ) =>
+        @page.open templateUrl, ( status ) =>
 
           if status is 'success'
             @trigger 'page:opened'
@@ -78,7 +70,7 @@ module.exports = class Document
     # If static, then after loading HTML+CSS+images and other resources we're
     # done, there's no other rendering to wait for because there's no
     # scripting. We're ready for capture.
-    if @options.templateType is 'static' then @on 'page:ready', =>
+    if @options.template.type is 'static' then @on 'page:ready', =>
       @trigger 'page:rendered'
 
     # If scripted, we wait for the resource timeout to determine if the page
@@ -88,7 +80,7 @@ module.exports = class Document
       clearTimeout(@timers.resource)
       @timers['template'] = setTimeout =>
         @server.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
-        event after #{@options.templateTimeout/1000}s. Perhaps it crashed?"
+        event after #{@options.template.templateTimeout/1000}s. Perhaps it crashed?"
       , @options.templateTimeout
 
     @on 'client:template:loaded', =>
@@ -100,17 +92,17 @@ module.exports = class Document
     # has passed or the the template webapp has signaled it has finished
     # rendering the page. Similarly, it can cancel the timeout by triggering
     # the 'render:init' event, and skip it trigging the 'render:done' event.
-    if @options.templateType is 'scripted' then @on 'page:ready', =>
+    if @options.template.type is 'scripted' then @on 'page:ready', =>
       # @timers['render'] = setTimeout =>
       #   @trigger 'page:rendered'
-      # , @options.renderTimeout
+      # , @options.template.renderTimeout
 
       @on 'client:template:render:init', =>
         clearTimeout(@timers.render)
         @timers['extrender'] = setTimeout =>
           @server.logWarning? "Still waiting for template to finish rendering
-          after #{@options.extRenderTimeout/1000}s. Perhaps it crashed?"
-        , @options.extRenderTimeout
+          after #{@options.template.extRenderTimeout/1000}s. Perhaps it crashed?"
+        , @options.template.extRenderTimeout
 
       @on 'client:template:render:done', =>
         clearTimeout(@timers.render)
@@ -120,7 +112,7 @@ module.exports = class Document
   # The callback will receive the meta data as it's argument when done
   getMeta: ->
     deferred = Q.defer()
-    
+
     metaRequest = ->
       # Try and get meta data if Nota client is present (i.e. template loaded it)
       Nota?.getDocumentMeta()
@@ -148,11 +140,11 @@ module.exports = class Document
         @trigger 'page:no-meta'
 
       outputPath = @helper.findOutputPath
-        defaultFilename:  @options.defaultFilename
+        defaultFilename:  @options.template.defaultFilename
         preserve:         job.preserve
         outputPath:       job.outputPath
         meta:             meta
-      
+
       # Update the meta data with the final output path and options passed to
       # this render call.
       job.outputPath = outputPath
@@ -173,7 +165,7 @@ module.exports = class Document
       clearTimeout(@timers.resource)
 
     # To prevent the output being spammed full of resource log events we allow supressing it
-    @trigger 'page:resource:requested' if @server.options.logging?.pageResources
+    @trigger 'page:resource:requested' if @options.logging?.pageResources
 
   onResourceReceived: ( resource ) =>
     return if resource.stage isnt "end" and not resource.redirectURL?
@@ -183,7 +175,7 @@ module.exports = class Document
     @loadingResources.splice(i, 1)
 
     # To prevent the output being spammed full of resource log events we allow supressing it
-    @trigger 'page:resource:received' if @server.options.logging?.pageResources
+    @trigger 'page:resource:received' if @options.logging?.pageResources
 
     if @loadingResources.length is 0
       # We're done loading all resources. Set a new timer to wait if any new
@@ -195,16 +187,16 @@ module.exports = class Document
       clearTimeout(@timers.resource)
       @timers['resource'] = setTimeout =>
         @trigger 'page:ready'
-      , @options.resourceTimeout
+      , @options.template.resourceTimeout
 
   onClientError: (msg)->
     @server.logClientError? msg
-    if @options.errorTimeout?
+    if @options.template.errorTimeout?
       # After the error timeout we trigger an event to signal that the job
       # has crashed.
       @timers['error'] = setTimeout =>
         @trigger 'error-timeout', msg
-      , @options.errorTimeout
+      , @options.template.errorTimeout
 
       # On any sign of progress, cancel the timeout, because the job might
       # continue after all.
@@ -213,7 +205,7 @@ module.exports = class Document
   isReady: ->
     # Which ever comes first
     @state is 'page:ready'
-    
+
   injectData: (data)->
     deferred = Q.defer()
     inject = (data)->

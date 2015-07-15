@@ -8,9 +8,10 @@
   module.exports = JobQueue = (function(_super) {
     __extends(JobQueue, _super);
 
-    function JobQueue(jobs, options) {
+    function JobQueue(jobs, template, options) {
       var job, _i, _len, _ref;
       this.jobs = jobs;
+      this.template = template;
       this.options = options;
       if (this.jobs.length === 0) {
         throw new Error("Creating empty job queue");

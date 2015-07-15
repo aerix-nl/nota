@@ -32,11 +32,7 @@
     };
 
     LogginChannels.prototype.logError = function(errorMsg) {
-      var _ref;
-      console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
-      if (((_ref = this.options) != null ? _ref.verbose : void 0) && (errorMsg.toSource != null)) {
-        return console.error(this.prefixes.nota + errorMsg.toSource());
-      }
+      return console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
     };
 
     LogginChannels.prototype.logEvent = function(event) {

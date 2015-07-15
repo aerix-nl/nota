@@ -1,12 +1,18 @@
 (function() {
-  var Nota, Path, Q;
+  var Nota, Path, Q, fs, _;
 
   Path = require('path');
 
   Q = require('q');
 
+  fs = require('fs');
+
+  _ = require('underscore');
+
   module.exports = Nota = (function() {
     Nota.Server = require(Path.join(__dirname, 'server'));
+
+    Nota.Document = require(Path.join(__dirname, 'document'));
 
     Nota.Webrender = require(Path.join(__dirname, 'webrender_server'));
 
@@ -24,27 +30,37 @@
       this.options = options;
       this.logging = logging;
       if (this.options == null) {
-        throw new Error("Server requires an Nota options hash. See `/config-default.json` and the NotaCLI parseOptions function.");
+        this.options = this.defaults;
       }
       if (this.logging == null) {
         this.logging = require('./logging')(this.options);
       }
-    }
-
-    Nota.prototype.start = function() {
-      var deferred;
-      deferred = Q.defer();
-      this.server = new Server(this.options, this.logging);
+      this.helper = new Nota.TemplateHelper(this.logging);
+      this.server = new Nota.Server(this.options, this.logging);
       if (this.options.listen) {
-        this.webrender = new Webrender(this.server.app, this.options, this.logging);
+        this.webrender = new Nota.Webrender(this.server.app, this.options, this.logging);
         this.webrender.start();
       }
       this.server.start();
-      if (this.options.preview) {
-        deferred.resolve();
-      } else {
-        this.document = new Nota.Document(this, this.options.document);
-        this.document.on('all', this.logging.logEvent);
+    }
+
+    Nota.prototype.setTemplate = function(template) {
+      var deferred, differentTemplate;
+      if ((template != null ? template.path : void 0) == null) {
+        throw new Error("No template path provided.");
+      }
+      deferred = Q.defer();
+      if (this.document != null) {
+        differentTemplate = this.document.options.template.path !== template.path;
+        if (differentTemplate) {
+          this.document.close();
+          delete this.document;
+        }
+      }
+      if (this.document == null) {
+        this.server.setTemplate(template);
+        this.document = new Nota.Document(this.server.url(), this.logging, this.options);
+        this.document.on('all', this.logging.logEvent, this.logging);
         this.document.once('page:ready', (function(_this) {
           return function() {
             return deferred.resolve();
@@ -58,27 +74,32 @@
       var deferred;
       deferred = Q.defer();
       this.jobQueue = this.parseQueueArgs(arguments, deferred);
-      switch (this.jobQueue.options.templateType) {
-        case 'static':
-          this.after('page:rendered', (function(_this) {
-            return function() {
-              return _this.renderStatic(_this.jobQueue);
-            };
-          })(this));
-          break;
-        case 'scripted':
-          this.after('page:ready', (function(_this) {
-            return function() {
-              return _this.renderScripted(_this.jobQueue);
-            };
-          })(this));
-      }
+      this.setTemplate(this.jobQueue.template).then((function(_this) {
+        return function() {
+          var e;
+          try {
+            switch (_this.jobQueue.template.type) {
+              case 'static':
+                return _this.after('page:rendered', function() {
+                  return _this.renderStatic(_this.jobQueue);
+                });
+              case 'scripted':
+                return _this.after('page:ready', function() {
+                  return _this.renderScripted(_this.jobQueue);
+                });
+            }
+          } catch (_error) {
+            e = _error;
+            return console.log(e);
+          }
+        };
+      })(this));
       return deferred.promise;
     };
 
     Nota.prototype.parseQueueArgs = function(args, deferred) {
-      var jobQueue, jobs, options;
-      if (args[0] instanceof JobQueue) {
+      var jobQueue, jobs, template, _ref;
+      if (args[0] instanceof Nota.JobQueue) {
         return jobQueue = args[0];
       } else {
         if (args[0] instanceof Array) {
@@ -86,15 +107,12 @@
         } else if (args[0] instanceof Object && ((args[0].data != null) || (args[0].dataPath != null))) {
           jobs = [args[0]];
         }
-        options = args[1] || {};
-        _.extend(options, {
-          deferFinish: deferred,
-          templateType: this.document.options.templateType
-        });
-        _.extend(options.document, {
-          templateType: this.helper.getTemplateType(this.templatePath)
-        });
-        return jobQueue = new Nota.JobQueue(jobs, options);
+        template = args[1] || {};
+        if (!((_ref = this.document) != null ? _ref.options.template.path : void 0) && (template.path == null)) {
+          throw new Error("No template loaded yet. Please provide a template with the initial job queue call. Subsequent jobs on the same template can omit the template specification.");
+        }
+        template.type = this.helper.getTemplateType(template.path);
+        return jobQueue = new Nota.JobQueue(jobs, template, deferred);
       }
     };
 
@@ -116,7 +134,7 @@
     };
 
     Nota.prototype.renderScripted = function(queue) {
-      var error, inProgressJobs, job, offerData, postRender, renderJob, start, _base;
+      var error, inProgressJobs, job, postRender, renderJob, start, _base;
       if ((inProgressJobs = queue.inProgress())) {
         if (typeof (_base = this.logging).logWarning === "function") {
           _base.logWarning("Attempting to render while already occupied with jobs:\n\n" + inProgressJobs + "\n\nRejecting this render call.\n\nFor multithreaded rendering of a queue please create another server\ninstance (don't forget to provide it with an unoccupied port).");
@@ -132,19 +150,6 @@
         });
         return postRender(meta);
       });
-      offerData = (function(_this) {
-        return function(job) {
-          var data, deferred;
-          deferred = Q.defer();
-          data = job.data || JSON.parse(fs.readFileSync(job.dataPath, {
-            encoding: 'utf8'
-          }));
-          _this.document.injectData(data).then(function() {
-            return deferred.resolve(job);
-          });
-          return deferred.promise;
-        };
-      })(this);
       renderJob = (function(_this) {
         return function(job) {
           var deferred;
@@ -178,10 +183,9 @@
         return this.logging.logError(err);
       };
       if ((job.dataPath != null) || (job.data != null)) {
-        return offerData(job).then(renderJob).then(postRender)["catch"](error);
-      } else {
-        return renderJob(job).then(postRender)["catch"](error);
+        this.server.setData(job.dataPath);
       }
+      return renderJob(job).then(postRender)["catch"](error);
     };
 
     Nota.prototype.after = function(event, callback, context) {

@@ -16,8 +16,8 @@
   cheerio = require('cheerio');
 
   module.exports = TemplateHelper = (function() {
-    function TemplateHelper(logWarning) {
-      this.logWarning = logWarning;
+    function TemplateHelper(logging) {
+      this.logging = logging;
       _.extend(this, Backbone.Events);
     }
 
@@ -38,7 +38,7 @@
     };
 
     TemplateHelper.prototype.getTemplatesIndex = function(basePath, logWarnings) {
-      var definition, dir, index, templateDirs, warningMsg, _i, _len;
+      var definition, dir, index, templateDirs, warningMsg, _i, _len, _ref;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -58,8 +58,10 @@
         if (definition.meta === 'not template') {
           warningMsg = "Template " + (chalk.cyan(dir)) + " has no mandatory " + (chalk.cyan('template.html')) + " file " + (chalk.gray('(omitting template)'));
           if (logWarnings) {
-            if (typeof this.logWarning === "function") {
-              this.logWarning(warningMsg);
+            if ((_ref = this.logging) != null) {
+              if (typeof _ref.logWarning === "function") {
+                _ref.logWarning(warningMsg);
+              }
             }
           }
           continue;
@@ -70,7 +72,7 @@
     };
 
     TemplateHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var bower, bowerPath, definition, definitionPath, isDefined, npm, npmPath, warningMsg;
+      var bower, bowerPath, definition, definitionPath, isDefined, npm, npmPath, warningMsg, _ref;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -81,8 +83,10 @@
       if (!isDefined) {
         warningMsg = "Template " + (chalk.cyan(dir)) + " has no " + (chalk.cyan('nota.json')) + " definition " + (chalk.gray('(optional, but recommended)'));
         if (logWarnings) {
-          if (typeof this.logWarning === "function") {
-            this.logWarning(warningMsg);
+          if ((_ref = this.logging) != null) {
+            if (typeof _ref.logWarning === "function") {
+              _ref.logWarning(warningMsg);
+            }
           }
         }
         if (this.isFile(Path.join(dir, "bower.json"))) {
@@ -122,7 +126,7 @@
       var bower, bowerPath, checknwarn, node, nodePath;
       checknwarn = (function(_this) {
         return function(args) {
-          var defType, deps, depsDir, devDeps, mngr;
+          var defType, deps, depsDir, devDeps, mngr, _ref;
           if (args[2] == null) {
             return;
           }
@@ -132,7 +136,7 @@
           devDeps = (args[2].devDependencies != null) && _.keys(args[2].devDependencies).length > 0;
           if ((deps || devDeps) && !_this.isDirectory(depsDir)) {
             mngr = args[0] === 'node' ? 'npm' : args[0];
-            return typeof _this.logWarning === "function" ? _this.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mngr + ' install')) + "?") : void 0;
+            return (_ref = _this.logging) != null ? typeof _ref.logWarning === "function" ? _ref.logWarning("Template " + (chalk.cyan(templateDir)) + " has " + defType + " definition with dependencies, but no " + defType + " " + args[1] + " seem installed yet. Forgot " + (chalk.cyan(mngr + ' install')) + "?") : void 0 : void 0;
           }
         };
       })(this);
@@ -149,14 +153,14 @@
     };
 
     TemplateHelper.prototype.getExampleDataPath = function(templatePath) {
-      var definition, exampleDataPath;
+      var definition, exampleDataPath, _ref;
       definition = this.getTemplateDefinition(templatePath, false);
       if ((definition != null ? definition['exampleData'] : void 0) != null) {
         exampleDataPath = Path.join(templatePath, definition['exampleData']);
         if (this.isData(exampleDataPath)) {
           return exampleDataPath;
         } else if (logWarnings) {
-          return typeof this.logWarning === "function" ? this.logWarning("Example data path declaration found in template definition, but file doesn't exist.") : void 0;
+          return (_ref = this.logging) != null ? typeof _ref.logWarning === "function" ? _ref.logWarning("Example data path declaration found in template definition, but file doesn't exist.") : void 0 : void 0;
         }
       }
     };
@@ -194,7 +198,7 @@
     };
 
     TemplateHelper.prototype.findDataPath = function(options) {
-      var dataPath, template, _dataPath;
+      var dataPath, template, _dataPath, _ref, _ref1;
       dataPath = options.dataPath, template = options.template;
       if (dataPath != null) {
         if (this.isData(dataPath)) {
@@ -207,20 +211,24 @@
           throw new Error("Failed to find data '" + dataPath + "'.");
         }
       } else if (_dataPath = this.getExampleDataPath(template.path)) {
-        if (typeof this.logWarning === "function") {
-          this.logWarning("No data provided. Using example data at " + (chalk.cyan(_dataPath)) + " as found in template definition.");
+        if ((_ref = this.logging) != null) {
+          if (typeof _ref.logWarning === "function") {
+            _ref.logWarning("No data provided. Using example data at " + (chalk.cyan(_dataPath)) + " as found in template definition.");
+          }
         }
         dataPath = _dataPath;
       } else {
-        if (typeof this.logWarning === "function") {
-          this.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
+        if ((_ref1 = this.logging) != null) {
+          if (typeof _ref1.logWarning === "function") {
+            _ref1.logWarning("No data has been provided or example data found. If your template is model driven and requires data, please provide data with " + (chalk.cyan('--data=<file path>')));
+          }
         }
       }
       return dataPath;
     };
 
     TemplateHelper.prototype.findOutputPath = function(options) {
-      var defaultFilename, meta, outputPath, preserve;
+      var defaultFilename, meta, outputPath, preserve, _ref;
       outputPath = options.outputPath, meta = options.meta, defaultFilename = options.defaultFilename, preserve = options.preserve;
       if (outputPath != null) {
         if (this.isDirectory(outputPath)) {
@@ -231,8 +239,10 @@
           }
         }
         if (this.isFile(outputPath) && !preserve) {
-          if (typeof this.logWarning === "function") {
-            this.logWarning("Overwriting with current render: " + outputPath);
+          if ((_ref = this.logging) != null) {
+            if (typeof _ref.logWarning === "function") {
+              _ref.logWarning("Overwriting with current render: " + outputPath);
+            }
           }
         }
       } else {

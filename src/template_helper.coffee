@@ -9,7 +9,7 @@ cheerio       = require('cheerio')
 # Utility class to help it with common filesystem and template/data related questiosn
 module.exports = class TemplateHelper
 
-  constructor: ( @logWarning )->
+  constructor: ( @logging )->
     _.extend(@, Backbone.Events)
 
   isFile: ( path ) ->
@@ -41,7 +41,7 @@ module.exports = class TemplateHelper
       if definition.meta is 'not template'
         warningMsg = "Template #{chalk.cyan(dir)} has no mandatory
         #{chalk.cyan 'template.html'} file #{chalk.gray '(omitting template)'}"
-        @logWarning? warningMsg if logWarnings
+        @logging?.logWarning? warningMsg if logWarnings
         continue
       # Save the definition in the index with it's name as the key
       index[definition.path] = definition
@@ -56,7 +56,7 @@ module.exports = class TemplateHelper
     if not isDefined
       warningMsg = "Template #{chalk.cyan(dir)} has no #{chalk.cyan 'nota.json'} definition
       #{chalk.gray '(optional, but recommended)'}"
-      @logWarning? warningMsg if logWarnings
+      @logging?.logWarning? warningMsg if logWarnings
 
       # Cascade of fallbacks
       if @isFile( Path.join dir, "bower.json" )
@@ -115,7 +115,7 @@ module.exports = class TemplateHelper
       # if there are dependencies, are is there a sign of the containing directory?
       if (deps or devDeps) and not @isDirectory depsDir
         mngr = if args[0] is 'node' then 'npm' else args[0]
-        @logWarning? "Template #{chalk.cyan templateDir}
+        @logging?.logWarning? "Template #{chalk.cyan templateDir}
         has #{defType} definition with dependencies, but no #{defType}
         #{args[1]} seem installed yet. Forgot #{chalk.cyan mngr+' install'}?"
 
@@ -141,7 +141,7 @@ module.exports = class TemplateHelper
       exampleDataPath = Path.join templatePath, definition['exampleData']
       if @isData exampleDataPath then return exampleDataPath
       else if logWarnings
-        @logWarning? "Example data path declaration found in template
+        @logging?.logWarning? "Example data path declaration found in template
         definition, but file doesn't exist."
 
   # Inspect the template HTML and see if it contains JavaScript, if it
@@ -195,10 +195,10 @@ module.exports = class TemplateHelper
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
     else if _dataPath = @getExampleDataPath template.path
-      @logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
+      @logging?.logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
       dataPath = _dataPath
     else
-      @logWarning? "No data has been provided or example data found. If your
+      @logging?.logWarning? "No data has been provided or example data found. If your
       template is model driven and requires data, please provide data with
       #{chalk.cyan '--data=<file path>'}"
     dataPath
@@ -230,7 +230,7 @@ module.exports = class TemplateHelper
       # Now that we have an output path and filename, do a check if it's
       # already occupied.
       if @isFile(outputPath) and not preserve
-        @logWarning? "Overwriting with current render: #{outputPath}"
+        @logging?.logWarning? "Overwriting with current render: #{outputPath}"
 
     else
       if meta?.filename?
