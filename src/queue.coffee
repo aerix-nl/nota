@@ -13,10 +13,10 @@ module.exports = class JobQueue extends Array
   #   type: 'static' or 'scripted'
   # }
 
-  # options = {
-  #   deferFinish: deferred that exposes .resolve(returnValue)
-  # }
-  constructor: (@jobs, @template, @options) ->
+  # deferred: deferred that exposes .resolve(returnValue) which to resolve
+  # when queue has finished rendering.
+
+  constructor: (@jobs, @template, @deferred) ->
     if @jobs.length is 0 then throw new Error "Creating empty job queue"
     @push job for job in @jobs
     # JobQueue.__super__ = @jobs.slice() # Make a copy
@@ -29,7 +29,7 @@ module.exports = class JobQueue extends Array
 
     # Automatically complete with resolving deferred when finished
     if @isFinished()
-      @options.deferFinish?.resolve @meta
+      @deferred?.resolve @meta
 
   jobFailed: (job, jobMeta)->
     # TODO: differentiate between completed jobs and failed jobs

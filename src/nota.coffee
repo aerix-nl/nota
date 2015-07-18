@@ -198,3 +198,4 @@ module.exports = class Nota
   after: (event, callback, context)->
     if @document.state is event then callback.apply(context or @)
     else @document.once event, callback, context
+
