@@ -32,14 +32,7 @@ module.exports = class Nota
     # a phantom looking to capture it as a PDF).
     @server = new Nota.Server( @options, @logging )
 
-    # If we also want the webrender service, then we also inject up the
-    # webrenderer middelware into the server so it can intercept webrender
-    # REST API calls and server the webrender interface. After that we're
-    # ready to start it up.
-    if @options.listen
-      @webrender = new Nota.Webrender( @server.app, @options, @logging )
-      @webrender.start()
-
+  start: ->
     @server.start()
 
   # Postcondition: a document with the current template has been loaded

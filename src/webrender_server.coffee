@@ -3,12 +3,12 @@ bodyParser = require('body-parser')
 Handlebars = require('handlebars')
 chalk      = require('chalk')
 tmp        = require('tmp')
-Q           = require('q')
-fs           = require('fs')
+Q          = require('q')
+fs         = require('fs')
 
 module.exports = class Webrender
 
-  constructor: ( @app, @options, @logging )->
+  constructor: ( @options, @logging )->
     # PhantomJS page renderBase64 isn't available for PDF, so we can't render
     # to memory and buffer it there before sending it over to the client. So
     # we need somewhere on the filesystem to park it, a sort of webrender temp
@@ -30,17 +30,18 @@ module.exports = class Webrender
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/render"
 
+  # Set Express middlewarez and bind to routes
+  bind: (expressApp)->
+    # For parsing request bodies to 'application/json'
+    expressApp.use bodyParser.json()
+    # For parsing request bodies to 'application/x-www-form-urlencoded'
+    expressApp.use bodyParser.urlencoded extended: true
+
+    expressApp.post '/render', @webRender
+    expressApp.get  '/render', @webRenderInterface
+
   # Start listening for HTTP render requests
   start: ->
-
-    # For parsing request bodies to 'application/json'
-    @app.use bodyParser.json()
-    # For parsing request bodies to 'application/x-www-form-urlencoded'
-    @app.use bodyParser.urlencoded extended: true
-
-    @app.post '/render', @webRender
-    @app.get  '/render', @webRenderInterface
-
     @log? "Listening at #{ chalk.cyan @url() } for POST requests"
 
     # For convenience try to do a local and external IP lookup (LAN and WAN)

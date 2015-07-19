@@ -17,8 +17,7 @@
   fs = require('fs');
 
   module.exports = Webrender = (function() {
-    function Webrender(app, options, logging) {
-      this.app = app;
+    function Webrender(options, logging) {
       this.options = options;
       this.logging = logging;
       this.webRender = __bind(this.webRender, this);
@@ -45,14 +44,17 @@
       return "http://" + this.serverAddress + ":" + this.serverPort + "/render";
     };
 
-    Webrender.prototype.start = function() {
-      var html;
-      this.app.use(bodyParser.json());
-      this.app.use(bodyParser.urlencoded({
+    Webrender.prototype.bind = function(expressApp) {
+      expressApp.use(bodyParser.json());
+      expressApp.use(bodyParser.urlencoded({
         extended: true
       }));
-      this.app.post('/render', this.webRender);
-      this.app.get('/render', this.webRenderInterface);
+      expressApp.post('/render', this.webRender);
+      return expressApp.get('/render', this.webRenderInterface);
+    };
+
+    Webrender.prototype.start = function() {
+      var html;
       if (typeof this.log === "function") {
         this.log("Listening at " + (chalk.cyan(this.url())) + " for POST requests");
       }

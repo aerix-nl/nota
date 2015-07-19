@@ -37,12 +37,11 @@
       }
       this.helper = new Nota.TemplateHelper(this.logging);
       this.server = new Nota.Server(this.options, this.logging);
-      if (this.options.listen) {
-        this.webrender = new Nota.Webrender(this.server.app, this.options, this.logging);
-        this.webrender.start();
-      }
-      this.server.start();
     }
+
+    Nota.prototype.start = function() {
+      return this.server.start();
+    };
 
     Nota.prototype.setTemplate = function(template) {
       var deferred, differentTemplate;
