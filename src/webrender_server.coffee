@@ -6,53 +6,48 @@ tmp        = require('tmp')
 Q          = require('q')
 fs         = require('fs')
 
+TemplateHelper = require('./template_helper')
+
 module.exports = class Webrender
 
   constructor: ( @options, @logging )->
+    { @serverAddress, @serverPort } = @options
+
+    @helper = new TemplateHelper( @logging )
+
     # PhantomJS page renderBase64 isn't available for PDF, so we can't render
     # to memory and buffer it there before sending it over to the client. So
     # we need somewhere on the filesystem to park it, a sort of webrender temp
     # dir, and then upload that file with the response. We need to be able to
-    # create this dir (or it has to already exist) to continue.
-    mkdirp @options.webrenderPath, (err)=> if err
-      throw new Error "Unable to create render output path
-      #{chalk.cyan options.webrenderPath}. Error: #{err}"
-
-    tmp.file (err, path, fd, cleanupCallback)->
-      if (err)
-        throw err
-
-      console.log("File: ", path)
-      console.log("Filedescriptor: ", fd)
-
-      cleanupCallback()
+    # create this dir to continue.
+    @webrenderCache = tmp.dirSync()
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/render"
 
   # Set Express middlewarez and bind to routes
-  bind: (expressApp)->
+  bind: (@expressApp)->
     # For parsing request bodies to 'application/json'
-    expressApp.use bodyParser.json()
+    @expressApp.use bodyParser.json()
     # For parsing request bodies to 'application/x-www-form-urlencoded'
-    expressApp.use bodyParser.urlencoded extended: true
+    @expressApp.use bodyParser.urlencoded extended: true
 
-    expressApp.post '/render', @webRender
-    expressApp.get  '/render', @webRenderInterface
+    @expressApp.post '/render', @webrender
+    @expressApp.get  '/render', @webrenderInterface
 
   # Start listening for HTTP render requests
   start: ->
-    @log? "Listening at #{ chalk.cyan @url() } for POST requests"
+    @logging.log? "Listening at #{ chalk.cyan @url() } for POST requests"
 
     # For convenience try to do a local and external IP lookup (LAN and WAN)
     if @options.logging.webrenderAddress then @ipLookups().then (@ip)=>
-      if @ip.lan? then @log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
-      if @ip.wan? then @log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
+      if @ip.lan? then @logging.log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
+      if @ip.wan? then @logging.log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
 
     .catch (err)=>
       # Don't log whatever error gets caught here as an error, because the LAN
       # and WAN IP lookups where are purely a convenience and optional.
-      @log? err
+      @logging.log? err
 
     html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
     @webrenderTemplate = Handlebars.compile html
@@ -61,7 +56,7 @@ module.exports = class Webrender
   ipLookups: ->
     deferred = Q.defer()
 
-    timeout = 2000
+    timeout = 8000
     local   = @ipLookupLocal()
     ext     = @ipLookupExt()
     reject  = ->
@@ -104,23 +99,25 @@ module.exports = class Webrender
 
     deferred.promise
 
-  webRenderInterface: (req, res)=>
-    definition = @helper.getTemplateDefinition(@templatePath)
-    webRenderHTML = webrenderTemplate({
-      template:     definition
+  setTemplate: (@template)->
+
+  webrenderInterface: (req, res)=>
+    console.log @template
+    webrenderHTML = @webrenderTemplate({
+      template:     @helper.getTemplateDefinition @template.path
       serverPort:   @serverPort
       ip:           @ip
     })
 
-    res.send webRenderHTML
+    res.send webrenderHTML
 
-  webRender: (req, res)=>
+  webrender: (req, res)=>
     if not @reqPreconditions(req, res) then return
 
     # We got the data and we're ready to give it a try
     job = {
       data:         req.body.data
-      outputPath:   @options.webrenderPath
+      outputPath:   @webrenderCache.name
     }
 
     @queue(job).then (meta)->
@@ -149,3 +146,6 @@ module.exports = class Webrender
       return false
 
     return true
+
+  close: ->
+    @webrenderCache.removeCallback()

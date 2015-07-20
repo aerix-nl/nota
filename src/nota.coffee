@@ -32,27 +32,42 @@ module.exports = class Nota
     # a phantom looking to capture it as a PDF).
     @server = new Nota.Server( @options, @logging )
 
-  start: ->
+  start: (apis, @template)->
+    apis = _.extend { server: true }, apis
+
+    if apis.webrender
+      # If we also want the webrender service, then we also inject up the
+      # webrenderer middelware into the server so it can intercept webrender
+      # REST API calls and server the webrender interface. After that we're
+      # ready to start it up.
+      @webrender = new Nota.Webrender( @options, @logging )
+      @server.use @webrender
+
+    if @template? then @setTemplate @template
     @server.start()
 
   # Postcondition: a document with the current template has been loaded
-  setTemplate: (template)->
+  setTemplate: (template, phantom = false)->
     if not template?.path? then throw new Error "No template path provided."
 
     deferred = Q.defer()
 
-    if @document?
-      differentTemplate = @document.options.template.path isnt template.path
-      if differentTemplate
-        @document.close()
-        delete @document
+    @server.setTemplate template
 
-    if not @document?
-      @server.setTemplate template
+    if @webrender?
+      @webrender.setTemplate template
+
+    if @document? and (@document.options.template.path isnt template.path)
+      @document.close()
+      delete @document
+
+    if not @document? and phantom
       @document = new Nota.Document(@server.url(), @logging, @options)
       @document.on 'all', @logging.logEvent, @logging
       @document.once 'page:ready', =>
         deferred.resolve()
+    else
+      deferred.resolve()
 
     deferred.promise
 
@@ -78,7 +93,7 @@ module.exports = class Nota
     @jobQueue = @parseQueueArgs(arguments, deferred)
 
     # Ensure the document is loaded and ready
-    @setTemplate(@jobQueue.template).then =>
+    @setTemplate(@jobQueue.template, true).then =>
       # Start rendering
       try
         switch @jobQueue.template.type

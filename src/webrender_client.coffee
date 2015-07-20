@@ -8,7 +8,7 @@ requirejs.config {
     'underscore': '/nota/vendor/underscore/underscore'
 }
 
-define ['backbone', 'json'], ->
+define ['backbone'], ->
   $upload     = $('#upload')
   $dataProto  = $('#data').remove()
   $filename   = $('#data-filename')

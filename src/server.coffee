@@ -29,6 +29,10 @@ module.exports  = class NotaServer
 
     @app = Express()
 
+    # Nota middlewares. Similar to Express middlewares, but more high level
+    # and with different conventions and API's. Kind of like plugins.
+    @middlewares = []
+
   start: ->
     @trigger "server:init"
 
@@ -43,7 +47,13 @@ module.exports  = class NotaServer
 
     @app.listen @serverPort
 
+    middleware.start() for middleware in @middlewares
+
     @trigger "server:running"
+
+  use: (middleware)->
+    middleware.bind(@app)
+    @middlewares.push middleware
 
   setTemplate: (@template)->
     # Open the server with servering the template path as root

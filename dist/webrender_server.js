@@ -1,5 +1,5 @@
 (function() {
-  var Handlebars, Q, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
+  var Handlebars, Q, TemplateHelper, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   mkdirp = require('mkdirp');
@@ -16,28 +16,19 @@
 
   fs = require('fs');
 
+  TemplateHelper = require('./template_helper');
+
   module.exports = Webrender = (function() {
     function Webrender(options, logging) {
+      var _ref;
       this.options = options;
       this.logging = logging;
-      this.webRender = __bind(this.webRender, this);
-      this.webRenderInterface = __bind(this.webRenderInterface, this);
+      this.webrender = __bind(this.webrender, this);
+      this.webrenderInterface = __bind(this.webrenderInterface, this);
       this.url = __bind(this.url, this);
-      mkdirp(this.options.webrenderPath, (function(_this) {
-        return function(err) {
-          if (err) {
-            throw new Error("Unable to create render output path " + (chalk.cyan(options.webrenderPath)) + ". Error: " + err);
-          }
-        };
-      })(this));
-      tmp.file(function(err, path, fd, cleanupCallback) {
-        if (err) {
-          throw err;
-        }
-        console.log("File: ", path);
-        console.log("Filedescriptor: ", fd);
-        return cleanupCallback();
-      });
+      _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort;
+      this.helper = new TemplateHelper(this.logging);
+      this.webrenderCache = tmp.dirSync();
     }
 
     Webrender.prototype.url = function() {
@@ -45,35 +36,38 @@
     };
 
     Webrender.prototype.bind = function(expressApp) {
-      expressApp.use(bodyParser.json());
-      expressApp.use(bodyParser.urlencoded({
+      this.expressApp = expressApp;
+      this.expressApp.use(bodyParser.json());
+      this.expressApp.use(bodyParser.urlencoded({
         extended: true
       }));
-      expressApp.post('/render', this.webRender);
-      return expressApp.get('/render', this.webRenderInterface);
+      this.expressApp.post('/render', this.webrender);
+      return this.expressApp.get('/render', this.webrenderInterface);
     };
 
     Webrender.prototype.start = function() {
-      var html;
-      if (typeof this.log === "function") {
-        this.log("Listening at " + (chalk.cyan(this.url())) + " for POST requests");
+      var html, _base;
+      if (typeof (_base = this.logging).log === "function") {
+        _base.log("Listening at " + (chalk.cyan(this.url())) + " for POST requests");
       }
       if (this.options.logging.webrenderAddress) {
         this.ipLookups().then((function(_this) {
           return function(ip) {
+            var _base1, _base2;
             _this.ip = ip;
             if (_this.ip.lan != null) {
-              if (typeof _this.log === "function") {
-                _this.log("LAN address: " + chalk.cyan("http://" + ip.lan + ":" + _this.serverPort + "/render"));
+              if (typeof (_base1 = _this.logging).log === "function") {
+                _base1.log("LAN address: " + chalk.cyan("http://" + ip.lan + ":" + _this.serverPort + "/render"));
               }
             }
             if (_this.ip.wan != null) {
-              return typeof _this.log === "function" ? _this.log("WAN address: " + chalk.cyan("http://" + ip.wan + ":" + _this.serverPort + "/render")) : void 0;
+              return typeof (_base2 = _this.logging).log === "function" ? _base2.log("WAN address: " + chalk.cyan("http://" + ip.wan + ":" + _this.serverPort + "/render")) : void 0;
             }
           };
         })(this))["catch"]((function(_this) {
           return function(err) {
-            return typeof _this.log === "function" ? _this.log(err) : void 0;
+            var _base1;
+            return typeof (_base1 = _this.logging).log === "function" ? _base1.log(err) : void 0;
           };
         })(this));
       }
@@ -86,7 +80,7 @@
     Webrender.prototype.ipLookups = function() {
       var deferred, ext, local, reject, timeout;
       deferred = Q.defer();
-      timeout = 2000;
+      timeout = 8000;
       local = this.ipLookupLocal();
       ext = this.ipLookupExt();
       reject = function() {
@@ -142,25 +136,29 @@
       return deferred.promise;
     };
 
-    Webrender.prototype.webRenderInterface = function(req, res) {
-      var definition, webRenderHTML;
-      definition = this.helper.getTemplateDefinition(this.templatePath);
-      webRenderHTML = webrenderTemplate({
-        template: definition,
+    Webrender.prototype.setTemplate = function(template) {
+      this.template = template;
+    };
+
+    Webrender.prototype.webrenderInterface = function(req, res) {
+      var webrenderHTML;
+      console.log(this.template);
+      webrenderHTML = this.webrenderTemplate({
+        template: this.helper.getTemplateDefinition(this.template.path),
         serverPort: this.serverPort,
         ip: this.ip
       });
-      return res.send(webRenderHTML);
+      return res.send(webrenderHTML);
     };
 
-    Webrender.prototype.webRender = function(req, res) {
+    Webrender.prototype.webrender = function(req, res) {
       var job;
       if (!this.reqPreconditions(req, res)) {
         return;
       }
       job = {
         data: req.body.data,
-        outputPath: this.options.webrenderPath
+        outputPath: this.webrenderCache.name
       };
       return this.queue(job).then(function(meta) {
         var pdf;
@@ -192,6 +190,10 @@
         return false;
       }
       return true;
+    };
+
+    Webrender.prototype.close = function() {
+      return this.webrenderCache.removeCallback();
     };
 
     return Webrender;

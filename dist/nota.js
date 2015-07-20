@@ -39,25 +39,39 @@
       this.server = new Nota.Server(this.options, this.logging);
     }
 
-    Nota.prototype.start = function() {
+    Nota.prototype.start = function(apis, template) {
+      this.template = template;
+      apis = _.extend({
+        server: true
+      }, apis);
+      if (apis.webrender) {
+        this.webrender = new Nota.Webrender(this.options, this.logging);
+        this.server.use(this.webrender);
+      }
+      if (this.template != null) {
+        this.setTemplate(this.template);
+      }
       return this.server.start();
     };
 
-    Nota.prototype.setTemplate = function(template) {
-      var deferred, differentTemplate;
+    Nota.prototype.setTemplate = function(template, phantom) {
+      var deferred;
+      if (phantom == null) {
+        phantom = false;
+      }
       if ((template != null ? template.path : void 0) == null) {
         throw new Error("No template path provided.");
       }
       deferred = Q.defer();
-      if (this.document != null) {
-        differentTemplate = this.document.options.template.path !== template.path;
-        if (differentTemplate) {
-          this.document.close();
-          delete this.document;
-        }
+      this.server.setTemplate(template);
+      if (this.webrender != null) {
+        this.webrender.setTemplate(template);
       }
-      if (this.document == null) {
-        this.server.setTemplate(template);
+      if ((this.document != null) && (this.document.options.template.path !== template.path)) {
+        this.document.close();
+        delete this.document;
+      }
+      if ((this.document == null) && phantom) {
         this.document = new Nota.Document(this.server.url(), this.logging, this.options);
         this.document.on('all', this.logging.logEvent, this.logging);
         this.document.once('page:ready', (function(_this) {
@@ -65,6 +79,8 @@
             return deferred.resolve();
           };
         })(this));
+      } else {
+        deferred.resolve();
       }
       return deferred.promise;
     };
@@ -73,7 +89,7 @@
       var deferred;
       deferred = Q.defer();
       this.jobQueue = this.parseQueueArgs(arguments, deferred);
-      this.setTemplate(this.jobQueue.template).then((function(_this) {
+      this.setTemplate(this.jobQueue.template, true).then((function(_this) {
         return function() {
           var e;
           try {

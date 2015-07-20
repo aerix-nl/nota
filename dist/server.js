@@ -40,9 +40,11 @@
       this.helper = new TemplateHelper(this.logging);
       this.on('all', this.logging.logEvent, this.logging);
       this.app = Express();
+      this.middlewares = [];
     }
 
     NotaServer.prototype.start = function() {
+      var middleware, _i, _len, _ref;
       this.trigger("server:init");
       this.app.get('/', function(req, res) {
         return res.redirect("/template.html");
@@ -51,7 +53,17 @@
       this.app.use('/nota/assets/', Express["static"]("" + __dirname + "/../assets/"));
       this.app.use('/nota/vendor/', Express["static"]("" + __dirname + "/../bower_components/"));
       this.app.listen(this.serverPort);
+      _ref = this.middlewares;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        middleware = _ref[_i];
+        middleware.start();
+      }
       return this.trigger("server:running");
+    };
+
+    NotaServer.prototype.use = function(middleware) {
+      middleware.bind(this.app);
+      return this.middlewares.push(middleware);
     };
 
     NotaServer.prototype.setTemplate = function(template) {

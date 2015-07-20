@@ -2,7 +2,6 @@
   "serverAddress":            "localhost",
   "serverPort":               7483,
   "templatesPath":            "templates",
-  "webrenderPath":            "webrender",
 
   "logging": {
     "verbose":                false,

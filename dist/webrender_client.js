@@ -7,7 +7,7 @@
     }
   });
 
-  define(['backbone', 'json'], function() {
+  define(['backbone'], function() {
     var $cancel, $dataProto, $filename, $form, $upload, showBlock;
     $upload = $('#upload');
     $dataProto = $('#data').remove();
