@@ -79,7 +79,7 @@ module.exports = class Document
     @on 'client:template:init', =>
       clearTimeout(@timers.resource)
       @timers['template'] = setTimeout =>
-        @server.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
+        @loggin.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
         event after #{@options.template.templateTimeout/1000}s. Perhaps it crashed?"
       , @options.templateTimeout
 
@@ -100,7 +100,7 @@ module.exports = class Document
       @on 'client:template:render:init', =>
         clearTimeout(@timers.render)
         @timers['extrender'] = setTimeout =>
-          @server.logWarning? "Still waiting for template to finish rendering
+          @loggin.logWarning? "Still waiting for template to finish rendering
           after #{@options.template.extRenderTimeout/1000}s. Perhaps it crashed?"
         , @options.template.extRenderTimeout
 
@@ -190,7 +190,7 @@ module.exports = class Document
       , @options.template.resourceTimeout
 
   onClientError: (msg)->
-    @server.logClientError? msg
+    @logging.logClientError? msg
     if @options.template.errorTimeout?
       # After the error timeout we trigger an event to signal that the job
       # has crashed.

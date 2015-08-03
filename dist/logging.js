@@ -7,7 +7,7 @@
   module.exports = LogginChannels = (function() {
     LogginChannels.prototype.prefixes = {
       nota: chalk.gray('nota '),
-      tempalte: chalk.gray('template ')
+      template: chalk.gray('template ')
     };
 
     function LogginChannels(options, prefixes) {
@@ -31,8 +31,11 @@
       return console.warn(this.prefixes.nota + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
     };
 
-    LogginChannels.prototype.logError = function(errorMsg) {
-      return console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
+    LogginChannels.prototype.logError = function(err) {
+      console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + err);
+      if (err instanceof Error) {
+        return console.error(this.prefixes.nota + chalk.gray(err.stack));
+      }
     };
 
     LogginChannels.prototype.logEvent = function(event) {

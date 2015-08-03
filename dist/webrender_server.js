@@ -19,13 +19,20 @@
   TemplateHelper = require('./template_helper');
 
   module.exports = Webrender = (function() {
-    function Webrender(options, logging) {
+    function Webrender(queue, options, logging) {
       var _ref;
+      this.queue = queue;
       this.options = options;
       this.logging = logging;
       this.webrender = __bind(this.webrender, this);
       this.webrenderInterface = __bind(this.webrenderInterface, this);
       this.url = __bind(this.url, this);
+      if (this.queue == null) {
+        throw new Error("Please provide a job queue function to map webrender requests to");
+      }
+      if (this.options == null) {
+        throw new Error("Please provide an options hash");
+      }
       _ref = this.options, this.serverAddress = _ref.serverAddress, this.serverPort = _ref.serverPort;
       this.helper = new TemplateHelper(this.logging);
       this.webrenderCache = tmp.dirSync();
@@ -46,12 +53,20 @@
     };
 
     Webrender.prototype.start = function() {
-      var html, _base;
+      var html;
+      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
+        encoding: 'utf8'
+      });
+      return this.webrenderTemplate = Handlebars.compile(html);
+    };
+
+    Webrender.prototype.logStart = function() {
+      var _base;
       if (typeof (_base = this.logging).log === "function") {
         _base.log("Listening at " + (chalk.cyan(this.url())) + " for POST requests");
       }
       if (this.options.logging.webrenderAddress) {
-        this.ipLookups().then((function(_this) {
+        return this.ipLookups().then((function(_this) {
           return function(ip) {
             var _base1, _base2;
             _this.ip = ip;
@@ -71,10 +86,6 @@
           };
         })(this));
       }
-      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
-        encoding: 'utf8'
-      });
-      return this.webrenderTemplate = Handlebars.compile(html);
     };
 
     Webrender.prototype.ipLookups = function() {
@@ -141,14 +152,13 @@
     };
 
     Webrender.prototype.webrenderInterface = function(req, res) {
-      var webrenderHTML;
-      console.log(this.template);
-      webrenderHTML = this.webrenderTemplate({
+      var html;
+      html = this.webrenderTemplate({
         template: this.helper.getTemplateDefinition(this.template.path),
         serverPort: this.serverPort,
         ip: this.ip
       });
-      return res.send(webrenderHTML);
+      return res.send(html);
     };
 
     Webrender.prototype.webrender = function(req, res) {
@@ -160,7 +170,7 @@
         data: req.body.data,
         outputPath: this.webrenderCache.name
       };
-      return this.queue(job).then(function(meta) {
+      return this.queue(job, this.template).then(function(meta) {
         var pdf;
         if (meta[0].fail != null) {
           return res.status(500).send("An error occured while rendering: " + meta[0].fail);
@@ -168,7 +178,11 @@
           pdf = Path.resolve(meta[0].outputPath);
           return res.download(pdf);
         }
-      });
+      })["catch"]((function(_this) {
+        return function(err) {
+          return _this.loggin.logError(err);
+        };
+      })(this));
     };
 
     Webrender.prototype.reqPreconditions = function(req, res) {

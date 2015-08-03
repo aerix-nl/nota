@@ -33,14 +33,17 @@ module.exports = class Nota
     @server = new Nota.Server( @options, @logging )
 
   start: (apis, @template)->
+    # The APIs hash determines which parts of the Nota API needs to be
+    # exposed, and hence which modules need to be started. We always start the
+    # server and provide serving of the template and it's data.
     apis = _.extend { server: true }, apis
 
     if apis.webrender
-      # If we also want the webrender service, then we also inject up the
+      # If we also want the webrender service, then we also inject the
       # webrenderer middelware into the server so it can intercept webrender
       # REST API calls and server the webrender interface. After that we're
       # ready to start it up.
-      @webrender = new Nota.Webrender( @options, @logging )
+      @webrender = new Nota.Webrender( @queue, @options, @logging )
       @server.use @webrender
 
     if @template? then @setTemplate @template
@@ -71,9 +74,11 @@ module.exports = class Nota
 
     deferred.promise
 
+  setData: (data)->
+    @server.setData data
 
   # Call with either a JobQueue instance or
-  # with (jobs , options) where
+  # with (jobs , template) where
   #
   #   jobs = [{
   #       dataPath:   dataPath
@@ -82,25 +87,24 @@ module.exports = class Nota
   #       preserve:   true | false
   #     }]
   #
-  #   options = {
-  #     template:
-  #       type:       'static' | 'scripted'
-  #   }
-  queue: ( ) ->
+  #   template = {
+  #     path: <path to template dir>
+  #    }
+  queue: ( ) =>
     deferred = Q.defer()
 
-    # Extract or construct the job queue from the call
-    @jobQueue = @parseQueueArgs(arguments, deferred)
+    try
+      # Extract or construct the job queue from the call
+      @jobQueue = @parseQueueArgs(arguments, deferred)
+    catch err
+      deferred.reject err
 
     # Ensure the document is loaded and ready
     @setTemplate(@jobQueue.template, true).then =>
       # Start rendering
-      try
-        switch @jobQueue.template.type
-          when 'static'   then @after 'page:rendered', => @renderStatic(@jobQueue)
-          when 'scripted' then @after 'page:ready', =>  @renderScripted(@jobQueue)
-      catch e
-        console.log e
+      switch @jobQueue.template.type
+        when 'static'   then @after('page:rendered').then => @renderStatic(@jobQueue)
+        when 'scripted' then @after('page:ready').then =>  @renderScripted(@jobQueue)
 
     deferred.promise
 
@@ -108,10 +112,20 @@ module.exports = class Nota
   # queue argument, and array of jobs with and options hash, or a single job
   # object with an options hash.
   parseQueueArgs: (args, deferred)->
+    templateRequiredError = new Error "No template loaded yet. Please provide a template with the
+      initial job queue call. Subsequent jobs on the same template can omit the template
+      specification."
+
     if args[0] instanceof Nota.JobQueue
       jobQueue = args[0]
-    else
 
+      if not jobQueue.length > 0
+        throw new Error "Empty job queue provided"
+
+      if not jobQueue.template.path? and not @document?.options.template.path
+        throw templateRequiredError
+
+    else
       if args[0] instanceof Array
         jobs  = args[0]
       else if args[0] instanceof Object and ( args[0].data? or args[0].dataPath? )
@@ -120,9 +134,7 @@ module.exports = class Nota
       template = args[1] or {}
 
       if not @document?.options.template.path and not template.path?
-        throw new Error "No template loaded yet. Please provide a template
-        with the initial job queue call. Subsequent jobs on the same template
-        can omit the template specification."
+        throw templateRequiredError
 
       template.type = @helper.getTemplateType template.path
 
@@ -169,7 +181,7 @@ module.exports = class Nota
     renderJob = (job)=>
       deferred = Q.defer()
 
-      @after 'page:rendered', => @document.capture job
+      @after('page:rendered').then => @document.capture job
       @document.once 'render:done', deferred.resolve
 
       deferred.promise
@@ -192,18 +204,20 @@ module.exports = class Nota
     error = (err)->
       @logging.logError err
 
+    @setData(job.data or job.dataPath)
 
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    if job.dataPath? or job.data?
-      @server.setData(job.dataPath)
-
     renderJob(job)
     .then postRender
     .catch error
 
-  after: (event, callback, context)->
-    if @document.state is event then callback.apply(context or @)
-    else @document.once event, callback, context
+  after: (event)->
+    defer = Q.defer()
+
+    if @document.state is event then defer.resolve()
+    else @document.once event, defer.resolve()
+
+    defer.promise
 

@@ -10,7 +10,13 @@ TemplateHelper = require('./template_helper')
 
 module.exports = class Webrender
 
-  constructor: ( @options, @logging )->
+  constructor: ( @queue, @options, @logging )->
+    # Provide a queue function which requests are mapped to, and an options hash
+    if not @queue? then throw new Error "Please provide a job queue function to map webrender requests to"
+
+    # Provide a queue function which requests are mapped to, and an options hash
+    if not @options? then throw new Error "Please provide an options hash"
+
     { @serverAddress, @serverPort } = @options
 
     @helper = new TemplateHelper( @logging )
@@ -37,20 +43,20 @@ module.exports = class Webrender
 
   # Start listening for HTTP render requests
   start: ->
+    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    @webrenderTemplate = Handlebars.compile html
+
+  logStart: ->
     @logging.log? "Listening at #{ chalk.cyan @url() } for POST requests"
 
     # For convenience try to do a local and external IP lookup (LAN and WAN)
     if @options.logging.webrenderAddress then @ipLookups().then (@ip)=>
       if @ip.lan? then @logging.log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
       if @ip.wan? then @logging.log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
-
     .catch (err)=>
       # Don't log whatever error gets caught here as an error, because the LAN
       # and WAN IP lookups where are purely a convenience and optional.
       @logging.log? err
-
-    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
-    @webrenderTemplate = Handlebars.compile html
 
 
   ipLookups: ->
@@ -102,14 +108,13 @@ module.exports = class Webrender
   setTemplate: (@template)->
 
   webrenderInterface: (req, res)=>
-    console.log @template
-    webrenderHTML = @webrenderTemplate({
+    html = @webrenderTemplate({
       template:     @helper.getTemplateDefinition @template.path
       serverPort:   @serverPort
       ip:           @ip
     })
 
-    res.send webrenderHTML
+    res.send html
 
   webrender: (req, res)=>
     if not @reqPreconditions(req, res) then return
@@ -120,12 +125,16 @@ module.exports = class Webrender
       outputPath:   @webrenderCache.name
     }
 
-    @queue(job).then (meta)->
+    @queue(job, @template).then (meta)->
+
       if meta[0].fail?
         res.status(500).send "An error occured while rendering: #{meta[0].fail}"
       else
         pdf = Path.resolve meta[0].outputPath
         res.download pdf
+
+    .catch (err)=>
+      @loggin.logError err
 
   reqPreconditions: (req, res)->
     if not req.body.data?

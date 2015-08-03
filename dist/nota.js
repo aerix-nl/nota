@@ -1,5 +1,6 @@
 (function() {
-  var Nota, Path, Q, fs, _;
+  var Nota, Path, Q, fs, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Path = require('path');
 
@@ -29,6 +30,7 @@
     function Nota(options, logging) {
       this.options = options;
       this.logging = logging;
+      this.queue = __bind(this.queue, this);
       if (this.options == null) {
         this.options = this.defaults;
       }
@@ -45,7 +47,7 @@
         server: true
       }, apis);
       if (apis.webrender) {
-        this.webrender = new Nota.Webrender(this.options, this.logging);
+        this.webrender = new Nota.Webrender(this.queue, this.options, this.logging);
         this.server.use(this.webrender);
       }
       if (this.template != null) {
@@ -85,27 +87,30 @@
       return deferred.promise;
     };
 
+    Nota.prototype.setData = function(data) {
+      return this.server.setData(data);
+    };
+
     Nota.prototype.queue = function() {
-      var deferred;
+      var deferred, err;
       deferred = Q.defer();
-      this.jobQueue = this.parseQueueArgs(arguments, deferred);
+      try {
+        this.jobQueue = this.parseQueueArgs(arguments, deferred);
+      } catch (_error) {
+        err = _error;
+        deferred.reject(err);
+      }
       this.setTemplate(this.jobQueue.template, true).then((function(_this) {
         return function() {
-          var e;
-          try {
-            switch (_this.jobQueue.template.type) {
-              case 'static':
-                return _this.after('page:rendered', function() {
-                  return _this.renderStatic(_this.jobQueue);
-                });
-              case 'scripted':
-                return _this.after('page:ready', function() {
-                  return _this.renderScripted(_this.jobQueue);
-                });
-            }
-          } catch (_error) {
-            e = _error;
-            return console.log(e);
+          switch (_this.jobQueue.template.type) {
+            case 'static':
+              return _this.after('page:rendered').then(function() {
+                return _this.renderStatic(_this.jobQueue);
+              });
+            case 'scripted':
+              return _this.after('page:ready').then(function() {
+                return _this.renderScripted(_this.jobQueue);
+              });
           }
         };
       })(this));
@@ -113,9 +118,16 @@
     };
 
     Nota.prototype.parseQueueArgs = function(args, deferred) {
-      var jobQueue, jobs, template, _ref;
+      var jobQueue, jobs, template, templateRequiredError, _ref, _ref1;
+      templateRequiredError = new Error("No template loaded yet. Please provide a template with the initial job queue call. Subsequent jobs on the same template can omit the template specification.");
       if (args[0] instanceof Nota.JobQueue) {
-        return jobQueue = args[0];
+        jobQueue = args[0];
+        if (!jobQueue.length > 0) {
+          throw new Error("Empty job queue provided");
+        }
+        if ((jobQueue.template.path == null) && !((_ref = this.document) != null ? _ref.options.template.path : void 0)) {
+          throw templateRequiredError;
+        }
       } else {
         if (args[0] instanceof Array) {
           jobs = args[0];
@@ -123,8 +135,8 @@
           jobs = [args[0]];
         }
         template = args[1] || {};
-        if (!((_ref = this.document) != null ? _ref.options.template.path : void 0) && (template.path == null)) {
-          throw new Error("No template loaded yet. Please provide a template with the initial job queue call. Subsequent jobs on the same template can omit the template specification.");
+        if (!((_ref1 = this.document) != null ? _ref1.options.template.path : void 0) && (template.path == null)) {
+          throw templateRequiredError;
         }
         template.type = this.helper.getTemplateType(template.path);
         return jobQueue = new Nota.JobQueue(jobs, template, deferred);
@@ -169,7 +181,7 @@
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          _this.after('page:rendered', function() {
+          _this.after('page:rendered').then(function() {
             return _this.document.capture(job);
           });
           _this.document.once('render:done', deferred.resolve);
@@ -197,18 +209,19 @@
       error = function(err) {
         return this.logging.logError(err);
       };
-      if ((job.dataPath != null) || (job.data != null)) {
-        this.server.setData(job.dataPath);
-      }
+      this.setData(job.data || job.dataPath);
       return renderJob(job).then(postRender)["catch"](error);
     };
 
-    Nota.prototype.after = function(event, callback, context) {
+    Nota.prototype.after = function(event) {
+      var defer;
+      defer = Q.defer();
       if (this.document.state === event) {
-        return callback.apply(context || this);
+        defer.resolve();
       } else {
-        return this.document.once(event, callback, context);
+        this.document.once(event, defer.resolve());
       }
+      return defer.promise;
     };
 
     return Nota;

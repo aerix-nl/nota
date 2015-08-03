@@ -80,7 +80,7 @@
           clearTimeout(_this.timers.resource);
           return _this.timers['template'] = setTimeout(function() {
             var _base;
-            return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.template.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+            return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.template.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
           }, _this.options.templateTimeout);
         };
       })(this));
@@ -98,7 +98,7 @@
               clearTimeout(_this.timers.render);
               return _this.timers['extrender'] = setTimeout(function() {
                 var _base;
-                return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.template.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+                return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.template.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
               }, _this.options.template.extRenderTimeout);
             });
             return _this.on('client:template:render:done', function() {
@@ -197,7 +197,7 @@
 
     Document.prototype.onClientError = function(msg) {
       var _base;
-      if (typeof (_base = this.server).logClientError === "function") {
+      if (typeof (_base = this.logging).logClientError === "function") {
         _base.logClientError(msg);
       }
       if (this.options.template.errorTimeout != null) {

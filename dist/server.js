@@ -32,6 +32,7 @@
       this.options = options;
       this.logging = logging;
       this.url = __bind(this.url, this);
+      this.serveData = __bind(this.serveData, this);
       if (this.options == null) {
         throw new Error("Server requires an Nota options hash. See `/config-default.json` and the NotaCLI parseOptions function.");
       }
@@ -52,6 +53,7 @@
       this.app.use('/nota/lib/', Express["static"]("" + __dirname + "/"));
       this.app.use('/nota/assets/', Express["static"]("" + __dirname + "/../assets/"));
       this.app.use('/nota/vendor/', Express["static"]("" + __dirname + "/../bower_components/"));
+      this.app.get('/nota/data', this.serveData);
       this.app.listen(this.serverPort);
       _ref = this.middlewares;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -71,16 +73,42 @@
       return this.app.use(Express["static"](this.template.path));
     };
 
-    NotaServer.prototype.setData = function(dataPath) {
-      this.dataPath = dataPath;
-      return this.app.get('/nota/data', (function(_this) {
-        return function(req, res) {
-          res.setHeader('Content-Type', 'application/json');
-          return res.send(fs.readFileSync(_this.dataPath, {
+    NotaServer.prototype.setData = function(data) {
+      if (!(typeof data === 'object' || typeof data === 'string')) {
+        throw new Error("Set data with either a string path to the data file or JSON object");
+      }
+      return this.currentData = data;
+    };
+
+    NotaServer.prototype.getData = function() {
+      if (this.currentData == null) {
+        throw new Error('Currently no data set on server');
+      }
+      if (typeof this.currentData === 'string') {
+        if (!this.helper.isFile(this.currentData)) {
+          throw new Error("Provided data path doesn't exist. Please provide a path to a data file.");
+        } else {
+          return fs.readFileSync(this.currentData, {
             encoding: 'utf8'
-          }));
-        };
-      })(this));
+          });
+        }
+      } else if (typeof this.currentData === 'object') {
+        return this.currentData;
+      } else {
+        throw new Error("Please set the data on server with either a JSON data object or a path that resolves to a data file");
+      }
+    };
+
+    NotaServer.prototype.serveData = function(req, res) {
+      var data, e;
+      try {
+        data = this.getData();
+      } catch (_error) {
+        e = _error;
+        res.status(500).send(e);
+      }
+      res.setHeader('Content-Type', 'application/json');
+      return res.send(data);
     };
 
     NotaServer.prototype.url = function() {

@@ -45,6 +45,8 @@ module.exports  = class NotaServer
     @app.use '/nota/assets/',  Express.static("#{__dirname}/../assets/")
     @app.use '/nota/vendor/',  Express.static("#{__dirname}/../bower_components/")
 
+    @app.get '/nota/data', @serveData
+
     @app.listen @serverPort
 
     middleware.start() for middleware in @middlewares
@@ -59,10 +61,37 @@ module.exports  = class NotaServer
     # Open the server with servering the template path as root
     @app.use Express.static(@template.path)
 
-  setData: (@dataPath)->
-    @app.get '/nota/data', ( req, res ) =>
-      res.setHeader 'Content-Type', 'application/json'
-      res.send fs.readFileSync(@dataPath, encoding: 'utf8')
+  setData: (data)->
+    unless (typeof data is 'object' or typeof data is 'string')
+      throw new Error "Set data with either a string path to the data file or JSON object"
+
+    @currentData = data
+
+  getData: ->
+    if not @currentData?
+      throw new Error 'Currently no data set on server'
+
+    if typeof @currentData is 'string'
+      if not @helper.isFile(@currentData)
+        throw new Error "Provided data path doesn't exist. Please provide a path to a data file."
+      else
+        fs.readFileSync(@currentData, encoding: 'utf8')
+
+    else if typeof @currentData is 'object'
+      @currentData
+
+    else
+      throw new Error "Please set the data on server with either a JSON data object or a path
+      that resolves to a data file"
+
+  serveData: ( req, res ) =>
+    try
+      data = @getData()
+    catch e
+      res.status(500).send e
+
+    res.setHeader 'Content-Type', 'application/json'
+    res.send data
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"
