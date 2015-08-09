@@ -88,11 +88,14 @@ define ['backbone', 'json'], ->
       # return the cache
       if not force and @data? then return callback?(@data)
 
-      @trigger 'data:fetching'
-      # Else we continue and get the data from the server
-      require ['json!/nota/data'], (@data) =>
-        @trigger 'data:loaded'
-        callback?(@data)
+      try
+        @trigger 'data:fetching'
+        # Else we continue and get the data from the server
+        require ['json!/nota/data'], (@data) =>
+          @trigger 'data:loaded'
+          callback?(@data)
+      catch err
+        console.log err.stack
 
     # Passive:
     # Wait on this entry point for Nota server to inject the data

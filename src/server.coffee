@@ -65,6 +65,19 @@ module.exports  = class NotaServer
     unless (typeof data is 'object' or typeof data is 'string')
       throw new Error "Set data with either a string path to the data file or JSON object"
 
+    if typeof @currentData is 'string'
+      if not @helper.isFile(@currentData)
+        throw new Error "Provided data path doesn't exist. Please provide a path to a data file."
+      else
+
+        try
+          _data = JSON.parse fs.readFileSync(@currentData, encoding: 'utf8')
+        catch e
+          throw new Error chalk.gray("Error parsing data file #{@currentData} :") + e
+
+        if _.keys(_data).length is 0 or _data.length is 0
+          throw new Error "Provided data file is empty"
+
     @currentData = data
 
   getData: ->
@@ -72,10 +85,7 @@ module.exports  = class NotaServer
       throw new Error 'Currently no data set on server'
 
     if typeof @currentData is 'string'
-      if not @helper.isFile(@currentData)
-        throw new Error "Provided data path doesn't exist. Please provide a path to a data file."
-      else
-        fs.readFileSync(@currentData, encoding: 'utf8')
+      fs.readFileSync(@currentData, encoding: 'utf8')
 
     else if typeof @currentData is 'object'
       @currentData

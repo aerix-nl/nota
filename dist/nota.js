@@ -56,27 +56,27 @@
       return this.server.start();
     };
 
-    Nota.prototype.setTemplate = function(template, phantom) {
-      var deferred;
-      if (phantom == null) {
-        phantom = false;
-      }
+    Nota.prototype.setTemplate = function(template) {
       if ((template != null ? template.path : void 0) == null) {
         throw new Error("No template path provided.");
       }
-      deferred = Q.defer();
       this.server.setTemplate(template);
       if (this.webrender != null) {
         this.webrender.setTemplate(template);
       }
       if ((this.document != null) && (this.document.options.template.path !== template.path)) {
         this.document.close();
-        delete this.document;
+        return delete this.document;
       }
-      if ((this.document == null) && phantom) {
+    };
+
+    Nota.prototype.openTemplate = function() {
+      var deferred;
+      deferred = Q.defer();
+      if (this.document == null) {
         this.document = new Nota.Document(this.server.url(), this.logging, this.options);
         this.document.on('all', this.logging.logEvent, this.logging);
-        this.document.once('page:ready', (function(_this) {
+        this.document.after('page:ready').then((function(_this) {
           return function() {
             return deferred.resolve();
           };
@@ -88,7 +88,9 @@
     };
 
     Nota.prototype.setData = function(data) {
-      return this.server.setData(data);
+      var _ref;
+      this.server.setData(data);
+      return (_ref = this.document) != null ? _ref.injectData(data) : void 0;
     };
 
     Nota.prototype.queue = function() {
@@ -100,20 +102,14 @@
         err = _error;
         deferred.reject(err);
       }
-      this.setTemplate(this.jobQueue.template, true).then((function(_this) {
-        return function() {
-          switch (_this.jobQueue.template.type) {
-            case 'static':
-              return _this.after('page:rendered').then(function() {
-                return _this.renderStatic(_this.jobQueue);
-              });
-            case 'scripted':
-              return _this.after('page:ready').then(function() {
-                return _this.renderScripted(_this.jobQueue);
-              });
-          }
-        };
-      })(this));
+      this.setTemplate(this.jobQueue.template, true);
+      switch (this.jobQueue.template.type) {
+        case 'static':
+          this.renderStatic(this.jobQueue);
+          break;
+        case 'scripted':
+          this.renderScripted(this.jobQueue);
+      }
       return deferred.promise;
     };
 
@@ -147,7 +143,11 @@
       var job, start;
       job = queue.nextJob();
       start = new Date();
-      return this.document.capture(job).then((function(_this) {
+      return this.openTemplate().then((function(_this) {
+        return function() {
+          return _this.document.capture(job);
+        };
+      })(this)).then((function(_this) {
         return function(meta) {
           var finished;
           finished = new Date();
@@ -170,21 +170,22 @@
       }
       job = queue.nextJob();
       start = new Date();
-      this.document.on('error-timeout', function(err) {
-        var meta;
-        meta = _.extend({}, job, {
-          fail: err
-        });
-        return postRender(meta);
-      });
       renderJob = (function(_this) {
         return function(job) {
           var deferred;
           deferred = Q.defer();
-          _this.after('page:rendered').then(function() {
+          _this.document.after('page:rendered').then(function() {
             return _this.document.capture(job);
+          }).then(function(meta) {
+            return deferred.resolve(meta);
           });
-          _this.document.once('render:done', deferred.resolve);
+          _this.document.once('error-timeout', function(err) {
+            var meta;
+            meta = _.extend({}, job, {
+              fail: err
+            });
+            return deferred.reject(meta);
+          });
           return deferred.promise;
         };
       })(this);
@@ -206,22 +207,15 @@
           }
         };
       })(this);
-      error = function(err) {
-        return this.logging.logError(err);
-      };
+      error = (function(_this) {
+        return function(err) {
+          return _this.logging.logError(err);
+        };
+      })(this);
       this.setData(job.data || job.dataPath);
-      return renderJob(job).then(postRender)["catch"](error);
-    };
-
-    Nota.prototype.after = function(event) {
-      var defer;
-      defer = Q.defer();
-      if (this.document.state === event) {
-        defer.resolve();
-      } else {
-        this.document.once(event, defer.resolve());
-      }
-      return defer.promise;
+      return this.openTemplate().then(function() {
+        return renderJob(job);
+      }).then(postRender).fail(error);
     };
 
     return Nota;

@@ -114,6 +114,7 @@ module.exports = class Document
     deferred = Q.defer()
 
     metaRequest = ->
+      console.log $("#invoice-id").html()
       # Try and get meta data if Nota client is present (i.e. template loaded it)
       Nota?.getDocumentMeta()
 
@@ -217,6 +218,18 @@ module.exports = class Document
   setState: (event)->
     if @pagePhases.indexOf(event) > @pagePhases.indexOf(@state)
       @state = event
+
+  # Postcondition: promises to resolve after the document has reached the
+  # given state
+  after: (event)->
+    deferred = Q.defer()
+
+    if @state is event
+      deferred.resolve()
+    else @once event, ->
+      deferred.resolve()
+
+    deferred.promise
 
   close: ->
     @page.close()

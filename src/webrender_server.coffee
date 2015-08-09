@@ -53,7 +53,7 @@ module.exports = class Webrender
     if @options.logging.webrenderAddress then @ipLookups().then (@ip)=>
       if @ip.lan? then @logging.log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
       if @ip.wan? then @logging.log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
-    .catch (err)=>
+    .fail (err)=>
       # Don't log whatever error gets caught here as an error, because the LAN
       # and WAN IP lookups where are purely a convenience and optional.
       @logging.log? err
@@ -125,15 +125,18 @@ module.exports = class Webrender
       outputPath:   @webrenderCache.name
     }
 
-    @queue(job, @template).then (meta)->
+    @queue(job, @template)
+    .then (meta)->
 
       if meta[0].fail?
         res.status(500).send "An error occured while rendering: #{meta[0].fail}"
+        throw new Error "Job failed: " + meta[0].fail
       else
-        pdf = Path.resolve meta[0].outputPath
+        pdf = meta[0].outputPath
+        console.log pdf
         res.download pdf
 
-    .catch (err)=>
+    .fail (err)=>
       @loggin.logError err
 
   reqPreconditions: (req, res)->

@@ -49,11 +49,10 @@ module.exports = class Nota
     if @template? then @setTemplate @template
     @server.start()
 
-  # Postcondition: a document with the current template has been loaded
-  setTemplate: (template, phantom = false)->
+  # Postcondition: if a template was loaded, it has been closed, and it's
+  # ensured that with the next job the correct template will open.
+  setTemplate: (template)->
     if not template?.path? then throw new Error "No template path provided."
-
-    deferred = Q.defer()
 
     @server.setTemplate template
 
@@ -64,10 +63,14 @@ module.exports = class Nota
       @document.close()
       delete @document
 
-    if not @document? and phantom
+  # Postcondition: a document with the current template has been loaded
+  openTemplate: ->
+    deferred = Q.defer()
+
+    if not @document?
       @document = new Nota.Document(@server.url(), @logging, @options)
       @document.on 'all', @logging.logEvent, @logging
-      @document.once 'page:ready', =>
+      @document.after('page:ready').then =>
         deferred.resolve()
     else
       deferred.resolve()
@@ -76,6 +79,7 @@ module.exports = class Nota
 
   setData: (data)->
     @server.setData data
+    @document?.injectData data
 
   # Call with either a JobQueue instance or
   # with (jobs , template) where
@@ -100,11 +104,12 @@ module.exports = class Nota
       deferred.reject err
 
     # Ensure the document is loaded and ready
-    @setTemplate(@jobQueue.template, true).then =>
-      # Start rendering
-      switch @jobQueue.template.type
-        when 'static'   then @after('page:rendered').then => @renderStatic(@jobQueue)
-        when 'scripted' then @after('page:ready').then =>  @renderScripted(@jobQueue)
+    @setTemplate(@jobQueue.template, true)
+
+    # Start rendering
+    switch @jobQueue.template.type
+      when 'static'   then @renderStatic(@jobQueue)
+      when 'scripted' then @renderScripted(@jobQueue)
 
     deferred.promise
 
@@ -145,7 +150,9 @@ module.exports = class Nota
     job = queue.nextJob()
     start = new Date()
 
-    @document.capture(job).then (meta)=>
+    @openTemplate()
+    .then => @document.capture(job)
+    .then (meta)=>
       finished = new Date()
       meta.duration = finished-start
 
@@ -174,21 +181,24 @@ module.exports = class Nota
     job = queue.nextJob()
     start = new Date()
 
-    @document.on 'error-timeout', (err)->
-      meta = _.extend {}, job, { fail: err }
-      postRender meta
-
     renderJob = (job)=>
       deferred = Q.defer()
 
-      @after('page:rendered').then => @document.capture job
-      @document.once 'render:done', deferred.resolve
+      @document.after('page:rendered')
+      .then =>
+        @document.capture(job)
+      .then (meta)->
+        deferred.resolve meta
+
+      @document.once 'error-timeout', (err)->
+        meta = _.extend {}, job, { fail: err }
+        deferred.reject meta
 
       deferred.promise
 
     postRender = (meta)=>
       finished = new Date()
-      meta.duration = finished-start
+      meta.duration = (finished - start)
 
       if meta.fail?
         queue.jobFailed     job, meta
@@ -201,23 +211,22 @@ module.exports = class Nota
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderScripted queue
 
-    error = (err)->
+    error = (err)=>
       @logging.logError err
 
+    # First we need to set the data, and then open the template. This is to
+    # avoid a race condition that we get when opening the template when
+    # setting the template. In that case the template might have opened and
+    # started requesting the data before the job data has been set. Then it'll
+    # either receive no data, or possibly the example data of a template.
     @setData(job.data or job.dataPath)
 
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    renderJob(job)
+    @openTemplate()
+    .then -> renderJob(job)
     .then postRender
-    .catch error
+    .fail error
 
-  after: (event)->
-    defer = Q.defer()
-
-    if @document.state is event then defer.resolve()
-    else @document.once event, defer.resolve()
-
-    defer.promise
 

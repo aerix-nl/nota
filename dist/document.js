@@ -115,6 +115,7 @@
       var deferred, metaRequest;
       deferred = Q.defer();
       metaRequest = function() {
+        console.log($("#invoice-id").html());
         return typeof Nota !== "undefined" && Nota !== null ? Nota.getDocumentMeta() : void 0;
       };
       this.page.evaluate(metaRequest, deferred.resolve);
@@ -232,6 +233,19 @@
       if (this.pagePhases.indexOf(event) > this.pagePhases.indexOf(this.state)) {
         return this.state = event;
       }
+    };
+
+    Document.prototype.after = function(event) {
+      var deferred;
+      deferred = Q.defer();
+      if (this.state === event) {
+        deferred.resolve();
+      } else {
+        this.once(event, function() {
+          return deferred.resolve();
+        });
+      }
+      return deferred.promise;
     };
 
     Document.prototype.close = function() {

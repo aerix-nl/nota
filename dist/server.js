@@ -74,8 +74,26 @@
     };
 
     NotaServer.prototype.setData = function(data) {
+      var e, _data;
       if (!(typeof data === 'object' || typeof data === 'string')) {
         throw new Error("Set data with either a string path to the data file or JSON object");
+      }
+      if (typeof this.currentData === 'string') {
+        if (!this.helper.isFile(this.currentData)) {
+          throw new Error("Provided data path doesn't exist. Please provide a path to a data file.");
+        } else {
+          try {
+            _data = JSON.parse(fs.readFileSync(this.currentData, {
+              encoding: 'utf8'
+            }));
+          } catch (_error) {
+            e = _error;
+            throw new Error(chalk.gray("Error parsing data file " + this.currentData + " :") + e);
+          }
+          if (_.keys(_data).length === 0 || _data.length === 0) {
+            throw new Error("Provided data file is empty");
+          }
+        }
       }
       return this.currentData = data;
     };
@@ -85,13 +103,9 @@
         throw new Error('Currently no data set on server');
       }
       if (typeof this.currentData === 'string') {
-        if (!this.helper.isFile(this.currentData)) {
-          throw new Error("Provided data path doesn't exist. Please provide a path to a data file.");
-        } else {
-          return fs.readFileSync(this.currentData, {
-            encoding: 'utf8'
-          });
-        }
+        return fs.readFileSync(this.currentData, {
+          encoding: 'utf8'
+        });
       } else if (typeof this.currentData === 'object') {
         return this.currentData;
       } else {

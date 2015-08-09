@@ -67,20 +67,26 @@
       };
 
       NotaClient.prototype.getData = function(callback, force) {
+        var err;
         if (force == null) {
           force = true;
         }
         if (!force && (this.data != null)) {
           return typeof callback === "function" ? callback(this.data) : void 0;
         }
-        this.trigger('data:fetching');
-        return require(['json!/nota/data'], (function(_this) {
-          return function(data) {
-            _this.data = data;
-            _this.trigger('data:loaded');
-            return typeof callback === "function" ? callback(_this.data) : void 0;
-          };
-        })(this));
+        try {
+          this.trigger('data:fetching');
+          return require(['json!/nota/data'], (function(_this) {
+            return function(data) {
+              _this.data = data;
+              _this.trigger('data:loaded');
+              return typeof callback === "function" ? callback(_this.data) : void 0;
+            };
+          })(this));
+        } catch (_error) {
+          err = _error;
+          return console.log(err.stack);
+        }
       };
 
       NotaClient.prototype.injectData = function(data) {

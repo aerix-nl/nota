@@ -79,7 +79,7 @@
               return typeof (_base2 = _this.logging).log === "function" ? _base2.log("WAN address: " + chalk.cyan("http://" + ip.wan + ":" + _this.serverPort + "/render")) : void 0;
             }
           };
-        })(this))["catch"]((function(_this) {
+        })(this)).fail((function(_this) {
           return function(err) {
             var _base1;
             return typeof (_base1 = _this.logging).log === "function" ? _base1.log(err) : void 0;
@@ -173,12 +173,14 @@
       return this.queue(job, this.template).then(function(meta) {
         var pdf;
         if (meta[0].fail != null) {
-          return res.status(500).send("An error occured while rendering: " + meta[0].fail);
+          res.status(500).send("An error occured while rendering: " + meta[0].fail);
+          throw new Error("Job failed: " + meta[0].fail);
         } else {
-          pdf = Path.resolve(meta[0].outputPath);
+          pdf = meta[0].outputPath;
+          console.log(pdf);
           return res.download(pdf);
         }
-      })["catch"]((function(_this) {
+      }).fail((function(_this) {
         return function(err) {
           return _this.loggin.logError(err);
         };
