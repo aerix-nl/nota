@@ -1,12 +1,12 @@
 (function() {
-  var Handlebars, Q, TemplateHelper, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
+  var Mustache, Q, TemplateHelper, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   mkdirp = require('mkdirp');
 
   bodyParser = require('body-parser');
 
-  Handlebars = require('handlebars');
+  Mustache = require('mustache');
 
   chalk = require('chalk');
 
@@ -53,11 +53,9 @@
     };
 
     Webrender.prototype.start = function() {
-      var html;
-      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
+      return this.webrenderTemplate = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
         encoding: 'utf8'
       });
-      return this.webrenderTemplate = Handlebars.compile(html);
     };
 
     Webrender.prototype.logStart = function() {
@@ -82,7 +80,7 @@
         })(this)).fail((function(_this) {
           return function(err) {
             var _base1;
-            return typeof (_base1 = _this.logging).log === "function" ? _base1.log(err) : void 0;
+            return typeof (_base1 = _this.logging).log === "function" ? _base1.log(chalk.grey(err)) : void 0;
           };
         })(this));
       }
@@ -153,7 +151,7 @@
 
     Webrender.prototype.webrenderInterface = function(req, res) {
       var html;
-      html = this.webrenderTemplate({
+      html = Mustache.render(this.webrenderTemplate, {
         template: this.helper.getTemplateDefinition(this.template.path),
         serverPort: this.serverPort,
         ip: this.ip

@@ -1,6 +1,6 @@
 mkdirp     = require('mkdirp')
 bodyParser = require('body-parser')
-Handlebars = require('handlebars')
+Mustache   = require('mustache')
 chalk      = require('chalk')
 tmp        = require('tmp')
 Q          = require('q')
@@ -43,20 +43,21 @@ module.exports = class Webrender
 
   # Start listening for HTTP render requests
   start: ->
-    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
-    @webrenderTemplate = Handlebars.compile html
+    @webrenderTemplate = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
 
   logStart: ->
     @logging.log? "Listening at #{ chalk.cyan @url() } for POST requests"
 
     # For convenience try to do a local and external IP lookup (LAN and WAN)
-    if @options.logging.webrenderAddress then @ipLookups().then (@ip)=>
-      if @ip.lan? then @logging.log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
-      if @ip.wan? then @logging.log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
-    .fail (err)=>
-      # Don't log whatever error gets caught here as an error, because the LAN
-      # and WAN IP lookups where are purely a convenience and optional.
-      @logging.log? err
+    if @options.logging.webrenderAddress
+      @ipLookups()
+      .then (@ip)=>
+        if @ip.lan? then @logging.log? "LAN address: " + chalk.cyan "http://#{ip.lan}:#{@serverPort}/render"
+        if @ip.wan? then @logging.log? "WAN address: " + chalk.cyan "http://#{ip.wan}:#{@serverPort}/render"
+      .fail (err)=>
+        # Don't log whatever error gets caught here as an error, because the LAN
+        # and WAN IP lookups where are purely a convenience and optional.
+        @logging.log? chalk.grey err
 
 
   ipLookups: ->
@@ -65,6 +66,7 @@ module.exports = class Webrender
     timeout = 8000
     local   = @ipLookupLocal()
     ext     = @ipLookupExt()
+
     reject  = ->
       # If it's time to reject we see if any of both lookups has finished
       # and provide that (harvest what you can so to say).
@@ -107,12 +109,13 @@ module.exports = class Webrender
 
   setTemplate: (@template)->
 
+  # Some request handler functions to be called by Express.js
   webrenderInterface: (req, res)=>
-    html = @webrenderTemplate({
+    html = Mustache.render @webrenderTemplate, {
       template:     @helper.getTemplateDefinition @template.path
       serverPort:   @serverPort
       ip:           @ip
-    })
+    }
 
     res.send html
 

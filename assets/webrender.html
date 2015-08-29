@@ -53,12 +53,12 @@
     Alternatively, you can use the REST API. In matter of fact, this page is a simple app that uses that API. Send a POST request with data to the following URL, ad get the PDF download offer in the response header:
     <ul>
       <li>Locally:  <code>http://localhost:{{serverPort}}/render</code></li>
-      {{#if ip.lan }}
+      {{#ip.lan }}
       <li>LAN:      <code>http://{{ip.lan}}:{{serverPort}}/render</code></li>
-      {{/if}}
-      {{#if ip.wan }}
+      {{/ip.lan}}
+      {{#ip.wan }}
       <li>WAN:      <code>http://{{ip.wan}}:{{serverPort}}/render</code></li>
-      {{/if}}
+      {{/ip.wan}}
     </ul>
     </p>
 
