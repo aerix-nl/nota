@@ -84,8 +84,8 @@ module.exports  = class NotaServer
     if not @currentData?
       throw new Error 'Currently no data set on server'
 
-    if typeof @currentData is 'string'
-      fs.readFileSync(@currentData, encoding: 'utf8')
+    if typeof @currentData is 'string' and @helper.isData @currentData
+      JSON.parse fs.readFileSync(@currentData, encoding: 'utf8')
 
     else if typeof @currentData is 'object'
       @currentData
@@ -100,8 +100,11 @@ module.exports  = class NotaServer
     catch e
       res.status(500).send e
 
+    console.log 'blah', data.blah
+
     res.setHeader 'Content-Type', 'application/json'
-    res.send data
+    # {null, 2} is for newlines and indentation of 2 spaces: beautify output format
+    res.send JSON.stringify data, null, 2
 
   url: =>
     "http://#{@serverAddress}:#{@serverPort}/"

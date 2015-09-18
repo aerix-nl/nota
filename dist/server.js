@@ -102,10 +102,10 @@
       if (this.currentData == null) {
         throw new Error('Currently no data set on server');
       }
-      if (typeof this.currentData === 'string') {
-        return fs.readFileSync(this.currentData, {
+      if (typeof this.currentData === 'string' && this.helper.isData(this.currentData)) {
+        return JSON.parse(fs.readFileSync(this.currentData, {
           encoding: 'utf8'
-        });
+        }));
       } else if (typeof this.currentData === 'object') {
         return this.currentData;
       } else {
@@ -121,8 +121,9 @@
         e = _error;
         res.status(500).send(e);
       }
+      console.log('blah', data.blah);
       res.setHeader('Content-Type', 'application/json');
-      return res.send(data);
+      return res.send(JSON.stringify(data, null, 2));
     };
 
     NotaServer.prototype.url = function() {
