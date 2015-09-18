@@ -100,8 +100,6 @@ module.exports  = class NotaServer
     catch e
       res.status(500).send e
 
-    console.log 'blah', data.blah
-
     res.setHeader 'Content-Type', 'application/json'
     # {null, 2} is for newlines and indentation of 2 spaces: beautify output format
     res.send JSON.stringify data, null, 2

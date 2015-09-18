@@ -121,7 +121,6 @@
         e = _error;
         res.status(500).send(e);
       }
-      console.log('blah', data.blah);
       res.setHeader('Content-Type', 'application/json');
       return res.send(JSON.stringify(data, null, 2));
     };
