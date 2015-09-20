@@ -1,16 +1,13 @@
 (function() {
   requirejs.config({
     paths: {
-      'backbone': '/vendor/backbone/backbone',
-      'jquery': '/vendor/jquery/dist/jquery',
-      'underscore': '/vendor/underscore/underscore',
-      'json': '/vendor/requirejs-plugins/src/json',
-      'text': '/vendor/requirejs-text/text',
-      'requirejs': '/vendor/requirejs/require'
+      'backbone': '/nota/vendor/backbone/backbone',
+      'jquery': '/nota/vendor/jquery/dist/jquery',
+      'underscore': '/nota/vendor/underscore/underscore'
     }
   });
 
-  define(['backbone', 'json'], function() {
+  define(['backbone'], function() {
     var $cancel, $dataProto, $filename, $form, $upload, showBlock;
     $upload = $('#upload');
     $dataProto = $('#data').remove();

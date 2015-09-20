@@ -3,17 +3,12 @@
 requirejs.config {
   paths:
     # Common dependencies
-    'backbone':   '/vendor/backbone/backbone'
-    'jquery':     '/vendor/jquery/dist/jquery'
-    'underscore': '/vendor/underscore/underscore'
-
-    # RequireJS json! deps
-    'json':       '/vendor/requirejs-plugins/src/json'
-    'text':       '/vendor/requirejs-text/text'
-    'requirejs':  '/vendor/requirejs/require'
+    'backbone':   '/nota/vendor/backbone/backbone'
+    'jquery':     '/nota/vendor/jquery/dist/jquery'
+    'underscore': '/nota/vendor/underscore/underscore'
 }
 
-define ['backbone', 'json'], ->
+define ['backbone'], ->
   $upload     = $('#upload')
   $dataProto  = $('#data').remove()
   $filename   = $('#data-filename')

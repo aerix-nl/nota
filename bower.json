@@ -1,6 +1,6 @@
 {
   "name": "nota",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "descriptions": "Programmable PDF generator for static, scripted and model driven documents",
   "license": "MIT",
   "authors": [

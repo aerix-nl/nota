@@ -4,14 +4,14 @@
 requirejs.config {
   paths:
     # Common dependencies
-    'backbone':   '/vendor/backbone/backbone'
-    'jquery':     '/vendor/jquery/dist/jquery'
-    'underscore': '/vendor/underscore/underscore'
+    'backbone':   '/nota/vendor/backbone/backbone'
+    'jquery':     '/nota/vendor/jquery/dist/jquery'
+    'underscore': '/nota/vendor/underscore/underscore'
 
     # RequireJS json! deps
-    'json':      '/vendor/requirejs-plugins/src/json'
-    'text':      '/vendor/requirejs-text/text'
-    'requirejs': '/vendor/requirejs/require'
+    'json':       '/nota/vendor/requirejs-plugins/src/json'
+    'text':       '/nota/vendor/requirejs-text/text'
+    'requirejs':  '/nota/vendor/requirejs/require'
 }
 
 define ['backbone', 'json'], ->
@@ -63,7 +63,7 @@ define ['backbone', 'json'], ->
     # context for this function to be evaluated in.
     setDocumentMeta: (documentMeta, context)->
       unless documentMeta? then throw new Error("Document meta not defined")
-      
+
       if typeof documentMeta is 'function'
         @documentMeta.fn = documentMeta
 
@@ -88,11 +88,14 @@ define ['backbone', 'json'], ->
       # return the cache
       if not force and @data? then return callback?(@data)
 
-      @trigger 'data:fetching'
-      # Else we continue and get the data from the server
-      require ['json!/data'], (@data) =>
-        @trigger 'data:loaded'
-        callback?(@data)
+      try
+        @trigger 'data:fetching'
+        # Else we continue and get the data from the server
+        require ['json!/nota/data'], (@data) =>
+          @trigger 'data:loaded'
+          callback?(@data)
+      catch err
+        console.log err.stack
 
     # Passive:
     # Wait on this entry point for Nota server to inject the data

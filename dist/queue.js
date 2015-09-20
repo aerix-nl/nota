@@ -8,10 +8,11 @@
   module.exports = JobQueue = (function(_super) {
     __extends(JobQueue, _super);
 
-    function JobQueue(jobs, options) {
+    function JobQueue(jobs, template, deferred) {
       var job, _i, _len, _ref;
       this.jobs = jobs;
-      this.options = options;
+      this.template = template;
+      this.deferred = deferred;
       if (this.jobs.length === 0) {
         throw new Error("Creating empty job queue");
       }
@@ -31,7 +32,7 @@
       }
       this.meta[index] = jobMeta;
       if (this.isFinished()) {
-        return (_ref = this.options.deferFinish) != null ? _ref.resolve(this.meta) : void 0;
+        return (_ref = this.deferred) != null ? _ref.resolve(this.meta) : void 0;
       }
     };
 

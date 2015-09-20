@@ -1,284 +1,225 @@
 (function() {
-  var JobQueue, NotaCLI, NotaServer, Path, TemplateHelper, chalk, fs, nomnom, notaCLI, notifier, open, s, _,
+  var Nota, Path, Q, fs, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  nomnom = require('nomnom');
-
-  fs = require('fs');
 
   Path = require('path');
 
-  _ = require('underscore')._;
+  Q = require('q');
 
-  s = require('underscore.string');
+  fs = require('fs');
 
-  open = require('open');
+  _ = require('underscore');
 
-  chalk = require('chalk');
+  module.exports = Nota = (function() {
+    Nota.Server = require(Path.join(__dirname, 'server'));
 
-  notifier = require('node-notifier');
+    Nota.Document = require(Path.join(__dirname, 'document'));
 
-  NotaServer = require('./server');
+    Nota.Webrender = require(Path.join(__dirname, 'webrender_server'));
 
-  JobQueue = require('./queue');
+    Nota.JobQueue = require(Path.join(__dirname, 'queue'));
 
-  TemplateHelper = require('./template_helper');
+    Nota.TemplateHelper = require(Path.join(__dirname, 'template_helper'));
 
-  NotaCLI = (function() {
-    NotaCLI.prototype.defaults = require('../config-default.json');
+    Nota.LoggingChannels = require(Path.join(__dirname, 'logging'));
 
-    NotaCLI.prototype.meta = require('../package.json');
+    Nota.defaults = require(Path.join(__dirname, '../config-default.json'));
 
-    NotaCLI.prototype.logPrefix = chalk.gray('nota ');
+    Nota.meta = require(Path.join(__dirname, '../package.json'));
 
-    NotaCLI.prototype.clientPrefix = chalk.gray('nota-client ');
-
-    function NotaCLI(logChannels) {
-      this.logClientError = __bind(this.logClientError, this);
-      this.logClient = __bind(this.logClient, this);
-      this.logEvent = __bind(this.logEvent, this);
-      this.logError = __bind(this.logError, this);
-      this.logWarning = __bind(this.logWarning, this);
-      this.log = __bind(this.log, this);
-      this.listTemplatesIndex = __bind(this.listTemplatesIndex, this);
-      if (logChannels != null) {
-        this.log = logChannels.log, this.logEvent = logChannels.logEvent, this.logError = logChannels.logError, this.logWarning = logChannels.logWarning;
+    function Nota(options, logging) {
+      this.options = options;
+      this.logging = logging;
+      this.queue = __bind(this.queue, this);
+      if (this.options == null) {
+        this.options = this.defaults;
       }
-      this.helper = new TemplateHelper(this.logWarning);
-      nomnom.options({
-        template: {
-          position: 0,
-          help: 'The template directory path'
-        },
-        data: {
-          position: 1,
-          help: 'The data file path'
-        },
-        output: {
-          position: 2,
-          help: 'The output file'
-        },
-        preview: {
-          abbr: 'p',
-          flag: true,
-          help: 'Preview template in the browser'
-        },
-        listen: {
-          abbr: 's',
-          flag: true,
-          help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
-        },
-        list: {
-          abbr: 'l',
-          flag: true,
-          help: 'List all templates',
-          callback: (function(_this) {
-            return function() {
-              return _this.listTemplatesIndex();
-            };
-          })(this)
-        },
-        verbove: {
-          abbr: 'b',
-          flag: true,
-          help: 'More detailed console output on errors'
-        },
-        version: {
-          abbr: 'v',
-          flag: true,
-          help: 'Print version',
-          callback: (function(_this) {
-            return function() {
-              return _this.meta.version;
-            };
-          })(this)
-        },
-        resources: {
-          flag: true,
-          help: 'Show the events of page resource loading in output'
-        },
-        preserve: {
-          flag: true,
-          help: 'Prevent overwriting when output path is already occupied'
-        }
-      });
+      if (this.logging == null) {
+        this.logging = require('./logging')(this.options);
+      }
+      this.helper = new Nota.TemplateHelper(this.logging);
+      this.server = new Nota.Server(this.options, this.logging);
     }
 
-    NotaCLI.prototype.start = function() {
-      var e, logChannels;
+    Nota.prototype.start = function(apis, template) {
+      this.template = template;
+      apis = _.extend({
+        server: true
+      }, apis);
+      if (apis.webrender) {
+        this.webrender = new Nota.Webrender(this.queue, this.options, this.logging);
+        this.server.use(this.webrender);
+      }
+      if (this.template != null) {
+        this.setTemplate(this.template);
+      }
+      return this.server.start();
+    };
+
+    Nota.prototype.setTemplate = function(template) {
+      if ((template != null ? template.path : void 0) == null) {
+        throw new Error("No template path provided.");
+      }
+      this.server.setTemplate(template);
+      if (this.webrender != null) {
+        this.webrender.setTemplate(template);
+      }
+      if ((this.document != null) && (this.document.options.template.path !== template.path)) {
+        this.document.close();
+        return delete this.document;
+      }
+    };
+
+    Nota.prototype.openTemplate = function() {
+      var deferred;
+      deferred = Q.defer();
+      if (this.document == null) {
+        this.document = new Nota.Document(this.server.url(), this.logging, this.options);
+        this.document.on('all', this.logging.logEvent, this.logging);
+        this.document.after('page:ready').then((function(_this) {
+          return function() {
+            return deferred.resolve();
+          };
+        })(this));
+      } else {
+        deferred.resolve();
+      }
+      return deferred.promise;
+    };
+
+    Nota.prototype.setData = function(data) {
+      var _ref;
+      this.server.setData(data);
+      return (_ref = this.document) != null ? _ref.injectData(data) : void 0;
+    };
+
+    Nota.prototype.queue = function() {
+      var deferred, err;
+      deferred = Q.defer();
       try {
-        this.options = this.parseOptions(nomnom.nom(), this.defaults);
+        this.jobQueue = this.parseQueueArgs(arguments, deferred);
       } catch (_error) {
-        e = _error;
-        this.logError(e);
+        err = _error;
+        deferred.reject(err);
+      }
+      this.setTemplate(this.jobQueue.template, true);
+      switch (this.jobQueue.template.type) {
+        case 'static':
+          this.renderStatic(this.jobQueue);
+          break;
+        case 'scripted':
+          this.renderScripted(this.jobQueue);
+      }
+      return deferred.promise;
+    };
+
+    Nota.prototype.parseQueueArgs = function(args, deferred) {
+      var jobQueue, jobs, template, templateRequiredError, _ref, _ref1;
+      templateRequiredError = new Error("No template loaded yet. Please provide a template with the initial job queue call. Subsequent jobs on the same template can omit the template specification.");
+      if (args[0] instanceof Nota.JobQueue) {
+        jobQueue = args[0];
+        if (!jobQueue.length > 0) {
+          throw new Error("Empty job queue provided");
+        }
+        if ((jobQueue.template.path == null) && !((_ref = this.document) != null ? _ref.options.template.path : void 0)) {
+          throw templateRequiredError;
+        }
+      } else {
+        if (args[0] instanceof Array) {
+          jobs = args[0];
+        } else if (args[0] instanceof Object && ((args[0].data != null) || (args[0].dataPath != null))) {
+          jobs = [args[0]];
+        }
+        template = args[1] || {};
+        if (!((_ref1 = this.document) != null ? _ref1.options.template.path : void 0) && (template.path == null)) {
+          throw templateRequiredError;
+        }
+        template.type = this.helper.getTemplateType(template.path);
+        return jobQueue = new Nota.JobQueue(jobs, template, deferred);
+      }
+    };
+
+    Nota.prototype.renderStatic = function(queue) {
+      var job, start;
+      job = queue.nextJob();
+      start = new Date();
+      return this.openTemplate().then((function(_this) {
+        return function() {
+          return _this.document.capture(job);
+        };
+      })(this)).then((function(_this) {
+        return function(meta) {
+          var finished;
+          finished = new Date();
+          meta.duration = finished - start;
+          queue.jobCompleted(meta);
+          if (!queue.isFinished()) {
+            return _this.renderStatic(queue);
+          }
+        };
+      })(this));
+    };
+
+    Nota.prototype.renderScripted = function(queue) {
+      var error, inProgressJobs, job, postRender, renderJob, start, _base;
+      if ((inProgressJobs = queue.inProgress())) {
+        if (typeof (_base = this.logging).logWarning === "function") {
+          _base.logWarning("Attempting to render while already occupied with jobs:\n\n" + inProgressJobs + "\n\nRejecting this render call.\n\nFor multithreaded rendering of a queue please create another server\ninstance (don't forget to provide it with an unoccupied port).");
+        }
         return;
       }
-      logChannels = {
-        log: this.log,
-        logEvent: this.logEvent,
-        logWarning: this.logWarning,
-        logError: this.logError,
-        logClient: this.logClient,
-        logClientError: this.logClientError
-      };
-      this.server = new NotaServer(this.options, logChannels);
-      return this.server.start().then((function(_this) {
-        return function() {
-          if (_this.options.preview) {
-            open(_this.server.url());
-          }
-          if (_this.options.listen) {
-            return open(_this.server.webrenderUrl());
-          } else {
-            return _this.render(_this.options);
-          }
+      job = queue.nextJob();
+      start = new Date();
+      renderJob = (function(_this) {
+        return function(job) {
+          var deferred;
+          deferred = Q.defer();
+          _this.document.after('page:rendered').then(function() {
+            return _this.document.capture(job);
+          }).then(function(meta) {
+            return deferred.resolve(meta);
+          });
+          _this.document.once('error-timeout', function(err) {
+            var meta;
+            meta = _.extend({}, job, {
+              fail: err
+            });
+            return deferred.reject(meta);
+          });
+          return deferred.promise;
         };
-      })(this));
-    };
-
-    NotaCLI.prototype.render = function(options) {
-      var job;
-      job = {
-        dataPath: options.dataPath,
-        outputPath: options.outputPath,
-        preserve: options.preserve
-      };
-      return this.server.queue(job).then((function(_this) {
+      })(this);
+      postRender = (function(_this) {
         return function(meta) {
-          if (options.logging.notify) {
-            notifier.on('click', function() {
-              if (meta.length === 1) {
-                return open(meta[0].outputPath);
-              } else if (meta.length > 1) {
-                return open(Path.dirname(Path.resolve(meta[0].outputPath)));
-              } else {
-
-              }
-            });
-            notifier.notify({
-              title: "Nota: render jobs finished",
-              message: "" + meta.length + " document(s) captured to .PDF",
-              icon: Path.join(__dirname, '../assets/images/icon.png'),
-              wait: true
-            });
+          var finished, _base1;
+          finished = new Date();
+          meta.duration = finished - start;
+          if (meta.fail != null) {
+            queue.jobFailed(job, meta);
+          } else {
+            queue.jobCompleted(job, meta);
           }
-          _this.server.close();
-          return process.exit();
-        };
-      })(this));
-    };
-
-    NotaCLI.prototype.parseOptions = function(args, defaults) {
-      var definition, e, options;
-      options = _.extend({}, defaults);
-      options = _.extend(options, {
-        templatePath: args.template,
-        dataPath: args.data,
-        outputPath: args.output
-      });
-      if (args.preview != null) {
-        options.preview = args.preview;
-      }
-      if (args.listen != null) {
-        options.listen = args.listen;
-      }
-      if (args.port != null) {
-        options.port = args.port;
-      }
-      if (args.notify != null) {
-        options.logging.notify = args.notify;
-      }
-      if (args.resources != null) {
-        options.logging.pageResources = args.resources;
-      }
-      if (args.preserve != null) {
-        options.preserve = args.preserve;
-      }
-      if (args.verbose != null) {
-        options.verbose = args.verbose;
-      }
-      options.templatePath = this.helper.findTemplatePath(options);
-      try {
-        definition = this.helper.getTemplateDefinition(options.templatePath);
-        _.extend(options.document, definition.nota);
-      } catch (_error) {
-        e = _error;
-        this.logWarning(e);
-      }
-      options.dataPath = this.helper.findDataPath(options);
-      return options;
-    };
-
-    NotaCLI.prototype.listTemplatesIndex = function() {
-      var definition, dir, fold, headerDir, headerName, headerVersion, index, lengths, name, templates, version;
-      templates = [];
-      index = this.helper.getTemplatesIndex(this.defaults.templatesPath);
-      if (_.size(index) === 0) {
-        this.logError("No (valid) templates found in templates directory.");
-      } else {
-        headerDir = 'Directory';
-        headerName = 'Template name';
-        headerVersion = 'Version';
-        fold = function(memo, str) {
-          return Math.max(memo, str.length);
-        };
-        lengths = {
-          dirName: _.reduce(_.keys(index), fold, headerDir.length),
-          name: _.reduce(_(_(index).values()).pluck('name'), fold, headerName.length)
-        };
-        headerDir = s.pad(headerDir, lengths.dirName, ' ', 'right');
-        headerName = s.pad(headerName, lengths.name + 8, ' ', 'left');
-        this.log(chalk.gray(headerDir + headerName + ' ' + headerVersion));
-        templates = (function() {
-          var _results;
-          _results = [];
-          for (dir in index) {
-            definition = index[dir];
-            dir = s.pad(definition.dir, lengths.dirName, ' ', 'right');
-            name = s.pad(definition.name, lengths.name + 8, ' ', 'left');
-            version = definition.version != null ? 'v' + definition.version : '';
-            _results.push(this.log(chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)));
+          if (typeof (_base1 = _this.logging).log === "function") {
+            _base1.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
           }
-          return _results;
-        }).call(this);
-      }
-      return '';
+          if (!queue.isFinished()) {
+            return _this.renderScripted(queue);
+          }
+        };
+      })(this);
+      error = (function(_this) {
+        return function(err) {
+          return _this.logging.logError(err);
+        };
+      })(this);
+      this.setData(job.data || job.dataPath);
+      return this.openTemplate().then(function() {
+        return renderJob(job);
+      }).then(postRender).fail(error);
     };
 
-    NotaCLI.prototype.log = function(msg) {
-      return console.log(this.logPrefix + msg);
-    };
-
-    NotaCLI.prototype.logWarning = function(warningMsg) {
-      return console.warn(this.logPrefix + chalk.bgYellow.black('WARNG') + ' ' + warningMsg);
-    };
-
-    NotaCLI.prototype.logError = function(errorMsg) {
-      var _ref;
-      console.error(this.logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg);
-      if (((_ref = this.options) != null ? _ref.verbose : void 0) && (errorMsg.toSource != null)) {
-        return console.error(this.logPrefix + errorMsg.toSource());
-      }
-    };
-
-    NotaCLI.prototype.logEvent = function(event) {
-      return console.info(this.logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event);
-    };
-
-    NotaCLI.prototype.logClient = function(msg) {
-      return console.log(this.clientPrefix + msg);
-    };
-
-    NotaCLI.prototype.logClientError = function(msg) {
-      return console.error(this.clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg);
-    };
-
-    return NotaCLI;
+    return Nota;
 
   })();
-
-  notaCLI = new NotaCLI();
-
-  notaCLI.start();
 
 }).call(this);

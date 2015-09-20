@@ -1,223 +1,232 @@
-nomnom        = require('nomnom')
-fs            = require('fs')
-Path          = require('path')
-_             = require('underscore')._
-s             = require('underscore.string')
-open          = require('open')
-chalk         = require('chalk')
-notifier      = require('node-notifier')
+Path            = require('path')
+Q               = require('q')
+fs              = require('fs')
+_               = require('underscore')
 
-NotaServer    = require('./server')
-JobQueue      = require('./queue')
-TemplateHelper = require('./template_helper')
-
-class NotaCLI
+module.exports = class Nota
+  # Bind in some of the subclasses that compose Nota
+  @Server:            require( Path.join __dirname, 'server' )
+  @Document:          require( Path.join __dirname, 'document' )
+  @Webrender:         require( Path.join __dirname, 'webrender_server' )
+  @JobQueue:          require( Path.join __dirname, 'queue' )
+  @TemplateHelper:    require( Path.join __dirname, 'template_helper' )
+  @LoggingChannels:   require( Path.join __dirname, 'logging' )
 
   # Load the (default) configuration
-  defaults: require '../config-default.json'
+  @defaults:          require( Path.join __dirname, '../config-default.json' )
 
   # Load the package definition so we may know ourselves (version etc.)
-  meta: require '../package.json'
+  @meta:              require( Path.join __dirname, '../package.json' )
 
-  # Some strings that go before all logChannels (server origin and client origin respectively)
-  logPrefix:    chalk.gray('nota ')
-  clientPrefix: chalk.gray('nota-client ')
+  constructor: ( @options, @logging )->
+    # Allow for overriding of default settings
+    if not @options? then @options = @defaults
 
-  constructor: ( logChannels ) ->
     # Allow redirecting of logging output to channels through dependency injection
-    if logChannels? then { @log, @logEvent, @logError, @logWarning } = logChannels
+    if not @logging? then @logging = require('./logging')(@options)
 
-    # Instantiate our thrusty helping hand in template and job tasks
-    @helper = new TemplateHelper(@logWarning)
+    @helper = new Nota.TemplateHelper( @logging )
 
-    nomnom.options
-      template:
-        position: 0
-        help:     'The template directory path'
-      data:
-        position: 1
-        help:    'The data file path'
-      output:
-        position: 2
-        help:    'The output file'
+    # The webserver will respond with the template webpage to whoever come who
+    # may (perhaps a developer looking for a preview of the template, perhaps
+    # a phantom looking to capture it as a PDF).
+    @server = new Nota.Server( @options, @logging )
 
-      preview:
-        abbr: 'p'
-        flag: true
-        help: 'Preview template in the browser'
-      listen:
-        abbr: 's'
-        flag: true
-        help: 'Listen for HTTP POST requests with data to render and respond with output PDF'
-      list:
-        abbr: 'l'
-        flag: true
-        help: 'List all templates'
-        callback: => @listTemplatesIndex()
-      verbove:
-        abbr: 'b'
-        flag: true
-        help: 'More detailed console output on errors'
-      version:
-        abbr: 'v'
-        flag: true
-        help: 'Print version'
-        callback: => @meta.version
+  start: (apis, @template)->
+    # The APIs hash determines which parts of the Nota API needs to be
+    # exposed, and hence which modules need to be started. We always start the
+    # server and provide serving of the template and it's data.
+    apis = _.extend { server: true }, apis
 
-      resources:
-        flag: true
-        help: 'Show the events of page resource loading in output'
-      preserve:
-        flag: true
-        help: 'Prevent overwriting when output path is already occupied'
+    if apis.webrender
+      # If we also want the webrender service, then we also inject the
+      # webrenderer middelware into the server so it can intercept webrender
+      # REST API calls and server the webrender interface. After that we're
+      # ready to start it up.
+      @webrender = new Nota.Webrender( @queue, @options, @logging )
+      @server.use @webrender
 
-  start: ->
+    if @template? then @setTemplate @template
+    @server.start()
+
+  # Postcondition: if a template was loaded, it has been closed, and it's
+  # ensured that with the next job the correct template will open.
+  setTemplate: (template)->
+    if not template?.path? then throw new Error "No template path provided."
+
+    @server.setTemplate template
+
+    if @webrender?
+      @webrender.setTemplate template
+
+    if @document? and (@document.options.template.path isnt template.path)
+      @document.close()
+      delete @document
+
+  # Postcondition: a document with the current template has been loaded
+  openTemplate: ->
+    deferred = Q.defer()
+
+    if not @document?
+      @document = new Nota.Document(@server.url(), @logging, @options)
+      @document.on 'all', @logging.logEvent, @logging
+      @document.after('page:ready').then =>
+        deferred.resolve()
+    else
+      deferred.resolve()
+
+    deferred.promise
+
+  setData: (data)->
+    @server.setData data
+    @document?.injectData data
+
+  # Call with either a JobQueue instance or
+  # with (jobs , template) where
+  #
+  #   jobs = [{
+  #       dataPath:   dataPath
+  #       data:       obj (alternatively)
+  #       outputPath: outputPath
+  #       preserve:   true | false
+  #     }]
+  #
+  #   template = {
+  #     path: <path to template dir>
+  #    }
+  queue: ( ) =>
+    deferred = Q.defer()
+
     try
-      @options = @parseOptions nomnom.nom(), @defaults
-    catch e
-      @logError e
+      # Extract or construct the job queue from the call
+      @jobQueue = @parseQueueArgs(arguments, deferred)
+    catch err
+      deferred.reject err
+
+    # Ensure the document is loaded and ready
+    @setTemplate(@jobQueue.template, true)
+
+    # Start rendering
+    switch @jobQueue.template.type
+      when 'static'   then @renderStatic(@jobQueue)
+      when 'scripted' then @renderScripted(@jobQueue)
+
+    deferred.promise
+
+  # Parses the arguments of the queue call. Which could be either a single
+  # queue argument, and array of jobs with and options hash, or a single job
+  # object with an options hash.
+  parseQueueArgs: (args, deferred)->
+    templateRequiredError = new Error "No template loaded yet. Please provide a template with the
+      initial job queue call. Subsequent jobs on the same template can omit the template
+      specification."
+
+    if args[0] instanceof Nota.JobQueue
+      jobQueue = args[0]
+
+      if not jobQueue.length > 0
+        throw new Error "Empty job queue provided"
+
+      if not jobQueue.template.path? and not @document?.options.template.path
+        throw templateRequiredError
+
+    else
+      if args[0] instanceof Array
+        jobs  = args[0]
+      else if args[0] instanceof Object and ( args[0].data? or args[0].dataPath? )
+        jobs  = [ args[0] ] # Create new jobs array of the provided job object
+
+      template = args[1] or {}
+
+      if not @document?.options.template.path and not template.path?
+        throw templateRequiredError
+
+      template.type = @helper.getTemplateType template.path
+
+      jobQueue = new Nota.JobQueue(jobs, template, deferred)
+
+  renderStatic: (queue)->
+    # Dequeue the next job
+    job = queue.nextJob()
+    start = new Date()
+
+    @openTemplate()
+    .then => @document.capture(job)
+    .then (meta)=>
+      finished = new Date()
+      meta.duration = finished-start
+
+      # Mark this one as completed.
+      queue.jobCompleted(meta)
+
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished() then @renderStatic queue
+
+  renderScripted: (queue)->
+    if (inProgressJobs = queue.inProgress())
+      @logging.logWarning? """
+      Attempting to render while already occupied with jobs:
+
+      #{inProgressJobs}
+
+      Rejecting this render call.
+
+      For multithreaded rendering of a queue please create another server
+      instance (don't forget to provide it with an unoccupied port).
+      """
       return
 
-    # Sum the current (command line interface) logging channels
-    logChannels = {
-      log:              @log
-      logEvent:         @logEvent
-      logWarning:       @logWarning
-      logError:         @logError
-      logClient:        @logClient
-      logClientError:   @logClientError
-    }
+    # Dequeue the next job
+    job = queue.nextJob()
+    start = new Date()
 
-    @server = new NotaServer @options, logChannels
+    renderJob = (job)=>
+      deferred = Q.defer()
 
-    @server.start()
-    # We'll need to wait till all of it's components have loaded and setup is done
-    .then =>
-      
-      if @options.preview
-        # If we want a template preview, open the web page
-        open(@server.url())
+      @document.after('page:rendered')
+      .then =>
+        @document.capture(job)
+      .then (meta)->
+        deferred.resolve meta
 
-      if @options.listen
-        # Open the webrender page where renders can be requested
-        open(@server.webrenderUrl())
+      @document.once 'error-timeout', (err)->
+        meta = _.extend {}, job, { fail: err }
+        deferred.reject meta
 
+      deferred.promise
+
+    postRender = (meta)=>
+      finished = new Date()
+      meta.duration = (finished - start)
+
+      if meta.fail?
+        queue.jobFailed     job, meta
       else
-        # Else, perform a single render job and close the server
-        @render(@options)
+        queue.jobCompleted  job, meta
 
-  # TODO: refactor this wrapper away. Right now it's an ugly extractor that
-  # creates a single job and calls the server queue API, but this should
-  # become more general with job arrays in the future.
-  render: ( options )->
-    job = {
-      dataPath:   options.dataPath
-      outputPath: options.outputPath
-      preserve:   options.preserve
-    }
-    @server.queue job
-    .then (meta) =>
-      # We're done!
+      @logging.log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
 
-      if options.logging.notify
-        # Would be nice if you could click on the notification
-        notifier.on 'click', ->
-          if meta.length is 1
-            open meta[0].outputPath
-          else if meta.length > 1
-            open Path.dirname Path.resolve meta[0].outputPath
-          else # meta = []
+      # Recursively continue rendering what's left of the job queue untill
+      # it's empty, then we're finished.
+      unless queue.isFinished() then @renderScripted queue
 
-        # Send notification
-        notifier.notify
-          title:    "Nota: render jobs finished"
-          message:  "#{meta.length} document(s) captured to .PDF"
-          icon:     Path.join(__dirname, '../assets/images/icon.png')
-          wait:     true
+    error = (err)=>
+      @logging.logError err
 
-      @server.close()
-      process.exit()
+    # First we need to set the data, and then open the template. This is to
+    # avoid a race condition that we get when opening the template when
+    # setting the template. In that case the template might have opened and
+    # started requesting the data before the job data has been set. Then it'll
+    # either receive no data, or possibly the example data of a template.
+    @setData(job.data or job.dataPath)
 
-  # Settling options from parsed CLI arguments over defaults
-  parseOptions: ( args, defaults ) ->
-    options = _.extend {}, defaults
-    # Extend with mandatory arguments
-    options = _.extend options,
-      templatePath: args.template
-      dataPath:     args.data
-      outputPath:   args.output
-    # Extend with optional arguments
-    options.preview = args.preview                    if args.preview?
-    options.listen = args.listen                      if args.listen?
-    options.port = args.port                          if args.port?
-    options.logging.notify = args.notify              if args.notify?
-    options.logging.pageResources = args.resources    if args.resources?
-    options.preserve = args.preserve                  if args.preserve?
-    options.verbose = args.verbose                    if args.verbose?
-    
-    # Template
-    options.templatePath =          @helper.findTemplatePath(options)
-    # Template document config
-    try # We can do without them though
-      definition = @helper.getTemplateDefinition options.templatePath
-      _.extend options.document, definition.nota
-    catch e then @logWarning e
-    # Data
-    options.dataPath =              @helper.findDataPath(options)
-
-    return options
+    # Call the promise and wait for it to finish, then do some post-render
+    # administration of render meta data and see if we're done or can continue
+    # with the rest of the job queue.
+    @openTemplate()
+    .then -> renderJob(job)
+    .then postRender
+    .fail error
 
 
-  listTemplatesIndex: ( ) =>
-    templates = []
-    index = @helper.getTemplatesIndex(@defaults.templatesPath)
-
-    if _.size(index) is 0
-      @logError "No (valid) templates found in templates directory."
-    else
-      headerDir     = 'Directory'
-      headerName    = 'Template name'
-      headerVersion = 'Version'
-      
-      fold = (memo, str)->
-        Math.max(memo, str.length)
-      lengths =
-        dirName: _.reduce _.keys(index), fold, headerDir.length
-        name:    _.reduce _(_(index).values()).pluck('name'), fold, headerName.length
-
-      headerDir     = s.pad headerDir,  lengths.dirName, ' ', 'right'
-      headerName    = s.pad headerName, lengths.name + 8, ' ', 'left'
-      # List them all in a format of: templates/hello_world 'Hello World' v1.0
-
-      @log chalk.gray(headerDir + headerName + ' ' + headerVersion)
-      templates = for dir, definition of index
-        dir     = s.pad definition.dir,  lengths.dirName, ' ', 'right'
-        name    = s.pad definition.name, lengths.name + 8, ' ', 'left'
-        version = if definition.version? then 'v'+definition.version else ''
-        @log chalk.cyan(dir) + chalk.green(name) + ' ' + chalk.gray(version)
-    return '' # Somehow needed to make execution stop here with --list
-
-  # Server origin logging channels
-  log: ( msg )=>
-    console.log   @logPrefix + msg
-
-  logWarning: ( warningMsg )=>
-    console.warn  @logPrefix + chalk.bgYellow.black('WARNG') + ' ' + warningMsg
-
-  logError: ( errorMsg )=>
-    console.error @logPrefix + chalk.bgRed.black('ERROR') + ' ' + errorMsg
-    if @options?.verbose and errorMsg.toSource?
-      console.error @logPrefix + errorMsg.toSource()
-
-  logEvent: ( event )=>
-    console.info  @logPrefix + chalk.bgBlue.black('EVENT') + ' ' + event
-
-  # Client origin logging channels
-  logClient: ( msg )=>
-    console.log   @clientPrefix + msg
-
-  logClientError: ( msg )=>
-    console.error @clientPrefix + chalk.bgRed.black('ERROR') + ' ' + msg
-
-notaCLI = new NotaCLI()
-notaCLI.start()

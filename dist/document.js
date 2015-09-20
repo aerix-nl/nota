@@ -17,13 +17,13 @@
   module.exports = Document = (function() {
     Document.prototype.pagePhases = ['page:init', 'page:opened', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded', 'page:ready', 'client:template:render:init', 'client:template:render:done', 'page:rendered'];
 
-    function Document(server, options) {
-      this.server = server;
+    function Document(templateUrl, logging, options) {
+      this.logging = logging;
       this.options = options;
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       _.extend(this, Backbone.Events);
-      this.helper = new TemplateHelper();
+      this.helper = new TemplateHelper(this.logging);
       this.on('all', this.setState, this);
       phantom.create((function(_this) {
         return function(phantomInstance) {
@@ -37,18 +37,10 @@
               'render': null,
               'extrender': null
             };
-            _this.page.set('paperSize', _this.options.paperSize);
-            _this.page.set('zoomFactor', _this.options.zoomFactor);
-            _this.page.evaluate(function() {
-              var html;
-              html = document.getElementsByTagName('html').item(0);
-              html.style['transform-origin'] = '0 0';
-              html.style['-webkit-transform-origin'] = '0 0';
-              html.style['transform'] = 'scale(0.68)';
-              return html.style['-webkit-transform'] = 'scale(0.68)';
-            });
+            _this.page.set('paperSize', _this.options.template.paperSize);
+            _this.page.set('zoomFactor', _this.options.template.zoomFactor);
             _this.page.onConsoleMessage(function(msg) {
-              return _this.server.logClient(msg);
+              return _this.logging.logClient(msg);
             });
             _this.page.set('onError', function(msg) {
               return _this.onClientError(msg);
@@ -60,7 +52,7 @@
             _this.page.set('onResourceReceived', _this.onResourceReceived);
             _this.page.set('onTemplateInit', _this.onTemplateInit);
             _this.trigger('page:init');
-            return _this.page.open(_this.server.url(), function(status) {
+            return _this.page.open(templateUrl, function(status) {
               if (status === 'success') {
                 _this.trigger('page:opened');
                 return _this.listen();
@@ -76,7 +68,7 @@
     }
 
     Document.prototype.listen = function() {
-      if (this.options.templateType === 'static') {
+      if (this.options.template.type === 'static') {
         this.on('page:ready', (function(_this) {
           return function() {
             return _this.trigger('page:rendered');
@@ -88,7 +80,7 @@
           clearTimeout(_this.timers.resource);
           return _this.timers['template'] = setTimeout(function() {
             var _base;
-            return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+            return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.template.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
           }, _this.options.templateTimeout);
         };
       })(this));
@@ -99,15 +91,15 @@
           return _this.trigger('page:ready');
         };
       })(this));
-      if (this.options.templateType === 'scripted') {
+      if (this.options.template.type === 'scripted') {
         return this.on('page:ready', (function(_this) {
           return function() {
             _this.on('client:template:render:init', function() {
               clearTimeout(_this.timers.render);
               return _this.timers['extrender'] = setTimeout(function() {
                 var _base;
-                return typeof (_base = _this.server).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
-              }, _this.options.extRenderTimeout);
+                return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.template.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+              }, _this.options.template.extRenderTimeout);
             });
             return _this.on('client:template:render:done', function() {
               clearTimeout(_this.timers.render);
@@ -123,6 +115,7 @@
       var deferred, metaRequest;
       deferred = Q.defer();
       metaRequest = function() {
+        console.log($("#invoice-id").html());
         return typeof Nota !== "undefined" && Nota !== null ? Nota.getDocumentMeta() : void 0;
       };
       this.page.evaluate(metaRequest, deferred.resolve);
@@ -152,7 +145,7 @@
             _this.trigger('page:no-meta');
           }
           outputPath = _this.helper.findOutputPath({
-            defaultFilename: _this.options.defaultFilename,
+            defaultFilename: _this.options.template.defaultFilename,
             preserve: job.preserve,
             outputPath: job.outputPath,
             meta: meta
@@ -176,7 +169,7 @@
         this.loadingResources.push(request.id);
         clearTimeout(this.timers.resource);
       }
-      if ((_ref = this.server.options.logging) != null ? _ref.pageResources : void 0) {
+      if ((_ref = this.options.logging) != null ? _ref.pageResources : void 0) {
         return this.trigger('page:resource:requested');
       }
     };
@@ -190,7 +183,7 @@
         return;
       }
       this.loadingResources.splice(i, 1);
-      if ((_ref = this.server.options.logging) != null ? _ref.pageResources : void 0) {
+      if ((_ref = this.options.logging) != null ? _ref.pageResources : void 0) {
         this.trigger('page:resource:received');
       }
       if (this.loadingResources.length === 0) {
@@ -199,21 +192,21 @@
           return function() {
             return _this.trigger('page:ready');
           };
-        })(this), this.options.resourceTimeout);
+        })(this), this.options.template.resourceTimeout);
       }
     };
 
     Document.prototype.onClientError = function(msg) {
       var _base;
-      if (typeof (_base = this.server).logClientError === "function") {
+      if (typeof (_base = this.logging).logClientError === "function") {
         _base.logClientError(msg);
       }
-      if (this.options.errorTimeout != null) {
+      if (this.options.template.errorTimeout != null) {
         this.timers['error'] = setTimeout((function(_this) {
           return function() {
             return _this.trigger('error-timeout', msg);
           };
-        })(this), this.options.errorTimeout);
+        })(this), this.options.template.errorTimeout);
         return this.once('all', (function(_this) {
           return function() {
             return clearTimeout(_this.timers['error']);
@@ -240,6 +233,19 @@
       if (this.pagePhases.indexOf(event) > this.pagePhases.indexOf(this.state)) {
         return this.state = event;
       }
+    };
+
+    Document.prototype.after = function(event) {
+      var deferred;
+      deferred = Q.defer();
+      if (this.state === event) {
+        deferred.resolve();
+      } else {
+        this.once(event, function() {
+          return deferred.resolve();
+        });
+      }
+      return deferred.promise;
     };
 
     Document.prototype.close = function() {
