@@ -157,7 +157,7 @@
             return _this.renderStatic(queue);
           }
         };
-      })(this));
+      })(this)).fail(this.logging.logError);
     };
 
     Nota.prototype.renderScripted = function(queue) {
@@ -178,7 +178,7 @@
             return _this.document.capture(job);
           }).then(function(meta) {
             return deferred.resolve(meta);
-          });
+          }).fail(_this.logging.logError);
           _this.document.once('error-timeout', function(err) {
             var meta;
             meta = _.extend({}, job, {
@@ -191,7 +191,7 @@
       })(this);
       postRender = (function(_this) {
         return function(meta) {
-          var finished, _base1;
+          var finished, _base1, _base2;
           finished = new Date();
           meta.duration = finished - start;
           if (meta.fail != null) {
@@ -201,6 +201,9 @@
           }
           if (typeof (_base1 = _this.logging).log === "function") {
             _base1.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
+          }
+          if (typeof (_base2 = _this.logging).log === "function") {
+            _base2.log("Output path: " + (Path.resolve(meta.outputPath)));
           }
           if (!queue.isFinished()) {
             return _this.renderScripted(queue);

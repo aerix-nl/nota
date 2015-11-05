@@ -162,6 +162,7 @@ module.exports = class Nota
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderStatic queue
+    .fail @logging.logError
 
   renderScripted: (queue)->
     if (inProgressJobs = queue.inProgress())
@@ -189,6 +190,7 @@ module.exports = class Nota
         @document.capture(job)
       .then (meta)->
         deferred.resolve meta
+      .fail @logging.logError
 
       @document.once 'error-timeout', (err)->
         meta = _.extend {}, job, { fail: err }
@@ -206,6 +208,7 @@ module.exports = class Nota
         queue.jobCompleted  job, meta
 
       @logging.log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
+      @logging.log? "Output path: #{Path.resolve meta.outputPath}"
 
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.

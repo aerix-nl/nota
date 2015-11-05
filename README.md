@@ -172,7 +172,7 @@ soon](https://github.com/ariya/phantomjs/pull/13171), but no fix committed
 yet. For now we recommend making links that have the URL as the text so users
 can copy-paste that.
 
-#### Hyperlink expansion
+#### Hyperlink length expansion
 It seems that as an attempt to compensate for the lack of links, PhantomJS takes
 the `href` value of a link and suffixes it to the link's inner HTML, rendering
 a link like `<a href="www.somewhere.com">link</a>` into `<a
@@ -186,21 +186,40 @@ span.hyperlink` in your template CSS.
 #### Selectable text
 It seems PhantomJS only generates PDFs with selectable text on Linux due to a
 [bug](https://github.com/ariya/phantomjs/issues/10373). For now we recommend
-using the Vagrant spec to run Nota virtualized on Linux. Needs checking if
-solved in PhantomJS 2.
+setting up Nota on a Linux server, or using Vagran to run Nota in a Linux
+virtualization on MacOSX or Windows. Needs checking if solved in PhantomJS 2.
 
-#### Fonts
+#### Custom fonts
 Due to [a bug](https://github.com/ariya/phantomjs/issues/10592) in
 PhantomJS, the loading of webfonts (even if they're locally hosted) seems
-broken. For now you'll have to install the fonts on the system itself, and
-then they'll load as expected. Needs checking if solved in PhantomJS 2.
+broken. For now you'll have to install the fonts on the system itself. This
+works for MacOSX and Windows. Though on Linux PhantomJS should query to font
+from Freedesktop.org's Fontconfig, I've been unable to get this to work.
+Installing a font should be possible by converting the font files to Type1,
+placing them in `/usr/share/fonts/type1`, rebuilding the font cache. It's
+recommended to use `fc-cache -fv` to force it and print the verbose output so
+you can check whether it picked up the new fonts and indexed it. Check that
+your font is now recognized with `fc-match`. Despite all these signs of the
+font being available, I've been unable to get PhantomJS to pick up new fonts
+on Linux. Check out
+[this guide](https://medium.com/@stockholmux/besting-phantomjs-font-problems-ee22795f5c0b)
+for more details of how it should be possible. Needs verification from other
+Linux users if indeed broken, and also needs checking if solved in PhantomJS
+2.
+
+#### Font weights being ignored
+It seems PhantomJS only supports use of 'normal' and 'bold' values in the CSS
+`font-weight` attribute. As a result thin fonts will be rendered with normal
+weight. Needs checking if reproducible.
 
 #### Color definitions revert to black
 It looks like all use of color in the CSS (for text/borders/backgrounds etc.)
 is lost and reverted to black upon rendering. This can be worked around for
 the while by adding the `!important` keyword after all the color declaration,
-e.g. like this `h1 { color: red !important }`. More research needed on why and
-other solutions.
+e.g. like this `h1 { color: red !important }`. Note that this only works for
+elements where the selector directly applies. Subelements who would normally
+inherit a color definition still revert back to black. More research needed on
+why and other solutions.
 
 #### Paper size and zoom factor
 It looks like when rendering with PhantomJS 1.9.x the page receives a zoom
@@ -213,6 +232,16 @@ zoomfactor setter. For now we recommend either creating extra space for
 content flow or making a CSS stylesheet for print, with a smaller font size to
 counter this.
 
+#### Styling page header and footer
+It's possible to render page numbers on your page by setting
+`Nota.setDocumentHeader` and `Nota.setDocumentFooter` with `{ content:
+"<Handlebars.JS HTML template>", height: "x", width: "y" }` (width is
+optional). See an example here. The variables `pageNum` and `numPages` are
+available in the template for formatting page numbers. Both seem to be
+rendered as new separate pages during capturetime, which are then inserted in
+the template, so no styling or scripting of the original template is
+accessible. Limitation of
+PhantomJS.
 
 ## Meta
 

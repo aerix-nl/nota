@@ -10,22 +10,21 @@
     }
   });
 
-  define(['backbone', 'json'], function() {
+  define(['backbone', 'underscore', 'json'], function(Backbone, _) {
     var NotaClient;
     requirejs.config({});
     NotaClient = (function() {
       NotaClient.prototype.phantomRuntime = window._phantom != null;
 
-      NotaClient.prototype.documentMeta = {
-        data: null,
-        fn: null,
-        context: null
-      };
+      NotaClient.prototype.document = {};
 
       function NotaClient() {
         _.extend(this, Backbone.Events);
         this.on("all", this.logEvent, this);
         this.trigger('init');
+        if (this.phantomRuntime) {
+          $('body').addClass('phantomRuntime');
+        }
         this.trigger('loaded');
         this;
       }
@@ -38,41 +37,57 @@
         }
       };
 
-      NotaClient.prototype.setDocumentMeta = function(documentMeta, context) {
-        if (documentMeta == null) {
-          throw new Error("Document meta not defined");
-        }
-        if (typeof documentMeta === 'function') {
-          this.documentMeta.fn = documentMeta;
-          if (context != null) {
-            return this.documentMeta.context = context;
-          }
+      NotaClient.prototype.logError = function(error, contextMessage) {
+        if (this.phantomRuntime) {
+          error.message = "" + contextMessage + "\n" + error.message + "\n" + error.stack;
         } else {
-          return this.documentMeta.data = documentMeta;
+          console.error(contextMessage);
         }
+        throw error;
+      };
+
+      NotaClient.prototype.documentIsMultipage = function() {
+        return this.documentPages() > 1;
+      };
+
+      NotaClient.prototype.documentPages = function() {
+        var pages, toMMconversion;
+        toMMconversion = 3.187864111498258;
+        return pages = ($('body').height() / toMMconversion) / 287;
+      };
+
+      NotaClient.prototype.setDocument = function(property, value) {
+        if (property == null) {
+          throw new Error("Document property to set is not defined");
+        }
+        if (value == null) {
+          throw new Error("Document property value is not defined");
+        }
+        return this.document[property] = value;
+      };
+
+      NotaClient.prototype.getDocument = function(property) {
+        if (property == null) {
+          throw new Error("Document property is not defined");
+        }
+        return this.document[property];
+      };
+
+      NotaClient.prototype.setDocumentMeta = function(data, context) {
+        if (typeof data === "function") {
+          data = data.call(context);
+        }
+        return this.setDocument('meta', data);
       };
 
       NotaClient.prototype.getDocumentMeta = function() {
-        var ctx;
-        if (this.documentMeta.fn != null) {
-          ctx = this.documentMeta.context;
-          if (ctx != null) {
-            return this.documentMeta.fn.call(ctx);
-          } else {
-            return this.documentMeta.fn();
-          }
-        } else {
-          return this.documentMeta.data;
-        }
+        return this.getDocument('meta');
       };
 
-      NotaClient.prototype.getData = function(callback, force) {
+      NotaClient.prototype.getData = function(callback) {
         var err;
-        if (force == null) {
-          force = true;
-        }
-        if (!force && (this.data != null)) {
-          return typeof callback === "function" ? callback(this.data) : void 0;
+        if (callback == null) {
+          throw new Error("Callback that receives the data is required when using this method.");
         }
         try {
           this.trigger('data:fetching');
@@ -80,7 +95,7 @@
             return function(data) {
               _this.data = data;
               _this.trigger('data:loaded');
-              return typeof callback === "function" ? callback(_this.data) : void 0;
+              return callback(_this.data);
             };
           })(this));
         } catch (_error) {

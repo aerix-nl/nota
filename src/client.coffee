@@ -14,7 +14,7 @@ requirejs.config {
     'requirejs':  '/nota/vendor/requirejs/require'
 }
 
-define ['backbone', 'json'], ->
+define ['backbone', 'underscore', 'json'], (Backbone, _)->
   # Reset require.js because we're done loading our dependencies
   # And so that any use hereafter require has a clean slate.
   # In this case the template will load after Nota client, which
@@ -27,22 +27,9 @@ define ['backbone', 'json'], ->
     # window._phatom is defined it we're running in PhantomJS
     phantomRuntime: window._phantom?
 
-    # Document meta is where the template can provide Nota with meta data of
-    # the document. This read used by Nota server before a .PDF capture to
-    # obtain meta data of the current document state. This also provides a way
-    # for Nota to 'ask' if there are suggestions for the .PDF filename. The
-    # variable can be either a hash or a function that yields an equivalently
-    # formatted hash.
-    #
-    # meta data hash example = {
-    #   id: '44'
-    #   documentTitle: 'Invoice 2013.0044'
-    #   filename: 'Invoice_2014.0044-Client_Name.pdf'
-    # }
-    documentMeta:
-      data:     null
-      fn:       null
-      context:  null
+    # key/value store for the backend to retrieve data from like document meta data (used for
+    # proposing filename), page header and footer template, etc.
+    document: {}
 
     constructor: ->
       _.extend(@, Backbone.Events)
@@ -51,6 +38,9 @@ define ['backbone', 'json'], ->
       @on "all", @logEvent, @
       @trigger 'init'
 
+      # So that stylists can condition on running in PhantomJS or browser
+      if @phantomRuntime then $('body').addClass 'phantomRuntime'
+
       @trigger 'loaded'
       @
 
@@ -58,42 +48,78 @@ define ['backbone', 'json'], ->
       if @phantomRuntime then window.callPhantom(message)
       else console.info(message)
 
-    # documentMeta should either be a hash as specified in the property, or a
-    # function that yields an equivalent hash. Optionally you can provide a
-    # context for this function to be evaluated in.
-    setDocumentMeta: (documentMeta, context)->
-      unless documentMeta? then throw new Error("Document meta not defined")
+    # Call with either a message and the original error, or only the error (as the first argument)
+    logError: (error, contextMessage)->
 
-      if typeof documentMeta is 'function'
-        @documentMeta.fn = documentMeta
+      if @phantomRuntime
+        # From here on it's upwards through the PhantomJS's layer. Though errors get caught by PhantomJS and processed (even incorrectly as "onConsoleError" events), it sadly only keeps the error message. The valuable stack trace information is lost. So we'll have to compose a comprehensive error message with a stack trace ourselves.
+        error.message = """
+        #{contextMessage}
+        #{error.message}
+        #{error.stack}
+        """
 
-        # The document meta function will often depend on the template as it's
-        # context
-        if context? then @documentMeta.context = context
+      else # we're just running in the browser
+        # Console.error is only valuable when running in the browser. Only then does it really get
+        # handled by the console error channel. Sadly, PhantomJS seems to ignore the channel
+        # categories and just fires everything like a "onConsoleLog" event, instead of an
+        # "onConsoleError". Only thrown errors get fired as an "onConsoleEror" event.
+        console.error contextMessage
 
-      else @documentMeta.data = documentMeta
+      throw error
+
+    documentIsMultipage: ->
+      @documentPages() > 1
+
+    # Caculates to how many pages this document will be captured in PDF
+    documentPages: ->
+      toMMconversion = 3.187864111498258 # 1mm is 3.187864111498258px
+
+      # TODO:
+      # Find out why PhantomJS doesn't comply with the standard ISO216 A4
+      # height, where a single page is 297mm. Somehow a 297mm page overflows
+      # to 2 pages during capture, due to what seems like either a zoom factor
+      # applied, or an unwanted change in page size settings. Apparently 287mm
+      # is what PhantomJS considers A4 :/ try find fix ...
+      pages = ($('body').height() / toMMconversion) / 287
+
+    # Key-value store for the backend (PhantomJS) to retreive data from
+    setDocument: (property, value)->
+      if not property? then throw new Error("Document property to set is not defined")
+      if not value?    then throw new Error("Document property value is not defined")
+
+      @document[property] = value
+
+    getDocument: (property)->
+      if not property? then throw new Error("Document property is not defined")
+
+      @document[property]
+
+
+    # DEPRECATED:
+    # Legacy API support. Use `setDocument('meta', value)` or
+    # `getDocument('meta')` instead. Will be removed in 3.0
+    setDocumentMeta: (data, context)->
+      if typeof data is "function" then data = data.call(context)
+      @setDocument('meta', data)
 
     getDocumentMeta: ->
-      if @documentMeta.fn?
-        ctx = @documentMeta.context
-        if ctx? then @documentMeta.fn.call(ctx)
-        else @documentMeta.fn()
-      else @documentMeta.data
+      @getDocument('meta')
+
 
     # Active:
     # Force the client to probe the server for data
     # (used when previewing/developing templates in the browser)
-    getData: (callback, force = true)->
-      # If we have a cache of the data and aren't force to get a new one
-      # return the cache
-      if not force and @data? then return callback?(@data)
+    getData: (callback)->
+      if not callback?
+        throw new Error "Callback that receives the data is required when using this method."
 
       try
         @trigger 'data:fetching'
         # Else we continue and get the data from the server
         require ['json!/nota/data'], (@data) =>
           @trigger 'data:loaded'
-          callback?(@data)
+          callback(@data)
       catch err
         console.log err.stack
 

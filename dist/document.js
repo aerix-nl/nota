@@ -1,16 +1,20 @@
 (function() {
-  var Backbone, Document, Path, Q, TemplateHelper, phantom, _,
+  var Backbone, Document, Handlebars, Path, Q, TemplateHelper, chalk, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Q = require('q');
 
   Path = require('path');
 
+  chalk = require('chalk');
+
   phantom = require('phantom');
 
   _ = require('underscore')._;
 
   Backbone = require('backbone');
+
+  Handlebars = require('handlebars');
 
   TemplateHelper = require('./template_helper');
 
@@ -22,13 +26,14 @@
       this.options = options;
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
+      this.setFooter = __bind(this.setFooter, this);
       _.extend(this, Backbone.Events);
       this.helper = new TemplateHelper(this.logging);
       this.on('all', this.setState, this);
       phantom.create((function(_this) {
         return function(phantomInstance) {
           _this.phantomInstance = phantomInstance;
-          return phantomInstance.createPage(function(page) {
+          return _this.phantomInstance.createPage(function(page) {
             _this.page = page;
             _this.loadingResources = [];
             _this.timers = {
@@ -80,8 +85,8 @@
           clearTimeout(_this.timers.resource);
           return _this.timers['template'] = setTimeout(function() {
             var _base;
-            return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.template.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
-          }, _this.options.templateTimeout);
+            return typeof (_base = _this.logging).logWarning === "function" ? _base.logWarning("Still waiting to receive " + (chalk.cyan('client:template:loaded')) + " event after " + (_this.options.template.templateTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+          }, _this.options.template.templateTimeout);
         };
       })(this));
       this.on('client:template:loaded', (function(_this) {
@@ -98,7 +103,7 @@
               clearTimeout(_this.timers.render);
               return _this.timers['extrender'] = setTimeout(function() {
                 var _base;
-                return typeof (_base = _this.loggin).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.template.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
+                return typeof (_base = _this.logging).logWarning === "function" ? _base.logWarning("Still waiting for template to finish rendering after " + (_this.options.template.extRenderTimeout / 1000) + "s. Perhaps it crashed?") : void 0;
               }, _this.options.template.extRenderTimeout);
             });
             return _this.on('client:template:render:done', function() {
@@ -111,15 +116,32 @@
       }
     };
 
-    Document.prototype.getMeta = function() {
-      var deferred, metaRequest;
+    Document.prototype.getDocumentProperty = function(property) {
+      var deferred, propertyValueRequest;
+      if (property == null) {
+        throw new Error("Document property to get is not set");
+      }
       deferred = Q.defer();
-      metaRequest = function() {
-        console.log($("#invoice-id").html());
-        return typeof Nota !== "undefined" && Nota !== null ? Nota.getDocumentMeta() : void 0;
+      propertyValueRequest = function(property) {
+        return typeof Nota !== "undefined" && Nota !== null ? Nota.getDocument(property) : void 0;
       };
-      this.page.evaluate(metaRequest, deferred.resolve);
+      this.page.evaluate(propertyValueRequest, deferred.resolve, property);
       return deferred.promise;
+    };
+
+    Document.prototype.setFooter = function(footer) {
+      var footerTemplate, paperSizeOptions, renderFooter;
+      if (footer == null) {
+        return;
+      }
+      paperSizeOptions = _.extend({}, this.options.template.paperSize);
+      footerTemplate = Handlebars.compile(footer.contents);
+      renderFooter = function(pageNum, numPages) {
+        return "<span style=\"float:right; font-family: \"DINPro\", Roboto, sans-serif; color:#8D9699 !important;\">\n  " + pageNum + " / " + numPages + "\n</span>";
+      };
+      footer.contents = this.phantomInstance.callback(renderFooter, footer.content);
+      paperSizeOptions.footer = footer;
+      return this.page.set('paperSize', paperSizeOptions);
     };
 
     Document.prototype.capture = function(job) {
@@ -136,7 +158,8 @@
           });
         }
       });
-      this.getMeta().then((function(_this) {
+      this.getDocumentProperty('footer').then(this.setFooter).fail(deferred.reject);
+      this.getDocumentProperty('meta').then((function(_this) {
         return function(meta) {
           var outputPath;
           if (meta != null) {
@@ -151,15 +174,14 @@
             meta: meta
           });
           job.outputPath = outputPath;
-          meta = _.extend(meta, job);
+          meta = _.extend({}, meta, job);
           _this.trigger('render:init');
           return _this.page.render(outputPath, function() {
             _this.trigger('render:done', meta);
             return deferred.resolve(meta);
           });
         };
-      })(this));
-      this.state = 'page:ready';
+      })(this)).fail(deferred.reject);
       return deferred.promise;
     };
 

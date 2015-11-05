@@ -33,7 +33,7 @@
 
     LogginChannels.prototype.logError = function(err) {
       console.error(this.prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + err);
-      if (err instanceof Error) {
+      if ((err instanceof Error) || (err.stack != null)) {
         return console.error(this.prefixes.nota + chalk.gray(err.stack));
       }
     };

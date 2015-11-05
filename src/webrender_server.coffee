@@ -67,7 +67,7 @@ module.exports = class Webrender
     local   = @ipLookupLocal()
     ext     = @ipLookupExt()
 
-    reject  = ->
+    reject = ->
       # If it's time to reject we see if any of both lookups has finished
       # and provide that (harvest what you can so to say).
       if local.inspect().status is "fulfilled"
@@ -139,8 +139,7 @@ module.exports = class Webrender
         console.log pdf
         res.download pdf
 
-    .fail (err)=>
-      @loggin.logError err
+    .fail @loggin.logError
 
   reqPreconditions: (req, res)->
     if not req.body.data?

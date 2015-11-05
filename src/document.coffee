@@ -1,8 +1,10 @@
 Q             = require('q')
 Path          = require('path')
+chalk         = require('chalk')
 phantom       = require('phantom')
 _             = require('underscore')._
 Backbone      = require('backbone')
+Handlebars    = require('handlebars')
 
 TemplateHelper = require('./template_helper')
 
@@ -29,7 +31,7 @@ module.exports = class Document
     @on 'all', @setState, @
 
     phantom.create ( @phantomInstance ) =>
-      phantomInstance.createPage ( @page ) =>
+      @phantomInstance.createPage ( @page ) =>
         # Keep track of all currently loading resources
         @loadingResources = []
         @timers = {
@@ -79,9 +81,9 @@ module.exports = class Document
     @on 'client:template:init', =>
       clearTimeout(@timers.resource)
       @timers['template'] = setTimeout =>
-        @loggin.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
+        @logging.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
         event after #{@options.template.templateTimeout/1000}s. Perhaps it crashed?"
-      , @options.templateTimeout
+      , @options.template.templateTimeout
 
     @on 'client:template:loaded', =>
       clearTimeout(@timers.resource)
@@ -100,7 +102,7 @@ module.exports = class Document
       @on 'client:template:render:init', =>
         clearTimeout(@timers.render)
         @timers['extrender'] = setTimeout =>
-          @loggin.logWarning? "Still waiting for template to finish rendering
+          @logging.logWarning? "Still waiting for template to finish rendering
           after #{@options.template.extRenderTimeout/1000}s. Perhaps it crashed?"
         , @options.template.extRenderTimeout
 
@@ -110,16 +112,47 @@ module.exports = class Document
         @trigger 'page:rendered'
 
   # The callback will receive the meta data as it's argument when done
-  getMeta: ->
+  getDocumentProperty: (property)->
+    if not property? then throw new Error "Document property to get is not set"
+
     deferred = Q.defer()
 
-    metaRequest = ->
-      console.log $("#invoice-id").html()
-      # Try and get meta data if Nota client is present (i.e. template loaded it)
-      Nota?.getDocumentMeta()
+    propertyValueRequest = (property)->
+      # Try and get document data if Nota client is present (i.e. template loaded it)
+      Nota?.getDocument property
 
-    @page.evaluate metaRequest, deferred.resolve
+    @page.evaluate propertyValueRequest, deferred.resolve, property
     deferred.promise
+
+  setFooter: (footer)=>
+    if not footer? then return
+
+    # Make a object clone that we can safely extend it with the current capture value
+    paperSizeOptions = _.extend( {}, @options.template.paperSize )
+
+    # Compfile the footer template
+    footerTemplate = Handlebars.compile(footer.contents)
+
+    # The function that receives the page parameters and renders them in using Handlebars.js
+    renderFooter = (pageNum, numPages)->
+      # TODO: Wait for fix so we can use non-local variables
+      # See: https://github.com/ariya/phantomjs/issues/13644#issuecomment-149048161
+      # Which would enable use of tempates like this:
+      # footerTemplate({pageNum: pagenum, numPages: numPages})
+      """
+      <span style="float:right; font-family: "DINPro", Roboto, sans-serif; color:#8D9699 !important;">
+        #{pageNum} / #{numPages}
+      </span>
+      """
+
+    # Place the rendering function that yields the footer HTML content
+    # (wrapped in a phantomInstance.callback as required)
+    footer.contents = @phantomInstance.callback renderFooter, footer.content
+
+    paperSizeOptions.footer = footer
+
+    # Time to set the new config of the PhantomJS page
+    @page.set 'paperSize', paperSizeOptions
 
   capture: (job = {})->
     deferred = Q.defer()
@@ -134,7 +167,13 @@ module.exports = class Document
       if $? then $('a').each (idx, a)->
         $(a).replaceWith $('<span class="hyperlink">'+$(a).text()+'</span>')[0]
 
-    @getMeta().then (meta)=>
+    # Optionally enable page numbering if configured by template
+    @getDocumentProperty('footer')
+    .then @setFooter
+    .fail deferred.reject
+
+    @getDocumentProperty('meta')
+    .then (meta)=>
       if meta?
         @trigger 'page:meta-fetched', meta
       else
@@ -149,7 +188,7 @@ module.exports = class Document
       # Update the meta data with the final output path and options passed to
       # this render call.
       job.outputPath = outputPath
-      meta = _.extend meta, job
+      meta = _.extend {}, meta, job
 
       @trigger 'render:init'
       # This is where the real PDF making magic happens. Credits to PhantomJS
@@ -157,7 +196,8 @@ module.exports = class Document
         @trigger 'render:done', meta
         deferred.resolve meta
 
-    @state = 'page:ready'
+    .fail deferred.reject
+
     deferred.promise
 
   onResourceRequested: ( request ) =>

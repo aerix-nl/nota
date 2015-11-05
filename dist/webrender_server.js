@@ -178,11 +178,7 @@
           console.log(pdf);
           return res.download(pdf);
         }
-      }).fail((function(_this) {
-        return function(err) {
-          return _this.loggin.logError(err);
-        };
-      })(this));
+      }).fail(this.loggin.logError);
     };
 
     Webrender.prototype.reqPreconditions = function(req, res) {
