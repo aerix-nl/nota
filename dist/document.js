@@ -137,7 +137,7 @@
       paperSizeOptions = _.extend({}, this.options.template.paperSize);
       footerTemplate = Handlebars.compile(footer.contents);
       renderFooter = function(pageNum, numPages) {
-        return "<span style=\"float:right; font-family: \"DINPro\", Roboto, sans-serif; color:#8D9699 !important;\">\n  " + pageNum + " / " + numPages + "\n</span>";
+        return "<span style=\"float:right; font-family: 'DINPro', 'Roboto', sans-serif; color:#8D9699 !important; padding-right: 21mm;\">\n  " + pageNum + " / " + numPages + "\n</span>";
       };
       footer.contents = this.phantomInstance.callback(renderFooter, footer.content);
       paperSizeOptions.footer = footer;

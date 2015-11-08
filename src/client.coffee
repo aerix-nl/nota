@@ -40,6 +40,7 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
 
       # So that stylists can condition on running in PhantomJS or browser
       if @phantomRuntime then $('body').addClass 'phantomRuntime'
+      else $('body').addClass 'browserRuntime'
 
       @trigger 'loaded'
       @

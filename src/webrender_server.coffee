@@ -1,6 +1,6 @@
 mkdirp     = require('mkdirp')
 bodyParser = require('body-parser')
-Mustache   = require('mustache')
+Handlebars = require('handlebars')
 chalk      = require('chalk')
 tmp        = require('tmp')
 Q          = require('q')
@@ -43,7 +43,8 @@ module.exports = class Webrender
 
   # Start listening for HTTP render requests
   start: ->
-    @webrenderTemplate = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    @webrenderTemplate = Handlebars.compile html
 
   logStart: ->
     @logging.log? "Listening at #{ chalk.cyan @url() } for POST requests"
@@ -111,7 +112,7 @@ module.exports = class Webrender
 
   # Some request handler functions to be called by Express.js
   webrenderInterface: (req, res)=>
-    html = Mustache.render @webrenderTemplate, {
+    html = @webrenderTemplate {
       template:     @helper.getTemplateDefinition @template.path
       serverPort:   @serverPort
       ip:           @ip

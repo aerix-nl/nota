@@ -24,6 +24,8 @@
         this.trigger('init');
         if (this.phantomRuntime) {
           $('body').addClass('phantomRuntime');
+        } else {
+          $('body').addClass('browserRuntime');
         }
         this.trigger('loaded');
         this;

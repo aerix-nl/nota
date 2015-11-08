@@ -189,7 +189,7 @@
         } else if ((match = _(this.getTemplatesIndex(templatesPath, false)).findWhere({
           name: templatePath
         })) != null) {
-          throw new Error("No template at '" + templatePath + "'. But we did find a template which declares it's name as such. It's path is '" + match.dir + "'");
+          templatePath = match.path;
         } else {
           throw new Error("Failed to find template " + (chalk.cyan(templatePath)) + ". Try " + (chalk.cyan('--list')) + " for an overview of available templates.");
         }

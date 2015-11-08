@@ -140,7 +140,7 @@ module.exports = class Document
       # Which would enable use of tempates like this:
       # footerTemplate({pageNum: pagenum, numPages: numPages})
       """
-      <span style="float:right; font-family: "DINPro", Roboto, sans-serif; color:#8D9699 !important;">
+      <span style="float:right; font-family: 'DINPro', 'Roboto', sans-serif; color:#8D9699 !important; padding-right: 21mm;">
         #{pageNum} / #{numPages}
       </span>
       """
