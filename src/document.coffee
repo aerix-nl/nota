@@ -41,6 +41,9 @@ module.exports = class Document
           'extrender': null
         }
 
+        @options.template.paperSize = @parsePaper(@options.template.paperSize)
+
+        console.log @options.template.paperSize
         @page.set 'paperSize',  @options.template.paperSize
         @page.set 'zoomFactor', @options.template.zoomFactor
 
@@ -133,12 +136,13 @@ module.exports = class Document
     # Compfile the footer template
     footerTemplate = Handlebars.compile(footer.contents)
 
+    # TODO: Wait for fix so we can use non-local variables
+    # See: https://github.com/ariya/phantomjs/issues/13644#issuecomment-149048161
+    # Which would enable use of tempates like this:
+    # footerTemplate({pageNum: pagenum, numPages: numPages})
+
     # The function that receives the page parameters and renders them in using Handlebars.js
     renderFooter = (pageNum, numPages)->
-      # TODO: Wait for fix so we can use non-local variables
-      # See: https://github.com/ariya/phantomjs/issues/13644#issuecomment-149048161
-      # Which would enable use of tempates like this:
-      # footerTemplate({pageNum: pagenum, numPages: numPages})
       """
       <span style="float:right; font-family: 'DINPro', 'Roboto', sans-serif; color:#8D9699 !important; padding-right: 21mm;">
         #{pageNum} / #{numPages}
@@ -153,6 +157,30 @@ module.exports = class Document
 
     # Time to set the new config of the PhantomJS page
     @page.set 'paperSize', paperSizeOptions
+
+  # In some layout/styling cases the template needs access to the full paper
+  # width (for example for margin notes or overlays), so we can't use
+  # PhantomJS's native margin system for capturing to PDF (which creates hard
+  # margins). The template can disable this and take control of the margins
+  # using it's own stylesheets. For other usecases, like multipage templates
+  # with footers, using PhantomJS' margins is the only way to create
+  # consistent top and bottom margins over all PDF pages.
+  parsePaper: (paperSize)->
+    if paperSize?.margin?.deferHorizontal
+      paperSize.margin.left = 0
+      paperSize.margin.right = 0
+
+    if paperSize?.margin?.deferVertical
+      paperSize.margin.top = 0
+      paperSize.margin.bottom = 0
+
+    if paperSize?.margin?.deferHorizontal?
+      delete paperSize.margin.deferHorizontal
+
+    if paperSize?.margin?.deferVertical?
+      delete paperSize.margin.deferVertical
+
+    paperSize
 
   capture: (job = {})->
     deferred = Q.defer()

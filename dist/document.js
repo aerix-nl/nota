@@ -42,6 +42,8 @@
               'render': null,
               'extrender': null
             };
+            _this.options.template.paperSize = _this.parsePaper(_this.options.template.paperSize);
+            console.log(_this.options.template.paperSize);
             _this.page.set('paperSize', _this.options.template.paperSize);
             _this.page.set('zoomFactor', _this.options.template.zoomFactor);
             _this.page.onConsoleMessage(function(msg) {
@@ -142,6 +144,25 @@
       footer.contents = this.phantomInstance.callback(renderFooter, footer.content);
       paperSizeOptions.footer = footer;
       return this.page.set('paperSize', paperSizeOptions);
+    };
+
+    Document.prototype.parsePaper = function(paperSize) {
+      var _ref, _ref1, _ref2, _ref3;
+      if (paperSize != null ? (_ref = paperSize.margin) != null ? _ref.deferHorizontal : void 0 : void 0) {
+        paperSize.margin.left = 0;
+        paperSize.margin.right = 0;
+      }
+      if (paperSize != null ? (_ref1 = paperSize.margin) != null ? _ref1.deferVertical : void 0 : void 0) {
+        paperSize.margin.top = 0;
+        paperSize.margin.bottom = 0;
+      }
+      if ((paperSize != null ? (_ref2 = paperSize.margin) != null ? _ref2.deferHorizontal : void 0 : void 0) != null) {
+        delete paperSize.margin.deferHorizontal;
+      }
+      if ((paperSize != null ? (_ref3 = paperSize.margin) != null ? _ref3.deferVertical : void 0 : void 0) != null) {
+        delete paperSize.margin.deferVertical;
+      }
+      return paperSize;
     };
 
     Document.prototype.capture = function(job) {
