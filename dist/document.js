@@ -1,8 +1,10 @@
 (function() {
-  var Backbone, Document, Handlebars, Path, Q, TemplateHelper, chalk, phantom, _,
+  var Backbone, Document, Handlebars, Path, Q, TemplateHelper, chalk, fs, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Q = require('q');
+
+  fs = require('fs');
 
   Path = require('path');
 
@@ -177,7 +179,7 @@
       this.getDocumentProperty('footer').then(this.setFooter).fail(deferred.reject);
       this.getDocumentProperty('meta').then((function(_this) {
         return function(meta) {
-          var outputPath;
+          var outputPath, target;
           if (meta != null) {
             _this.trigger('page:meta-fetched', meta);
           } else {
@@ -189,13 +191,43 @@
             outputPath: job.outputPath,
             meta: meta
           });
-          job.outputPath = outputPath;
-          meta = _.extend({}, meta, job);
           _this.trigger('render:init');
-          return _this.page.render(outputPath, function() {
-            _this.trigger('render:done', meta);
-            return deferred.resolve(meta);
-          });
+          target = _this.options.template.buildTarget || _this.helper.buildTarget(outputPath);
+          if (target == null) {
+            throw new Error("Build target could not be established");
+          }
+          switch (target) {
+            case 'pdf':
+              if (_this.helper.extension(outputPath) !== 'pdf') {
+                outputPath = outputPath + '.pdf';
+              }
+              return _this.page.render(outputPath, function() {
+                if (_this.helper.isFile(meta.outputPath)) {
+                  job.outputPath = outputPath;
+                  meta = _.extend({}, meta, job);
+                  _this.trigger('render:done', meta);
+                  return deferred.resolve(meta);
+                } else {
+                  return deferred.reject(new Error("PhantomJS didn't render. Cause not available: https://github.com/sgentle/phantomjs-node/issues/290"));
+                }
+              });
+            case 'html':
+              if (_this.helper.extension(outputPath) !== 'html') {
+                outputPath = outputPath + '.html';
+              }
+              return _this.page.get('content', function(html) {
+                return fs.writeFile(outputPath, html, function(error) {
+                  if (error) {
+                    return deferred.reject(error);
+                  } else {
+                    job.outputPath = outputPath;
+                    meta = _.extend({}, meta, job);
+                    _this.trigger('render:done', meta);
+                    return deferred.resolve(meta);
+                  }
+                });
+              });
+          }
         };
       })(this)).fail(deferred.reject);
       return deferred.promise;

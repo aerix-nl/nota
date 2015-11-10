@@ -273,13 +273,23 @@
       return outputPath;
     };
 
-    TemplateHelper.prototype.buildTarget = function(path) {
+    TemplateHelper.prototype.extension = function(path) {
       var extension, idx;
       idx = path != null ? path.lastIndexOf('.') : void 0;
       if (!idx > 0) {
+        throw new Error("Filename has no extension");
+      }
+      return extension = path.substring(idx + 1).toLowerCase();
+    };
+
+    TemplateHelper.prototype.buildTarget = function(path) {
+      var error, extension;
+      try {
+        extension = this.extension(path);
+      } catch (_error) {
+        error = _error;
         throw new Error("Could not derive build target from filename without extension");
       }
-      extension = path.substring(idx + 1);
       switch (extension) {
         case 'pdf':
         case 'email':
@@ -288,7 +298,7 @@
         case 'eml':
           return 'email';
         default:
-          throw new Error("No known build target for file format " + (chalk.cyan('.' + extension)));
+          throw new Error("No known build target for file extension " + (chalk.cyan('.' + extension)));
       }
     };
 

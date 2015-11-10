@@ -249,13 +249,19 @@ module.exports = class TemplateHelper
 
     outputPath
 
-  buildTarget: (path)->
+  extension: (path)->
     idx = path?.lastIndexOf('.')
 
     if not idx > 0
-      throw new Error "Could not derive build target from filename without extension"
+      throw new Error "Filename has no extension"
 
-    extension = path.substring(idx+1)
+    extension = path.substring(idx+1).toLowerCase()
+
+  buildTarget: (path)->
+    try
+      extension = @extension(path)
+    catch error
+      throw new Error "Could not derive build target from filename without extension"
 
     switch extension
       when 'pdf', 'email', 'html'
@@ -263,4 +269,4 @@ module.exports = class TemplateHelper
       when 'eml'
         'email'
       else
-        throw new Error "No known build target for file format #{chalk.cyan '.'+extension}"
+        throw new Error "No known build target for file extension #{chalk.cyan '.'+extension}"

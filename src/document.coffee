@@ -1,4 +1,5 @@
 Q             = require('q')
+fs            = require('fs')
 Path          = require('path')
 chalk         = require('chalk')
 phantom       = require('phantom')
@@ -212,16 +213,51 @@ module.exports = class Document
         outputPath:       job.outputPath
         meta:             meta
 
-      # Update the meta data with the final output path and options passed to
-      # this render call.
-      job.outputPath = outputPath
-      meta = _.extend {}, meta, job
-
       @trigger 'render:init'
-      # This is where the real PDF making magic happens. Credits to PhantomJS
-      @page.render outputPath, ( ) =>
-        @trigger 'render:done', meta
-        deferred.resolve meta
+
+      # Give priority to explicitly defined build target. Perhaps the user
+      # wants to build to target with a filename that doesn't ordinarily
+      # correspond. Otherwise, try to derive the build target from the desired
+      # filename extension, if provided.
+      target = @options.template.buildTarget or @helper.buildTarget outputPath
+      if not target? then throw new Error "Build target could not be established"
+
+      switch target
+        when 'pdf'
+          # Ensure the extension is .pdf because PhantomJS (or the Node
+          # bindings) crash when it isn't.
+          if @helper.extension(outputPath) isnt 'pdf'
+            outputPath = outputPath + '.pdf'
+
+          # This is where the real PDF making magic happens. Credits to PhantomJS
+          @page.render outputPath, ( ) =>
+            # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/290
+            if @helper.isFile meta.outputPath
+              # Update the meta data with the final output path and options
+              # passed to this render call.
+              job.outputPath = outputPath
+              meta = _.extend {}, meta, job
+              @trigger 'render:done', meta
+              deferred.resolve meta
+            else
+              deferred.reject new Error "PhantomJS didn't render. Cause not
+              available: https://github.com/sgentle/phantomjs-node/issues/290"
+
+        when 'html'
+          if @helper.extension(outputPath) isnt 'html'
+            outputPath = outputPath + '.html'
+
+          @page.get 'content', (html)=>
+            fs.writeFile outputPath, html, (error)=>
+              if error
+                deferred.reject error
+              else
+                # Update the meta data with the final output path and options
+                # passed to this render call.
+                job.outputPath = outputPath
+                meta = _.extend {}, meta, job
+                @trigger 'render:done', meta
+                deferred.resolve meta
 
     .fail deferred.reject
 
