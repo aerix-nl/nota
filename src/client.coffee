@@ -53,7 +53,11 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
     logError: (error, contextMessage)->
 
       if @phantomRuntime
-        # From here on it's upwards through the PhantomJS's layer. Though errors get caught by PhantomJS and processed (even incorrectly as "onConsoleError" events), it sadly only keeps the error message. The valuable stack trace information is lost. So we'll have to compose a comprehensive error message with a stack trace ourselves.
+        # From here on it's upwards through the PhantomJS's layer. Though
+        # errors get caught by PhantomJS and processed (even incorrectly as
+        # "onConsoleError" events), it sadly only keeps the error message. The
+        # valuable stack trace information is lost. So we'll have to compose a
+        # comprehensive error message with a stack trace ourselves.
         error.message = """
         #{contextMessage}
         #{error.message}
@@ -129,6 +133,15 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
     # (used by PhantomJS during .PDF production)
     injectData: (@data)->
       @trigger 'data:injected', @data
+
+
+    # Request what we're going to build to (if rendering in PhantomJS), what
+    # the build target is (e.g. PDF, email, standalone-HTML).
+    buildTarget: ->
+      if @phantomRuntime
+        # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/292
+        window.callPhantom('req:build-target')
+
 
   # Hook ourself into the global namespace so we can be interfaced with
   this.Nota = new NotaClient()

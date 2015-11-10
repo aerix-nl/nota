@@ -72,7 +72,7 @@
     };
 
     TemplateHelper.prototype.getTemplateDefinition = function(dir, logWarnings) {
-      var bower, bowerPath, definition, definitionPath, isDefined, npm, npmPath, warningMsg, _ref;
+      var bower, bowerPath, definition, definitionPath, error, isDefined, npm, npmPath, warningMsg, _ref, _ref1, _ref2;
       if (logWarnings == null) {
         logWarnings = true;
       }
@@ -114,6 +114,24 @@
       }
       if (definition.name == null) {
         definition.name = Path.basename(dir);
+      }
+      if (definition.defaultFilename != null) {
+        try {
+          definition.buildTarget = this.buildTarget(definition.defaultFilename);
+        } catch (_error) {
+          error = _error;
+          if ((_ref1 = this.logging) != null) {
+            if (typeof _ref1.logWarning === "function") {
+              _ref1.logWarning("Couldn't derive build target from default filename: " + error);
+            }
+          }
+        }
+      } else {
+        if ((_ref2 = this.logging) != null) {
+          if (typeof _ref2.logWarning === "function") {
+            _ref2.logWarning("No default filetype specified with template definition, assuming PDF");
+          }
+        }
       }
       if (!fs.existsSync(Path.join(dir, "template.html"))) {
         definition.meta = 'not template';
@@ -253,6 +271,25 @@
         }
       }
       return outputPath;
+    };
+
+    TemplateHelper.prototype.buildTarget = function(path) {
+      var extension, idx;
+      idx = path != null ? path.lastIndexOf('.') : void 0;
+      if (!idx > 0) {
+        throw new Error("Could not derive build target from filename without extension");
+      }
+      extension = path.substring(idx + 1);
+      switch (extension) {
+        case 'pdf':
+        case 'email':
+        case 'html':
+          return extension;
+        case 'eml':
+          return 'email';
+        default:
+          throw new Error("No known build target for file format " + (chalk.cyan('.' + extension)));
+      }
     };
 
     return TemplateHelper;

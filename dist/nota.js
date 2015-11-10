@@ -70,17 +70,15 @@
       }
     };
 
-    Nota.prototype.openTemplate = function() {
+    Nota.prototype.openDocument = function() {
       var deferred;
       deferred = Q.defer();
       if (this.document == null) {
         this.document = new Nota.Document(this.server.url(), this.logging, this.options);
         this.document.on('all', this.logging.logEvent, this.logging);
-        this.document.after('page:ready').then((function(_this) {
-          return function() {
-            return deferred.resolve();
-          };
-        })(this));
+        this.document.after('page:ready').then(function() {
+          return deferred.resolve();
+        });
       } else {
         deferred.resolve();
       }
@@ -143,7 +141,7 @@
       var job, start;
       job = queue.nextJob();
       start = new Date();
-      return this.openTemplate().then((function(_this) {
+      return this.openDocument().then((function(_this) {
         return function() {
           return _this.document.capture(job);
         };
@@ -216,7 +214,7 @@
         };
       })(this);
       this.setData(job.data || job.dataPath);
-      return this.openTemplate().then(function() {
+      return this.openDocument().then(function() {
         return renderJob(job);
       }).then(postRender).fail(error);
     };

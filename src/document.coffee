@@ -43,7 +43,6 @@ module.exports = class Document
 
         @options.template.paperSize = @parsePaper(@options.template.paperSize)
 
-        console.log @options.template.paperSize
         @page.set 'paperSize',  @options.template.paperSize
         @page.set 'zoomFactor', @options.template.zoomFactor
 
@@ -52,11 +51,11 @@ module.exports = class Document
         # @page.zoomFactor = 0.9360
 
         @page.onConsoleMessage  ( msg ) => @logging.logClient msg
-        @page.set 'onError',    ( msg ) => @onClientError msg
-        @page.set 'onCallback', ( msg ) => @trigger("client:#{msg}")
-        @page.set 'onResourceRequested', @onResourceRequested
-        @page.set 'onResourceReceived',  @onResourceReceived
-        @page.set 'onTemplateInit',      @onTemplateInit
+        @page.set 'onError',              @onClientError
+        @page.set 'onCallback',           @onCallback
+        @page.set 'onResourceRequested',  @onResourceRequested
+        @page.set 'onResourceReceived',   @onResourceReceived
+        @page.set 'onTemplateInit',       @onTemplateInit
 
         @trigger 'page:init'
 
@@ -144,9 +143,9 @@ module.exports = class Document
     # The function that receives the page parameters and renders them in using Handlebars.js
     renderFooter = (pageNum, numPages)->
       """
-      <span style="float:right; font-family: 'DINPro', 'Roboto', sans-serif; color:#8D9699 !important; padding-right: 21mm;">
-        #{pageNum} / #{numPages}
-      </span>
+      <span style="float:right; font-family: 'DINPro', 'Roboto', sans-serif;
+        color:#8D9699 !important; padding-right: 21mm;"> #{pageNum} /
+        #{numPages} </span>
       """
 
     # Place the rendering function that yields the footer HTML content
@@ -182,7 +181,7 @@ module.exports = class Document
 
     paperSize
 
-  capture: (job = {})->
+  capture: (job)->
     deferred = Q.defer()
 
     # We're going to augment the job object into the job meta data object, better make a
@@ -258,7 +257,7 @@ module.exports = class Document
         @trigger 'page:ready'
       , @options.template.resourceTimeout
 
-  onClientError: (msg)->
+  onClientError: (msg)=>
     @logging.logClientError? msg
     if @options.template.errorTimeout?
       # After the error timeout we trigger an event to signal that the job
@@ -270,6 +269,15 @@ module.exports = class Document
       # On any sign of progress, cancel the timeout, because the job might
       # continue after all.
       @once 'all', => clearTimeout(@timers['error'])
+
+  onCallback: ( msg )=>
+    if msg.substring(0,4) is "req:" then @onRequest msg.substring(4)
+    else @trigger("client:#{msg}")
+
+  onRequest: (req)=>
+    if req is 'build-target'
+      # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/292
+      @options.template.buildTarget
 
   isReady: ->
     # Which ever comes first

@@ -111,6 +111,12 @@
         return this.trigger('data:injected', this.data);
       };
 
+      NotaClient.prototype.buildTarget = function() {
+        if (this.phantomRuntime) {
+          return window.callPhantom('req:build-target');
+        }
+      };
+
       return NotaClient;
 
     })();

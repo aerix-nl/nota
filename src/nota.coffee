@@ -64,13 +64,13 @@ module.exports = class Nota
       delete @document
 
   # Postcondition: a document with the current template has been loaded
-  openTemplate: ->
+  openDocument: ->
     deferred = Q.defer()
 
     if not @document?
       @document = new Nota.Document(@server.url(), @logging, @options)
       @document.on 'all', @logging.logEvent, @logging
-      @document.after('page:ready').then =>
+      @document.after('page:ready').then ->
         deferred.resolve()
     else
       deferred.resolve()
@@ -150,7 +150,7 @@ module.exports = class Nota
     job = queue.nextJob()
     start = new Date()
 
-    @openTemplate()
+    @openDocument()
     .then => @document.capture(job)
     .then (meta)=>
       finished = new Date()
@@ -227,7 +227,7 @@ module.exports = class Nota
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    @openTemplate()
+    @openDocument()
     .then -> renderJob(job)
     .then postRender
     .fail error

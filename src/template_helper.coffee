@@ -90,6 +90,16 @@ module.exports = class TemplateHelper
     # statement' so we at least have some unique identifier.
     definition.name = Path.basename(dir) unless definition.name?
 
+    # Attempt to derive build target from default filename, if it has one, and
+    # it has a dot to signify an extension.
+    if definition.defaultFilename?
+      try
+        definition.buildTarget = @buildTarget(definition.defaultFilename)
+      catch error
+        @logging?.logWarning? "Couldn't derive build target from default filename: #{error}"
+    else
+      @logging?.logWarning? "No default filetype specified with template definition, assuming PDF"
+
     # Check requirements for template
     if not fs.existsSync( Path.join dir, "template.html" )
       definition.meta = 'not template'
@@ -168,18 +178,17 @@ module.exports = class TemplateHelper
     # Find the correct template path
     if not @isTemplate(templatePath)
 
-      if @isTemplate(_templatePath =
-        "#{process.cwd()}/#{templatePath}")
+      if @isTemplate(_templatePath = "#{process.cwd()}/#{templatePath}")
         templatePath = _templatePath
 
-      else if @isTemplate(_templatePath =
-        "#{templatesPath}/#{templatePath}")
+      else if @isTemplate(_templatePath = "#{templatesPath}/#{templatePath}")
         templatePath = _templatePath
 
       else if (match = _(@getTemplatesIndex(templatesPath, false)).findWhere {name: templatePath})?
         templatePath = match.path
 
-      else throw new Error("Failed to find template #{chalk.cyan templatePath}. Try #{chalk.cyan '--list'} for an overview of available templates.")
+      else throw new Error("Failed to find template #{chalk.cyan templatePath}.
+        Try #{chalk.cyan '--list'} for an overview of available templates.")
     templatePath
 
   findDataPath: ( options ) ->
@@ -194,7 +203,8 @@ module.exports = class TemplateHelper
         dataPath = _dataPath
       else throw new Error("Failed to find data '#{dataPath}'.")
     else if _dataPath = @getExampleDataPath template.path
-      @logging?.logWarning? "No data provided. Using example data at #{chalk.cyan _dataPath} as found in template definition."
+      @logging?.logWarning? "No data provided. Using example data at
+      #{chalk.cyan _dataPath} as found in template definition."
       dataPath = _dataPath
     else
       @logging?.logWarning? "No data has been provided or example data found. If your
@@ -238,3 +248,19 @@ module.exports = class TemplateHelper
         outputPath = defaultFilename
 
     outputPath
+
+  buildTarget: (path)->
+    idx = path?.lastIndexOf('.')
+
+    if not idx > 0
+      throw new Error "Could not derive build target from filename without extension"
+
+    extension = path.substring(idx+1)
+
+    switch extension
+      when 'pdf', 'email', 'html'
+        extension
+      when 'eml'
+        'email'
+      else
+        throw new Error "No known build target for file format #{chalk.cyan '.'+extension}"

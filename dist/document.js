@@ -24,6 +24,9 @@
     function Document(templateUrl, logging, options) {
       this.logging = logging;
       this.options = options;
+      this.onRequest = __bind(this.onRequest, this);
+      this.onCallback = __bind(this.onCallback, this);
+      this.onClientError = __bind(this.onClientError, this);
       this.onResourceReceived = __bind(this.onResourceReceived, this);
       this.onResourceRequested = __bind(this.onResourceRequested, this);
       this.setFooter = __bind(this.setFooter, this);
@@ -43,18 +46,13 @@
               'extrender': null
             };
             _this.options.template.paperSize = _this.parsePaper(_this.options.template.paperSize);
-            console.log(_this.options.template.paperSize);
             _this.page.set('paperSize', _this.options.template.paperSize);
             _this.page.set('zoomFactor', _this.options.template.zoomFactor);
             _this.page.onConsoleMessage(function(msg) {
               return _this.logging.logClient(msg);
             });
-            _this.page.set('onError', function(msg) {
-              return _this.onClientError(msg);
-            });
-            _this.page.set('onCallback', function(msg) {
-              return _this.trigger("client:" + msg);
-            });
+            _this.page.set('onError', _this.onClientError);
+            _this.page.set('onCallback', _this.onCallback);
             _this.page.set('onResourceRequested', _this.onResourceRequested);
             _this.page.set('onResourceReceived', _this.onResourceReceived);
             _this.page.set('onTemplateInit', _this.onTemplateInit);
@@ -139,7 +137,7 @@
       paperSizeOptions = _.extend({}, this.options.template.paperSize);
       footerTemplate = Handlebars.compile(footer.contents);
       renderFooter = function(pageNum, numPages) {
-        return "<span style=\"float:right; font-family: 'DINPro', 'Roboto', sans-serif; color:#8D9699 !important; padding-right: 21mm;\">\n  " + pageNum + " / " + numPages + "\n</span>";
+        return "<span style=\"float:right; font-family: 'DINPro', 'Roboto', sans-serif;\n  color:#8D9699 !important; padding-right: 21mm;\"> " + pageNum + " /\n  " + numPages + " </span>";
       };
       footer.contents = this.phantomInstance.callback(renderFooter, footer.content);
       paperSizeOptions.footer = footer;
@@ -167,9 +165,6 @@
 
     Document.prototype.capture = function(job) {
       var deferred;
-      if (job == null) {
-        job = {};
-      }
       deferred = Q.defer();
       job = _.extend({}, job);
       this.page.evaluate(function() {
@@ -255,6 +250,20 @@
             return clearTimeout(_this.timers['error']);
           };
         })(this));
+      }
+    };
+
+    Document.prototype.onCallback = function(msg) {
+      if (msg.substring(0, 4) === "req:") {
+        return this.onRequest(msg.substring(4));
+      } else {
+        return this.trigger("client:" + msg);
+      }
+    };
+
+    Document.prototype.onRequest = function(req) {
+      if (req === 'build-target') {
+        return this.options.template.buildTarget;
       }
     };
 
