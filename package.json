@@ -38,6 +38,7 @@
     "express": "4.8.5",
     "externalip": "^1.0.0",
     "handlebars": "^4.0.4",
+    "inliner": "^1.4.0",
     "mkdirp": "^0.5.0",
     "phantom": "^0.7.2",
     "q": "~1.0.1",

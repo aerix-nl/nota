@@ -2,7 +2,9 @@ Q             = require('q')
 fs            = require('fs')
 Path          = require('path')
 chalk         = require('chalk')
+cheerio       = require('cheerio')
 phantom       = require('phantom')
+Inliner       = require('inliner')
 _             = require('underscore')._
 Backbone      = require('backbone')
 Handlebars    = require('handlebars')
@@ -25,7 +27,7 @@ module.exports = class Document
     'page:rendered'
   ]
 
-  constructor: ( templateUrl, @logging, @options ) ->
+  constructor: ( @templateUrl, @logging, @options ) ->
     _.extend(@, Backbone.Events)
     @helper = new TemplateHelper(@logging)
 
@@ -60,7 +62,7 @@ module.exports = class Document
 
         @trigger 'page:init'
 
-        @page.open templateUrl, ( status ) =>
+        @page.open @templateUrl, ( status ) =>
 
           if status is 'success'
             @trigger 'page:opened'
@@ -232,7 +234,7 @@ module.exports = class Document
           # This is where the real PDF making magic happens. Credits to PhantomJS
           @page.render outputPath, ( ) =>
             # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/290
-            if @helper.isFile meta.outputPath
+            if @helper.isFile outputPath
               # Update the meta data with the final output path and options
               # passed to this render call.
               job.outputPath = outputPath
@@ -248,16 +250,51 @@ module.exports = class Document
             outputPath = outputPath + '.html'
 
           @page.get 'content', (html)=>
-            fs.writeFile outputPath, html, (error)=>
-              if error
-                deferred.reject error
-              else
-                # Update the meta data with the final output path and options
-                # passed to this render call.
-                job.outputPath = outputPath
-                meta = _.extend {}, meta, job
-                @trigger 'render:done', meta
-                deferred.resolve meta
+            $ = cheerio.load html
+
+            # Now that we have the pure HTML, we remove all script tags
+            # because we're going for a static HTML document anyway. Don't
+            # need to include these anymore.
+            $('script').remove()
+
+            # Also, we'll have to resolve the relative URL's of all locally
+            # served assets so that Inliner will be able to load those from
+            # the currently running Nota instance. But we shouldn't touch
+            # anything that references or sources something external already
+            # (those will start with `http://` or some other protocol)
+            protocolRegex = /\w*(\-\w*)*:/
+
+            attributePrefix = (attribute)=>
+              for element in $('['+attribute+']')
+                element = $(element)
+                # If it doesn't start with e.g. https://
+                if not (element.attr(attribute).search(protocolRegex) is 0)
+                  # Then we prefix the URL
+                  element.attr( attribute, @templateUrl + element.attr(attribute) )
+
+            attributePrefix('href')
+            attributePrefix('src')
+
+            html = $.html()
+
+            # Now we just need to embed all the external stylesheets,
+            # images and other resources into the HTML file so it's stand
+            # alone and can be viewed offline and saved as a single file.
+            # Easy peasy thanks to Inliner!
+            new Inliner html, (error, html)=>
+              if error? then deferred.reject error
+
+              # Overwrite it again, now it's final
+              fs.writeFile outputPath, html, (error)=>
+                if error
+                  deferred.reject error
+                else
+                  # Update the meta data with the final output path and
+                  # options passed to this render call.
+                  job.outputPath = outputPath
+                  meta = _.extend {}, meta, job
+                  @trigger 'render:done', meta
+                  deferred.resolve meta
 
     .fail deferred.reject
 

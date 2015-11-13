@@ -1,5 +1,5 @@
 (function() {
-  var Backbone, Document, Handlebars, Path, Q, TemplateHelper, chalk, fs, phantom, _,
+  var Backbone, Document, Handlebars, Inliner, Path, Q, TemplateHelper, chalk, cheerio, fs, phantom, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Q = require('q');
@@ -10,7 +10,11 @@
 
   chalk = require('chalk');
 
+  cheerio = require('cheerio');
+
   phantom = require('phantom');
+
+  Inliner = require('inliner');
 
   _ = require('underscore')._;
 
@@ -24,6 +28,7 @@
     Document.prototype.pagePhases = ['page:init', 'page:opened', 'client:init', 'client:loaded', 'client:template:init', 'client:template:loaded', 'page:ready', 'client:template:render:init', 'client:template:render:done', 'page:rendered'];
 
     function Document(templateUrl, logging, options) {
+      this.templateUrl = templateUrl;
       this.logging = logging;
       this.options = options;
       this.onRequest = __bind(this.onRequest, this);
@@ -59,7 +64,7 @@
             _this.page.set('onResourceReceived', _this.onResourceReceived);
             _this.page.set('onTemplateInit', _this.onTemplateInit);
             _this.trigger('page:init');
-            return _this.page.open(templateUrl, function(status) {
+            return _this.page.open(_this.templateUrl, function(status) {
               if (status === 'success') {
                 _this.trigger('page:opened');
                 return _this.listen();
@@ -202,7 +207,7 @@
                 outputPath = outputPath + '.pdf';
               }
               return _this.page.render(outputPath, function() {
-                if (_this.helper.isFile(meta.outputPath)) {
+                if (_this.helper.isFile(outputPath)) {
                   job.outputPath = outputPath;
                   meta = _.extend({}, meta, job);
                   _this.trigger('render:done', meta);
@@ -216,14 +221,47 @@
                 outputPath = outputPath + '.html';
               }
               return _this.page.get('content', function(html) {
+                var $, attributePrefix, protocolRegex;
+                $ = cheerio.load(html);
+                $('script').remove();
+                protocolRegex = /\w*(\-\w*)*:/;
+                attributePrefix = function(attribute) {
+                  var element, _i, _len, _ref, _results;
+                  _ref = $('[' + attribute + ']');
+                  _results = [];
+                  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    element = _ref[_i];
+                    element = $(element);
+                    if (!(element.attr(attribute).search(protocolRegex) === 0)) {
+                      _results.push(element.attr(attribute, _this.templateUrl + element.attr(attribute)));
+                    } else {
+                      _results.push(void 0);
+                    }
+                  }
+                  return _results;
+                };
+                attributePrefix('href');
+                attributePrefix('src');
+                html = $.html();
                 return fs.writeFile(outputPath, html, function(error) {
                   if (error) {
                     return deferred.reject(error);
                   } else {
-                    job.outputPath = outputPath;
-                    meta = _.extend({}, meta, job);
-                    _this.trigger('render:done', meta);
-                    return deferred.resolve(meta);
+                    return new Inliner(outputPath, function(error, html) {
+                      if (error != null) {
+                        deferred.reject(error);
+                      }
+                      return fs.writeFile(outputPath, html, function(error) {
+                        if (error) {
+                          return deferred.reject(error);
+                        } else {
+                          job.outputPath = outputPath;
+                          meta = _.extend({}, meta, job);
+                          _this.trigger('render:done', meta);
+                          return deferred.resolve(meta);
+                        }
+                      });
+                    });
                   }
                 });
               });
