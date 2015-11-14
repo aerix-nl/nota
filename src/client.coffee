@@ -135,10 +135,15 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
       @trigger 'data:injected', @data
 
 
+    setBuildTarget: (target)->
+      @buildTarget = target
+
     # Request what we're going to build to (if rendering in PhantomJS), what
     # the build target is (e.g. PDF, email, standalone-HTML).
-    buildTarget: ->
-      if @phantomRuntime
+    getBuildTarget: ->
+      if @buildTarget?
+        @buildTarget
+      else if @phantomRuntime
         # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/292
         window.callPhantom('req:build-target')
 

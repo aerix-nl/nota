@@ -129,22 +129,45 @@ module.exports = class Document
     @page.evaluate propertyValueRequest, deferred.resolve, property
     deferred.promise
 
+  # Place HTML in the parent document, convert CSS styles to fixed computed
+  # style declarations, and return HTML. (required for headers/footers, which
+  # exist outside of the HTML document, and have trouble getting styling
+  # otherwise)
+  sampleStyles: (html)->
+    host = document.createElement('div')
+    # Silly hack, or PhantomJS will 'blank' the main document for some reason
+    host.setAttribute('style', 'display:none;')
+    host.innerHTML = html
+
+    # Append to get styling of parent page
+    document.body.appendChild(host)
+
+    elements = host.getElementsByTagName('*')
+    # Iterate in reverse order (depth first) so that styles do not impact eachother
+    i = elements.length - 1
+    while i >= 0
+      elements[i].setAttribute('style', window.getComputedStyle(elements[i], null).cssText)
+      i = i - 1
+
+    # Remove from parent page again, so we're clean
+    document.body.removeChild(host)
+    return host.innerHTML
+
   setFooter: (footer)=>
     if not footer? then return
 
     # Make a object clone that we can safely extend it with the current capture value
     paperSizeOptions = _.extend( {}, @options.template.paperSize )
 
-    # Compfile the footer template
-    footerTemplate = Handlebars.compile(footer.contents)
+    # Apply template styles to footer HTML
+    # template = @page.evaluate(@sampleStyles, footer.contents)
 
-    # TODO: Wait for fix so we can use non-local variables
-    # See: https://github.com/ariya/phantomjs/issues/13644#issuecomment-149048161
-    # Which would enable use of tempates like this:
-    # footerTemplate({pageNum: pagenum, numPages: numPages})
-
-    # The function that receives the page parameters and renders them in using Handlebars.js
+    # The function that receives the page parameters and renders them in
     renderFooter = (pageNum, numPages)->
+      # TODO: Wait for fix so we can use non-local variables
+      # See: https://github.com/ariya/phantomjs/issues/13644#issuecomment-149048161
+      # Which would enable use of tempates like this:
+      # footerTemplate({pageNum: pagenum, numPages: numPages})
       """
       <span style="float:right; font-family: 'DINPro', 'Roboto', sans-serif;
         color:#8D9699 !important; padding-right: 21mm;"> #{pageNum} /
@@ -153,7 +176,7 @@ module.exports = class Document
 
     # Place the rendering function that yields the footer HTML content
     # (wrapped in a phantomInstance.callback as required)
-    footer.contents = @phantomInstance.callback renderFooter, footer.content
+    footer.contents = @phantomInstance.callback renderFooter
 
     paperSizeOptions.footer = footer
 
@@ -185,6 +208,15 @@ module.exports = class Document
     paperSize
 
   capture: (job)->
+    # Give priority to explicitly defined build target. Perhaps the user
+    # wants to build to target with a filename that doesn't ordinarily
+    # correspond. Otherwise, try to derive the build target from the desired
+    # filename extension, if provided.
+    target = @options.template.buildTarget or @helper.buildTarget outputPath
+    if not target? then throw new Error "Build target could not be established"
+
+    @page.evaluate @setBuildTarget, target
+
     deferred = Q.defer()
 
     # We're going to augment the job object into the job meta data object, better make a
@@ -217,12 +249,6 @@ module.exports = class Document
 
       @trigger 'render:init'
 
-      # Give priority to explicitly defined build target. Perhaps the user
-      # wants to build to target with a filename that doesn't ordinarily
-      # correspond. Otherwise, try to derive the build target from the desired
-      # filename extension, if provided.
-      target = @options.template.buildTarget or @helper.buildTarget outputPath
-      if not target? then throw new Error "Build target could not be established"
 
       switch target
         when 'pdf'
@@ -351,6 +377,9 @@ module.exports = class Document
     if req is 'build-target'
       # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/292
       @options.template.buildTarget
+
+  setBuildTargetClient: (target)->
+    Nota?.setBuildTarget(target)
 
   isReady: ->
     # Which ever comes first

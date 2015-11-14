@@ -136,17 +136,32 @@
       return deferred.promise;
     };
 
+    Document.prototype.sampleStyles = function(html) {
+      var elements, host, i;
+      host = document.createElement('div');
+      host.setAttribute('style', 'display:none;');
+      host.innerHTML = html;
+      document.body.appendChild(host);
+      elements = host.getElementsByTagName('*');
+      i = elements.length - 1;
+      while (i >= 0) {
+        elements[i].setAttribute('style', window.getComputedStyle(elements[i], null).cssText);
+        i = i - 1;
+      }
+      document.body.removeChild(host);
+      return host.innerHTML;
+    };
+
     Document.prototype.setFooter = function(footer) {
-      var footerTemplate, paperSizeOptions, renderFooter;
+      var paperSizeOptions, renderFooter;
       if (footer == null) {
         return;
       }
       paperSizeOptions = _.extend({}, this.options.template.paperSize);
-      footerTemplate = Handlebars.compile(footer.contents);
       renderFooter = function(pageNum, numPages) {
         return "<span style=\"float:right; font-family: 'DINPro', 'Roboto', sans-serif;\n  color:#8D9699 !important; padding-right: 21mm;\"> " + pageNum + " /\n  " + numPages + " </span>";
       };
-      footer.contents = this.phantomInstance.callback(renderFooter, footer.content);
+      footer.contents = this.phantomInstance.callback(renderFooter);
       paperSizeOptions.footer = footer;
       return this.page.set('paperSize', paperSizeOptions);
     };
@@ -171,7 +186,12 @@
     };
 
     Document.prototype.capture = function(job) {
-      var deferred;
+      var deferred, target;
+      target = this.options.template.buildTarget || this.helper.buildTarget(outputPath);
+      if (target == null) {
+        throw new Error("Build target could not be established");
+      }
+      this.page.evaluate(this.setBuildTarget, target);
       deferred = Q.defer();
       job = _.extend({}, job);
       this.page.evaluate(function() {
@@ -184,7 +204,7 @@
       this.getDocumentProperty('footer').then(this.setFooter).fail(deferred.reject);
       this.getDocumentProperty('meta').then((function(_this) {
         return function(meta) {
-          var outputPath, target;
+          var outputPath;
           if (meta != null) {
             _this.trigger('page:meta-fetched', meta);
           } else {
@@ -197,10 +217,6 @@
             meta: meta
           });
           _this.trigger('render:init');
-          target = _this.options.template.buildTarget || _this.helper.buildTarget(outputPath);
-          if (target == null) {
-            throw new Error("Build target could not be established");
-          }
           switch (target) {
             case 'pdf':
               if (_this.helper.extension(outputPath) !== 'pdf') {
@@ -243,26 +259,20 @@
                 attributePrefix('href');
                 attributePrefix('src');
                 html = $.html();
-                return fs.writeFile(outputPath, html, function(error) {
-                  if (error) {
-                    return deferred.reject(error);
-                  } else {
-                    return new Inliner(outputPath, function(error, html) {
-                      if (error != null) {
-                        deferred.reject(error);
-                      }
-                      return fs.writeFile(outputPath, html, function(error) {
-                        if (error) {
-                          return deferred.reject(error);
-                        } else {
-                          job.outputPath = outputPath;
-                          meta = _.extend({}, meta, job);
-                          _this.trigger('render:done', meta);
-                          return deferred.resolve(meta);
-                        }
-                      });
-                    });
+                return new Inliner(html, function(error, html) {
+                  if (error != null) {
+                    deferred.reject(error);
                   }
+                  return fs.writeFile(outputPath, html, function(error) {
+                    if (error) {
+                      return deferred.reject(error);
+                    } else {
+                      job.outputPath = outputPath;
+                      meta = _.extend({}, meta, job);
+                      _this.trigger('render:done', meta);
+                      return deferred.resolve(meta);
+                    }
+                  });
                 });
               });
           }
@@ -335,6 +345,10 @@
       if (req === 'build-target') {
         return this.options.template.buildTarget;
       }
+    };
+
+    Document.prototype.setBuildTargetClient = function(target) {
+      return typeof Nota !== "undefined" && Nota !== null ? Nota.setBuildTarget(target) : void 0;
     };
 
     Document.prototype.isReady = function() {
