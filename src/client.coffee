@@ -7,6 +7,7 @@ requirejs.config {
     'backbone':   '/nota/vendor/backbone/backbone'
     'jquery':     '/nota/vendor/jquery/dist/jquery'
     'underscore': '/nota/vendor/underscore/underscore'
+    'bluebird':   '/nota/vendor/bluebird/js/browser/bluebird'
 
     # RequireJS json! deps
     'json':       '/nota/vendor/requirejs-plugins/src/json'
@@ -14,7 +15,7 @@ requirejs.config {
     'requirejs':  '/nota/vendor/requirejs/require'
 }
 
-define ['backbone', 'underscore', 'json'], (Backbone, _)->
+define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
   # Reset require.js because we're done loading our dependencies
   # And so that any use hereafter require has a clean slate.
   # In this case the template will load after Nota client, which
@@ -71,6 +72,7 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
         # "onConsoleError". Only thrown errors get fired as an "onConsoleEror" event.
         console.error contextMessage
 
+      console.log 44
       throw error
 
     documentIsMultipage: ->
@@ -147,6 +149,21 @@ define ['backbone', 'underscore', 'json'], (Backbone, _)->
         # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/292
         window.callPhantom('req:build-target')
 
+    promiseTemplateInit: ->
+      @trigger 'template:init'
+      new Promise()
+      .then (value)=>
+        @trigger 'template:loaded', value
+      .catch (error)=>
+        @trigger 'template:error', error
+
+    promiseTempalteRender: ->
+      @trigger 'template:render:start'
+      new Promise()
+      .then (value)=>
+        @trigger 'template:render:done', value
+      .catch (error)=>
+        @trigger 'template:render:error', error
 
   # Hook ourself into the global namespace so we can be interfaced with
   this.Nota = new NotaClient()

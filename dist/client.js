@@ -4,13 +4,14 @@
       'backbone': '/nota/vendor/backbone/backbone',
       'jquery': '/nota/vendor/jquery/dist/jquery',
       'underscore': '/nota/vendor/underscore/underscore',
+      'bluebird': '/nota/vendor/bluebird/js/browser/bluebird',
       'json': '/nota/vendor/requirejs-plugins/src/json',
       'text': '/nota/vendor/requirejs-text/text',
       'requirejs': '/nota/vendor/requirejs/require'
     }
   });
 
-  define(['backbone', 'underscore', 'json'], function(Backbone, _) {
+  define(['backbone', 'underscore', 'bluebird', 'json'], function(Backbone, _, Promise) {
     var NotaClient;
     requirejs.config({});
     NotaClient = (function() {
@@ -45,6 +46,7 @@
         } else {
           console.error(contextMessage);
         }
+        console.log(44);
         throw error;
       };
 
@@ -121,6 +123,32 @@
         } else if (this.phantomRuntime) {
           return window.callPhantom('req:build-target');
         }
+      };
+
+      NotaClient.prototype.promiseTemplateInit = function() {
+        this.trigger('template:init');
+        return new Promise().then((function(_this) {
+          return function(value) {
+            return _this.trigger('template:loaded', value);
+          };
+        })(this))["catch"]((function(_this) {
+          return function(error) {
+            return _this.trigger('template:error', error);
+          };
+        })(this));
+      };
+
+      NotaClient.prototype.promiseTempalteRender = function() {
+        this.trigger('template:render:start');
+        return new Promise().then((function(_this) {
+          return function(value) {
+            return _this.trigger('template:render:done', value);
+          };
+        })(this))["catch"]((function(_this) {
+          return function(error) {
+            return _this.trigger('template:render:error', error);
+          };
+        })(this));
       };
 
       return NotaClient;
