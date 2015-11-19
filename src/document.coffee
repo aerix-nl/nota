@@ -288,84 +288,87 @@ module.exports = class Document
       @trigger 'render:init'
 
       switch buildTarget
-        when 'pdf'
-          # Ensure the extension is .pdf because PhantomJS (or the Node
-          # bindings) crash when it isn't.
-          if @helper.extension(outputPath) isnt 'pdf'
-            outputPath = outputPath + '.pdf'
-
-          # This is where the real PDF making magic happens. Credits to PhantomJS
-          @page.render outputPath, ( ) =>
-            # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/290
-            if @helper.isFile outputPath
-              # Update the meta data with the final output path and options
-              # passed to this render call.
-              job.outputPath = outputPath
-              meta = _.extend {}, meta, job
-              @trigger 'render:done', meta
-              @currentJob.resolve meta
-            else
-              @currentJob.reject new Error "PhantomJS didn't render. Cause not
-              available: https://github.com/sgentle/phantomjs-node/issues/290"
-
-        when 'html'
-          # Load some HTML capturing only dependencies
-          if not cheerio? then cheerio = require('cheerio')
-          if not Inliner? then Inliner = require('inliner')
-
-          if @helper.extension(outputPath) isnt 'html'
-            outputPath = outputPath + '.html'
-
-          @page.get 'content', (html)=>
-            $ = cheerio.load html
-
-            # Now that we have the pure HTML, we remove all script tags
-            # because we're going for a static HTML document anyway. Don't
-            # need to include these anymore.
-            $('script').remove()
-
-            # Also, we'll have to resolve the relative URL's of all locally
-            # served assets so that Inliner will be able to load those from
-            # the currently running Nota instance. But we shouldn't touch
-            # anything that references or sources something external already
-            # (those will start with `http://` or some other protocol)
-            protocolRegex = /\w*(\-\w*)*:/
-
-            attributePrefix = (attribute)=>
-              for element in $('['+attribute+']')
-                element = $(element)
-                # If it doesn't start with e.g. https://
-                if not (element.attr(attribute).search(protocolRegex) is 0)
-                  # Then we prefix the URL
-                  element.attr( attribute, @templateUrl + element.attr(attribute) )
-
-            attributePrefix('href')
-            attributePrefix('src')
-
-            html = $.html()
-
-            # Now we just need to embed all the external stylesheets,
-            # images and other resources into the HTML file so it's stand
-            # alone and can be viewed offline and saved as a single file.
-            # Easy peasy thanks to Inliner!
-            new Inliner html, (error, html)=>
-              if error? then @currentJob.reject error
-
-              # Overwrite it again, now it's final
-              fs.writeFile outputPath, html, (error)=>
-                if error
-                  @currentJob.reject error
-                else
-                  # Update the meta data with the final output path and
-                  # options passed to this render call.
-                  job.outputPath = outputPath
-                  meta = _.extend {}, meta, job
-                  @trigger 'render:done', meta
-                  @currentJob.resolve meta
+        when 'pdf'  then @capturePDF(outputPath, meta, job)
+        when 'html' then @captureHTML(outputPath, meta, job)
 
     .fail @currentJob.reject
 
     @currentJob.promise
+
+  capturePDF: (outputPath, meta, job)->
+    # Ensure the extension is .pdf because PhantomJS (or the Node
+    # bindings) crash when it isn't.
+    if @helper.extension(outputPath) isnt 'pdf'
+      outputPath = outputPath + '.pdf'
+
+    # This is where the real PDF making magic happens. Credits to PhantomJS
+    @page.render outputPath, ( ) =>
+      # TODO: FIXME: https://github.com/sgentle/phantomjs-node/issues/290
+      if @helper.isFile outputPath
+        # Update the meta data with the final output path and options
+        # passed to this render call.
+        job.outputPath = outputPath
+        meta = _.extend {}, meta, job
+        @trigger 'render:done', meta
+        @currentJob.resolve meta
+      else
+        @currentJob.reject new Error "PhantomJS didn't render. Cause not
+        available: https://github.com/sgentle/phantomjs-node/issues/290"
+
+  captureHTML: (outputPath, meta, job)->
+    # Load some HTML capturing only dependencies
+    if not cheerio? then cheerio = require('cheerio')
+    if not Inliner? then Inliner = require('inliner')
+
+    if @helper.extension(outputPath) isnt 'html'
+      outputPath = outputPath + '.html'
+
+    @page.get 'content', (html)=>
+      $ = cheerio.load html
+
+      # Now that we have the pure HTML, we remove all script tags
+      # because we're going for a static HTML document anyway. Don't
+      # need to include these anymore.
+      $('script').remove()
+
+      # Also, we'll have to resolve the relative URL's of all locally
+      # served assets so that Inliner will be able to load those from
+      # the currently running Nota instance. But we shouldn't touch
+      # anything that references or sources something external already
+      # (those will start with `http://` or some other protocol)
+      protocolRegex = /\w*(\-\w*)*:/
+
+      attributePrefix = (attribute)=>
+        for element in $('['+attribute+']')
+          element = $(element)
+          # If it doesn't start with e.g. https://
+          if not (element.attr(attribute).search(protocolRegex) is 0)
+            # Then we prefix the URL
+            element.attr( attribute, @templateUrl + element.attr(attribute) )
+
+      attributePrefix('href')
+      attributePrefix('src')
+
+      html = $.html()
+
+      # Now we just need to embed all the external stylesheets,
+      # images and other resources into the HTML file so it's stand
+      # alone, can be saved as a single file and viewed offline and.
+      # Easy peasy thanks to Inliner!
+      new Inliner html, (error, html)=>
+        if error? then @currentJob.reject error
+
+        # Overwrite it again, now it's final
+        fs.writeFile outputPath, html, (error)=>
+          if error
+            @currentJob.reject error
+          else
+            # Update the meta data with the final output path and
+            # options passed to this render call.
+            job.outputPath = outputPath
+            meta = _.extend {}, meta, job
+            @trigger 'render:done', meta
+            @currentJob.resolve meta
 
   onResourceRequested: ( request ) =>
     if @loadingResources.indexOf(request.id) is -1

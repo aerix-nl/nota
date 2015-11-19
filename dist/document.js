@@ -245,7 +245,7 @@
       this.getDocumentProperty('footer').then(this.setFooter).fail(this.currentJob.reject);
       this.getDocumentProperty('meta').then((function(_this) {
         return function(meta) {
-          var Inliner, buildTarget, cheerio, error, outputPath;
+          var buildTarget, error, outputPath;
           if (meta != null) {
             _this.trigger('page:meta-fetched', meta);
           } else {
@@ -270,72 +270,85 @@
           _this.trigger('render:init');
           switch (buildTarget) {
             case 'pdf':
-              if (_this.helper.extension(outputPath) !== 'pdf') {
-                outputPath = outputPath + '.pdf';
-              }
-              return _this.page.render(outputPath, function() {
-                if (_this.helper.isFile(outputPath)) {
-                  job.outputPath = outputPath;
-                  meta = _.extend({}, meta, job);
-                  _this.trigger('render:done', meta);
-                  return _this.currentJob.resolve(meta);
-                } else {
-                  return _this.currentJob.reject(new Error("PhantomJS didn't render. Cause not available: https://github.com/sgentle/phantomjs-node/issues/290"));
-                }
-              });
+              return _this.capturePDF(outputPath, meta, job);
             case 'html':
-              if (typeof cheerio === "undefined" || cheerio === null) {
-                cheerio = require('cheerio');
-              }
-              if (typeof Inliner === "undefined" || Inliner === null) {
-                Inliner = require('inliner');
-              }
-              if (_this.helper.extension(outputPath) !== 'html') {
-                outputPath = outputPath + '.html';
-              }
-              return _this.page.get('content', function(html) {
-                var $, attributePrefix, protocolRegex;
-                $ = cheerio.load(html);
-                $('script').remove();
-                protocolRegex = /\w*(\-\w*)*:/;
-                attributePrefix = function(attribute) {
-                  var element, _i, _len, _ref, _results;
-                  _ref = $('[' + attribute + ']');
-                  _results = [];
-                  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-                    element = _ref[_i];
-                    element = $(element);
-                    if (!(element.attr(attribute).search(protocolRegex) === 0)) {
-                      _results.push(element.attr(attribute, _this.templateUrl + element.attr(attribute)));
-                    } else {
-                      _results.push(void 0);
-                    }
-                  }
-                  return _results;
-                };
-                attributePrefix('href');
-                attributePrefix('src');
-                html = $.html();
-                return new Inliner(html, function(error, html) {
-                  if (error != null) {
-                    _this.currentJob.reject(error);
-                  }
-                  return fs.writeFile(outputPath, html, function(error) {
-                    if (error) {
-                      return _this.currentJob.reject(error);
-                    } else {
-                      job.outputPath = outputPath;
-                      meta = _.extend({}, meta, job);
-                      _this.trigger('render:done', meta);
-                      return _this.currentJob.resolve(meta);
-                    }
-                  });
-                });
-              });
+              return _this.captureHTML(outputPath, meta, job);
           }
         };
       })(this)).fail(this.currentJob.reject);
       return this.currentJob.promise;
+    };
+
+    Document.prototype.capturePDF = function(outputPath, meta, job) {
+      if (this.helper.extension(outputPath) !== 'pdf') {
+        outputPath = outputPath + '.pdf';
+      }
+      return this.page.render(outputPath, (function(_this) {
+        return function() {
+          if (_this.helper.isFile(outputPath)) {
+            job.outputPath = outputPath;
+            meta = _.extend({}, meta, job);
+            _this.trigger('render:done', meta);
+            return _this.currentJob.resolve(meta);
+          } else {
+            return _this.currentJob.reject(new Error("PhantomJS didn't render. Cause not available: https://github.com/sgentle/phantomjs-node/issues/290"));
+          }
+        };
+      })(this));
+    };
+
+    Document.prototype.captureHTML = function(outputPath, meta, job) {
+      var Inliner, cheerio;
+      if (typeof cheerio === "undefined" || cheerio === null) {
+        cheerio = require('cheerio');
+      }
+      if (typeof Inliner === "undefined" || Inliner === null) {
+        Inliner = require('inliner');
+      }
+      if (this.helper.extension(outputPath) !== 'html') {
+        outputPath = outputPath + '.html';
+      }
+      return this.page.get('content', (function(_this) {
+        return function(html) {
+          var $, attributePrefix, protocolRegex;
+          $ = cheerio.load(html);
+          $('script').remove();
+          protocolRegex = /\w*(\-\w*)*:/;
+          attributePrefix = function(attribute) {
+            var element, _i, _len, _ref, _results;
+            _ref = $('[' + attribute + ']');
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              element = _ref[_i];
+              element = $(element);
+              if (!(element.attr(attribute).search(protocolRegex) === 0)) {
+                _results.push(element.attr(attribute, _this.templateUrl + element.attr(attribute)));
+              } else {
+                _results.push(void 0);
+              }
+            }
+            return _results;
+          };
+          attributePrefix('href');
+          attributePrefix('src');
+          html = $.html();
+          return new Inliner(html, function(error, html) {
+            if (error != null) {
+              _this.currentJob.reject(error);
+            }
+            return fs.writeFile(outputPath, html, function(error) {
+              if (error) {
+                return _this.currentJob.reject(error);
+              } else {
+                job.outputPath = outputPath;
+                meta = _.extend({}, meta, job);
+                _this.trigger('render:done', meta);
+                return _this.currentJob.resolve(meta);
+              }
+            });
+          });
+        };
+      })(this));
     };
 
     Document.prototype.onResourceRequested = function(request) {
