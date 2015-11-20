@@ -12,7 +12,7 @@
   });
 
   define(['backbone', 'underscore', 'bluebird', 'json'], function(Backbone, _, Promise) {
-    var NotaClient;
+    var NotaClient, root;
     requirejs.config({});
     NotaClient = (function() {
       NotaClient.prototype.phantomRuntime = window._phantom != null;
@@ -22,13 +22,13 @@
       function NotaClient() {
         _.extend(this, Backbone.Events);
         this.on("all", this.logEvent, this);
-        this.trigger('init');
+        this.trigger('client:init:start');
         if (this.phantomRuntime) {
           $('body').addClass('phantomRuntime');
         } else {
           $('body').addClass('browserRuntime');
         }
-        this.trigger('loaded');
+        this.trigger('client:init:done');
         this;
       }
 
@@ -46,7 +46,6 @@
         } else {
           console.error(contextMessage);
         }
-        console.log(44);
         throw error;
       };
 
@@ -77,28 +76,17 @@
         return this.document[property];
       };
 
-      NotaClient.prototype.setDocumentMeta = function(data, context) {
-        if (typeof data === "function") {
-          data = data.call(context);
-        }
-        return this.setDocument('meta', data);
-      };
-
-      NotaClient.prototype.getDocumentMeta = function() {
-        return this.getDocument('meta');
-      };
-
       NotaClient.prototype.getData = function(callback) {
         var err;
         if (callback == null) {
           throw new Error("Callback that receives the data is required when using this method.");
         }
         try {
-          this.trigger('data:fetching');
+          this.trigger('client:data:fetching');
           return require(['json!/nota/data'], (function(_this) {
             return function(data) {
               _this.data = data;
-              _this.trigger('data:loaded');
+              _this.trigger('client:data:loaded');
               return callback(_this.data);
             };
           })(this));
@@ -110,11 +98,7 @@
 
       NotaClient.prototype.injectData = function(data) {
         this.data = data;
-        return this.trigger('data:injected', this.data);
-      };
-
-      NotaClient.prototype.setBuildTarget = function(target) {
-        return this.buildTarget = target;
+        return this.trigger('client:data:injected', this.data);
       };
 
       NotaClient.prototype.getBuildTarget = function() {
@@ -126,19 +110,19 @@
       };
 
       NotaClient.prototype.promiseTemplateInit = function() {
-        this.trigger('template:init');
+        this.trigger('template:init:start');
         return new Promise().then((function(_this) {
           return function(value) {
-            return _this.trigger('template:loaded', value);
+            return _this.trigger('template:init:done', value);
           };
         })(this))["catch"]((function(_this) {
           return function(error) {
-            return _this.trigger('template:error', error);
+            return _this.trigger('template:init:error', error);
           };
         })(this));
       };
 
-      NotaClient.prototype.promiseTempalteRender = function() {
+      NotaClient.prototype.promiseTemplateRender = function() {
         this.trigger('template:render:start');
         return new Promise().then((function(_this) {
           return function(value) {
@@ -154,7 +138,8 @@
       return NotaClient;
 
     })();
-    return this.Nota = new NotaClient();
+    root = window || this;
+    return root.Nota = new NotaClient();
   });
 
 }).call(this);

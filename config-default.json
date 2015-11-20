@@ -24,7 +24,7 @@
       "templateInitDead":     8000,
       "templateRenderSlow":   1500,
       "templateRenderDead":   8000,
-      "errorJobAbort":        2000
+      "errorAbort":           2000
     }
   }
 }

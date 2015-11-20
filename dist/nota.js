@@ -76,19 +76,15 @@
       if (this.document == null) {
         this.document = new Nota.Document(this.server.url(), this.logging, this.options);
         this.document.on('all', this.logging.logEvent, this.logging);
-        this.document.after('page:ready').then(function() {
-          return deferred.resolve();
-        });
-      } else {
-        deferred.resolve();
       }
+      this.document.init.promise.then(deferred.resolve);
+      this.document.init.promise.fail(deferred.reject);
       return deferred.promise;
     };
 
-    Nota.prototype.setData = function(data) {
-      var _ref;
+    Nota.prototype.renderData = function(data) {
       this.server.setData(data);
-      return (_ref = this.document) != null ? _ref.injectData(data) : void 0;
+      return this.document.renderData(data);
     };
 
     Nota.prototype.queue = function() {
@@ -159,7 +155,7 @@
     };
 
     Nota.prototype.renderScripted = function(queue) {
-      var error, inProgressJobs, job, postRender, renderJob, start, _base;
+      var afterJob, inProgressJobs, job, start, _base;
       if ((inProgressJobs = queue.inProgress())) {
         if (typeof (_base = this.logging).logWarning === "function") {
           _base.logWarning("Attempting to render while already occupied with jobs:\n\n" + inProgressJobs + "\n\nRejecting this render call.\n\nFor multithreaded rendering of a queue please create another server\ninstance (don't forget to provide it with an unoccupied port).");
@@ -168,28 +164,14 @@
       }
       job = queue.nextJob();
       start = new Date();
-      renderJob = (function(_this) {
-        return function(job) {
-          var deferred;
-          deferred = Q.defer();
-          _this.document.after('page:rendered').then(function() {
-            return _this.document.capture(job);
-          }).then(function(meta) {
-            return deferred.resolve(meta);
-          }).fail(_this.logging.logError);
-          _this.document.once('error-timeout', function(err) {
-            var meta;
+      afterJob = (function(_this) {
+        return function(meta, error) {
+          var finished;
+          if (error != null) {
             meta = _.extend({}, job, {
-              fail: err
+              fail: error
             });
-            return deferred.reject(meta);
-          });
-          return deferred.promise;
-        };
-      })(this);
-      postRender = (function(_this) {
-        return function(meta) {
-          var finished, _base1, _base2;
+          }
           finished = new Date();
           meta.duration = finished - start;
           if (meta.fail != null) {
@@ -197,26 +179,22 @@
           } else {
             queue.jobCompleted(job, meta);
           }
-          if (typeof (_base1 = _this.logging).log === "function") {
-            _base1.log("Job duration: " + ((meta.duration / 1000).toFixed(2)) + " seconds");
-          }
-          if (typeof (_base2 = _this.logging).log === "function") {
-            _base2.log("Output path: " + (Path.resolve(meta.outputPath)));
-          }
           if (!queue.isFinished()) {
             return _this.renderScripted(queue);
           }
         };
       })(this);
-      error = (function(_this) {
-        return function(err) {
-          return _this.logging.logError(err);
+      return this.openDocument().then((function(_this) {
+        return function() {
+          return _this.renderData(job.data || job.dataPath);
         };
-      })(this);
-      this.setData(job.data || job.dataPath);
-      return this.openDocument().then(function() {
-        return renderJob(job);
-      }).then(postRender).fail(error);
+      })(this)).then((function(_this) {
+        return function() {
+          return _this.document.capture(job);
+        };
+      })(this)).then(afterJob)["catch"](function(error) {
+        return afterJob(null, error);
+      });
     };
 
     return Nota;

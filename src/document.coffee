@@ -13,18 +13,19 @@ TemplateHelper = require('./template_helper')
 module.exports = class Document
 
   pagePhases: [
-    # TODO: refactor these to more consistent naming:
-    'page:init'                   # page:init:start
-    'page:opened'                 # page:init:opened
-    'client:init'                 # client:init:start
-    'client:loaded'               # client:init:done
-    'client:template:init'        # client:template:init:start
-    'client:template:loaded'      # client:template:init:done
-    'page:ready'                  # page:init:done
-                                  # page:capture:init
-    'client:template:render:init' # client:template:render:start
-    'client:template:render:done' # client:template:render:done
-    'page:rendered'               # page:capture:done
+    'page:init:start'
+    'page:init:opening'
+    'page:resouces:loading'
+    'page:resouces:loaded'
+    'client:init:start'
+    'client:init:done'
+    'template:init:start'
+    'template:init:done'
+    'client:page:init:done'
+    'template:render:start'
+    'template:render:done'
+    'page:capture:start'
+    'page:capture:done'
   ]
 
   constructor: ( @templateUrl, @logging, @options ) ->
@@ -36,54 +37,51 @@ module.exports = class Document
 
     @on 'all', @setState, @
 
-    @initPhantom().then =>
-      # Prepare to keep track of all currently loading resources
-      @loadingResources = []
-      @timers = {
-        'resourcesLoaded':  null
-        'templateInit':  null
-        'render':    null
-        'extrender': null
-        'error':      null
-      }
+    # Create a promise on the initialization of PhantomJS, the loading of the
+    # template URL, and the initialization of the template (if we're hosting a
+    # scripted one).
+    @init = Q.defer()
 
-      @options.template.paperSize = @parsePaper(@options.template.paperSize)
-
-      @page.set 'paperSize',  @options.template.paperSize
-      @page.set 'zoomFactor', @options.template.zoomFactor
-
-      # FIXME: TODO: Find for a fix that makes the zoomFactor work again, and after
-      # find a real fix for this workaround to counter a strange zoom factor.
-      # @page.zoomFactor = 0.9360
-
-      @page.onConsoleMessage ( msg ) => @logging.logClient msg
-      @page.set 'onError',              @onClientError
-      @page.set 'onCallback',           @onCallback
-      @page.set 'onResourceRequested',  @onResourceRequested
-      @page.set 'onResourceReceived',   @onResourceReceived
-      @page.set 'onTemplateInit',       @onTemplateInit
-
-      @trigger 'page:init'
-
-      @page.open @templateUrl, ( status ) =>
-
-        if status is 'success'
-          @trigger 'page:opened'
-          @listen()
-
-        else
-          throw new Error "Unable to load page: #{status}"
-          @trigger 'page:fail'
-          @close()
-
-
-  initPhantom: ->
-    deferred = Q.defer()
     phantom.create ( @phantomInstance ) =>
       @phantomInstance.createPage ( @page ) =>
-        deferred.resolve()
+        @timers = {
+          'resourcesLoaded':    null
+          'templateInitSlow':   null
+          'templateInitSlow':   null
+          'templateRenderSlow': null
+          'templateRenderDead': null
+          'errorAbort':         null
+        }
 
-    deferred.promise
+        @options.template.paperSize = @parsePaper(@options.template.paperSize)
+
+        @page.set 'paperSize',  @options.template.paperSize
+        @page.set 'zoomFactor', @options.template.zoomFactor
+
+        # FIXME: TODO: Find for a fix that makes the zoomFactor work again, and after
+        # find a real fix for this workaround to counter a strange zoom factor.
+        # @page.zoomFactor = 0.9360
+
+        @page.onConsoleMessage ( msg ) => @logging.logClient msg
+        @page.set 'onError',              @onClientError
+        @page.set 'onCallback',           @onCallback
+        @page.set 'onResourceRequested',  @onResourceRequested
+        @page.set 'onResourceReceived',   @onResourceReceived
+        @page.set 'onTemplateInit',       @onTemplateInit
+
+        @trigger 'page:init:start'
+
+        @page.open @templateUrl, ( status ) =>
+
+          if status is 'success'
+            @trigger 'page:init:opened'
+            @listen()
+
+          else
+            @close()
+            @abortInit("Unable to load page URL: #{status}")
+
+    return @
 
   listen: ->
     switch @options.template.type
@@ -95,40 +93,45 @@ module.exports = class Document
     # If static, then after loading HTML+CSS+images and other resources we're
     # done, there's no other rendering to wait for because there's no
     # scripting. We're ready for capture.
-    if @options.template.type is 'static' then @on 'page:ready', =>
-      @trigger 'page:rendered'
+    if @options.template.type is 'static' then @on 'page:resources:loaded', =>
+      @trigger 'page:init:done'
+      @init.resolve()
 
   listenScripted: ->
-    # If scripted, we wait for the resource timeout to determine if the page
-    # is ready. But if the template trigger an init event we cancel that
-    # timeout and wait for it's 'template:loaded' event to signal it's ready.
-    @on 'client:template:init', =>
-      clearTimeout(@timers.resourcesLoaded)
+    # If scripted, we wait for the resources to have laoded (determined by the
+    # resources loaded imeout), and use that as the arbiter to 'decide' that
+    # the template has had enough time to be loaded and any scripting to have
+    # initialized.
+    @on 'page:resources:loaded', @init.resolve, @init
+
+    # But if the template triggers an init event we cancel that timeout and
+    # wait for it's 'template:init:done' event to signal it's ready.
+    @once 'template:init:start', =>
+      @off 'page:resources:loaded', @init.resolve, @init
+
       onSlowTimeout = ( )=>
-        @logging.logWarning? "Still waiting to receive #{chalk.cyan 'client:template:loaded'}
-        after #{@options.template.timeouts.templateInit/1000}s. Perhaps it crashed?"
+        @logging.logWarning? "Still waiting to receive #{chalk.cyan 'template:init:done'}
+        after #{@options.template.timeouts.templateInitSlow/1000}s. Perhaps it crashed?"
       @timers.templateInitSlow = setTimeout onSlowTimeout, @options.template.timeouts.templateInitSlow
 
       onDeadTimeout = ( )=>
-        @logging.logWarning? "Template still hasn't signaled #{chalk.cyan 'client:template:loaded'}
-        event after #{@options.template.timeouts.templateInit/1000}s. Assuming it crashed during
+        reason = "Template still hasn't signaled #{chalk.cyan 'template:init:done'}
+        event after #{@options.template.timeouts.templateInitDead/1000}s. Assuming it crashed during
         initialization. Marking document as unusable for capture."
-        @logging.log "TODO: handling crashed template event"
+        @abortInit(reason)
       @timers.templateInitDead = setTimeout onDeadTimeout, @options.template.timeouts.templateInitDead
 
-    @on 'client:template:loaded', =>
+    @once 'template:init:done', =>
       clearTimeout(@timers.resourcesLoaded)
       clearTimeout(@timers.templateInitSlow)
       clearTimeout(@timers.templateInitDead)
-      @trigger 'page:ready'
+      @init.resolve()
 
-    # We also need to wait till either the render timeout has passed or the
-    # the template webapp has signaled it has finished rendering the page.
-    # Similarly, it can cancel the timeout by triggering the 'render:init'
-    # event, and skip it trigging the 'render:done' event.
-    @on 'page:ready', =>
-
-      @on 'client:template:render:init', =>
+      # We also need to wait till either the render timeout has passed or the
+      # the template webapp has signaled it has finished rendering the page.
+      # Similarly, it can cancel the timeout by triggering the 'render:init'
+      # event, and skip it trigging the 'render:done' event.
+      @on 'template:render:start', =>
         onSlowTimeout = ( )=>
           @logging.logWarning? "Still waiting for template to finish rendering
           after #{@options.template.timeouts.templateRenderSlow/1000}s. Perhaps it crashed?"
@@ -136,7 +139,7 @@ module.exports = class Document
         @timers.templateRenderSlow = setTimeout onSlowTimeout, timeToSlow
 
         onDeadTimeout = ( )=>
-          reason = "Template still hasn't signaled #{chalk.cyan 'client:template:render:done'}
+          reason = "Template still hasn't signaled #{chalk.cyan 'template:render:done'}
           after #{@options.template.timeouts.templateRenderDead/1000}s. Assuming it crashed during
           rendering. Aborting job to continue with rest of job queue."
           @logging.logError? reason
@@ -144,10 +147,10 @@ module.exports = class Document
         timeToDead = @options.template.timeouts.templateRenderDead
         @timers.templateRenderDead = setTimeout onDeadTimeout, timeToDead
 
-      @on 'client:template:render:done', =>
+      @on 'template:render:done', =>
         clearTimeout(@timers.templateRenderSlow)
         clearTimeout(@timers.templateRenderDead)
-        @trigger 'page:rendered'
+        @renderJob.resolve()
 
   # The callback will receive the meta data as it's argument when done
   getDocumentProperty: (property)->
@@ -157,7 +160,7 @@ module.exports = class Document
 
     propertyValueRequest = (property)->
       # Try and get document data if Nota client is present (i.e. template loaded it)
-      Nota?.getDocument property
+      Nota?.getDocument(property)
 
     @page.evaluate propertyValueRequest, deferred.resolve, property
     deferred.promise
@@ -241,7 +244,7 @@ module.exports = class Document
     paperSize
 
   capture: (job)->
-    @currentJob = Q.defer()
+    @captureJob = Q.defer()
 
     # We're going to augment the job object into the job meta data object, better make a
     # copy to prevent side effects.
@@ -256,7 +259,7 @@ module.exports = class Document
     # Optionally enable page numbering if configured by template
     @getDocumentProperty('footer')
     .then @setFooter
-    .fail @currentJob.reject
+    .fail @captureJob.reject
 
     @getDocumentProperty('meta')
     .then (meta)=>
@@ -285,15 +288,15 @@ module.exports = class Document
           Please have your template specify one in it's proposed filename, or
           specify one with the job."
 
-      @trigger 'render:init'
+      @trigger 'page:capture:init'
 
       switch buildTarget
         when 'pdf'  then @capturePDF(outputPath, meta, job)
         when 'html' then @captureHTML(outputPath, meta, job)
 
-    .fail @currentJob.reject
+    .fail @captureJob.reject
 
-    @currentJob.promise
+    @captureJob.promise
 
   capturePDF: (outputPath, meta, job)->
     # Ensure the extension is .pdf because PhantomJS (or the Node
@@ -309,11 +312,11 @@ module.exports = class Document
         # passed to this render call.
         job.outputPath = outputPath
         meta = _.extend {}, meta, job
-        @trigger 'render:done', meta
-        @currentJob.resolve meta
+        @trigger 'page:capture:done', meta
+        @captureJob.resolve meta
       else
-        @currentJob.reject new Error "PhantomJS didn't render. Cause not
-        available: https://github.com/sgentle/phantomjs-node/issues/290"
+        @captureJob.reject new Error "PhantomJS didn't render. Cause not available
+        (due to bug: https://github.com/sgentle/phantomjs-node/issues/290)"
 
   captureHTML: (outputPath, meta, job)->
     # Load some HTML capturing only dependencies
@@ -356,27 +359,32 @@ module.exports = class Document
       # alone, can be saved as a single file and viewed offline and.
       # Easy peasy thanks to Inliner!
       new Inliner html, (error, html)=>
-        if error? then @currentJob.reject error
+        if error? then @captureJob.reject error
 
         # Overwrite it again, now it's final
         fs.writeFile outputPath, html, (error)=>
           if error
-            @currentJob.reject error
+            @captureJob.reject error
           else
             # Update the meta data with the final output path and
             # options passed to this render call.
             job.outputPath = outputPath
             meta = _.extend {}, meta, job
-            @trigger 'render:done', meta
-            @currentJob.resolve meta
+            @trigger 'page:capture:done', meta
+            @captureJob.resolve meta
 
   onResourceRequested: ( request ) =>
+    if not @loadingResources?
+      # Prepare to keep track of all currently loading resources
+      @loadingResources = []
+      @trigger 'page:resources:loading'
+
     if @loadingResources.indexOf(request.id) is -1
       @loadingResources.push(request.id)
       clearTimeout(@timers.resourcesLoaded)
 
     # To prevent the output being spammed full of resource log events we allow supressing it
-    @trigger 'page:resource:requested' if @options.logging?.pageResources
+    @trigger 'page:resource:requested', request if @options.logging?.pageResources
 
   onResourceReceived: ( resource ) =>
     return if resource.stage isnt "end" and not resource.redirectURL?
@@ -386,7 +394,7 @@ module.exports = class Document
     @loadingResources.splice(i, 1)
 
     # To prevent the output being spammed full of resource log events we allow supressing it
-    @trigger 'page:resource:received' if @options.logging?.pageResources
+    @trigger 'page:resource:received', resource if @options.logging?.pageResources
 
     if @loadingResources.length is 0
       # We're done loading all resources. Set a new timer to wait if any new
@@ -399,32 +407,53 @@ module.exports = class Document
       @timers.resourcesLoaded = setTimeout @onResourcesLoaded, @options.template.timeouts.resourcesLoaded
 
   onResourcesLoaded: =>
-    # If we're running a static template, then after all resources have
-    # loaded, we're ready for capture.
-    if @options.template.type is 'static' then @trigger 'page:ready'
+    @trigger 'page:resources:loaded'
 
-  onClientError: (msg)=>
-    @logging.logClientError? msg
+  onClientError: (errorMsg)=>
+    @logging.logClientError? errorMsg
 
     # An error from the template ... doesn't look good. Give it some time, but
-    # it might have crashed. So after a timeout we abort the job.
-    if @options.template.timeouts.errorJobAbort?
-      abortJobWithMessage = ( )=> @abortJob(msg)
-      abortJobAfter = @options.template.timeouts.errorJobAbort
-      @timers.error = setTimeout abortJobWithMessage, abortJobAfter
+    # it might have crashed. So after a timeout we abort any job in progress.
+    if @options.template.timeouts.errorAbort?
+      abortWithMessage = ( )=>
+        @abortAll "Aborting #{@currentPhase()} due to template error. " + errorMsg
+      abortAfter = @options.template.timeouts.errorAbort
+      @timers.errorAbort = setTimeout abortWithMessage, abortAfter
 
-      # On any sign of progress, cancel the timeout, because the job might
-      # continue after all. Only do so once.
-      @once 'all', => clearTimeout(@timers.error)
+      # On any sign of progress from the client or template, cancel the
+      # timeout, because the job might continue after all. Only forgive so
+      # once (untill the next error).
+      @once 'client:', => clearTimeout(@timers.errorAbort)
+      @once 'template:', => clearTimeout(@timers.errorAbort)
 
-  abortJob: (reason)->
-    if @currentJob?
-      @trigger 'job:abort', reason
-      @currentJob.reject(reason)
+  abortAll: (reason)->
+    switch @currentPhase()
+      when 'init' then @abortInit(reason)
+      when 'render' then @abortRenderJob(reason)
+      when 'capture' then @abortCaptureJob(reason)
+
+  abortInit: (reason)->
+    clearTimeout(@timers.resourcesLoaded)
+    clearTimeout(@timers.templateInitSlow)
+    clearTimeout(@timers.templateInitDead)
+    @trigger 'page:init:abort', reason
+    @init.reject(reason)
+
+  abortRenderJob: (reason)->
+    if @renderJob?
+      clearTimeout(@timers.templateRenderSlow)
+      clearTimeout(@timers.templateRenderDead)
+      @trigger 'template:render:abort', reason
+      @renderJob.reject(reason)
+
+  abortCaptureJob: (reason)->
+    if @captureJob?
+      @trigger 'page:capture:abort', reason
+      @captureJob.reject(reason)
 
   onCallback: ( msg )=>
     if msg.substring(0,4) is "req:" then @onRequest msg.substring(4)
-    else @trigger("client:#{msg}")
+    else @trigger msg
 
   onRequest: (req)=>
     if req is 'build-target'
@@ -432,20 +461,33 @@ module.exports = class Document
       @options.template.buildTarget
 
   isReady: ->
-    # Which ever comes first
-    @state is 'page:ready'
+    # We're ready if initialization has completed and either no job is
+    # running, or if one has ran before, it has already completed.
+    @init.isResolved() and
+    ( not @renderJob? or @renderJob.isResolved() )
+    ( not @captureJob? or @captureJob.isResolved() )
 
-  injectData: (data)->
-    deferred = Q.defer()
+  renderData: (data)->
+    # This promise is longer lasting than just the injection of the data. It
+    # waits for resolving by the template or a timer that should give the
+    # template enough time to render.
+    @renderJob = Q.defer()
     inject = (data)->
       # Try and inject data if Nota client is present (i.e. template loaded it)
       Nota?.injectData(data)
-    @page.evaluate inject, deferred.resolve, data
-    deferred.promise
+    @page.evaluate inject, null, data
+    # Create a new promise which can be tracked for progress of the template
+    # on rendering this data.
+    @renderJob.promise
 
   setState: (event)->
     if @pagePhases.indexOf(event) > @pagePhases.indexOf(@state)
       @state = event
+
+  currentPhase: ->
+    if @init.promise.isPending()        then return 'init'
+    if @renderJob?.promise.isPending()  then return 'render'
+    if @captureJob?.promise.isPending() then return 'capture'
 
   # Postcondition: promises to resolve after the document has reached the
   # given state or if the document has already reached the given state.

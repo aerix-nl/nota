@@ -37,13 +37,13 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
 
       # Forward all nota client related messages to the server
       @on "all", @logEvent, @
-      @trigger 'init'
+      @trigger 'client:init:start'
 
       # So that stylists can condition on running in PhantomJS or browser
       if @phantomRuntime then $('body').addClass 'phantomRuntime'
       else $('body').addClass 'browserRuntime'
 
-      @trigger 'loaded'
+      @trigger 'client:init:done'
       @
 
     logEvent: (message) ->
@@ -72,7 +72,6 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
         # "onConsoleError". Only thrown errors get fired as an "onConsoleEror" event.
         console.error contextMessage
 
-      console.log 44
       throw error
 
     documentIsMultipage: ->
@@ -102,18 +101,6 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
 
       @document[property]
 
-
-    # DEPRECATED:
-    # Legacy API support. Use `setDocument('meta', value)` or
-    # `getDocument('meta')` instead. Will be removed in 3.0
-    setDocumentMeta: (data, context)->
-      if typeof data is "function" then data = data.call(context)
-      @setDocument('meta', data)
-
-    getDocumentMeta: ->
-      @getDocument('meta')
-
-
     # Active:
     # Force the client to probe the server for data
     # (used when previewing/developing templates in the browser)
@@ -122,10 +109,10 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
         throw new Error "Callback that receives the data is required when using this method."
 
       try
-        @trigger 'data:fetching'
+        @trigger 'client:data:fetching'
         # Else we continue and get the data from the server
         require ['json!/nota/data'], (@data) =>
-          @trigger 'data:loaded'
+          @trigger 'client:data:loaded'
           callback(@data)
       catch err
         console.log err.stack
@@ -134,11 +121,7 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
     # Wait on this entry point for Nota server to inject the data
     # (used by PhantomJS during .PDF production)
     injectData: (@data)->
-      @trigger 'data:injected', @data
-
-
-    setBuildTarget: (target)->
-      @buildTarget = target
+      @trigger 'client:data:injected', @data
 
     # Request what we're going to build to (if rendering in PhantomJS), what
     # the build target is (e.g. PDF, email, standalone-HTML).
@@ -150,14 +133,14 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
         window.callPhantom('req:build-target')
 
     promiseTemplateInit: ->
-      @trigger 'template:init'
+      @trigger 'template:init:start'
       new Promise()
       .then (value)=>
-        @trigger 'template:loaded', value
+        @trigger 'template:init:done', value
       .catch (error)=>
-        @trigger 'template:error', error
+        @trigger 'template:init:error', error
 
-    promiseTempalteRender: ->
+    promiseTemplateRender: ->
       @trigger 'template:render:start'
       new Promise()
       .then (value)=>
@@ -166,7 +149,8 @@ define ['backbone', 'underscore', 'bluebird', 'json'], (Backbone, _, Promise)->
         @trigger 'template:render:error', error
 
   # Hook ourself into the global namespace so we can be interfaced with
-  this.Nota = new NotaClient()
+  root = window or this
+  root.Nota = new NotaClient()
 
 
 
