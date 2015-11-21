@@ -196,7 +196,8 @@ module.exports = class Document
     paperSizeOptions = _.extend( {}, @options.template.paperSize )
 
     # Apply template styles to footer HTML
-    # template = @page.evaluate(@sampleStyles, footer.contents)
+    # unless footer.sampleStyles? is false
+    #   template = @page.evaluate(@sampleStyles, footer.contents)
 
     # The function that receives the page parameters and renders them in
     renderFooter = (pageNum, numPages)->
