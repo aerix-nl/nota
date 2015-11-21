@@ -1,7 +1,7 @@
 {
   "name": "nota",
-  "version": "2.0.0",
-  "description": "Programmable PDF generator for static, scripted and model driven documents",
+  "version": "2.1.0",
+  "description": "A modern document engine (renders stand-alone HTML and PDF)",
   "homepage": "https://github.com/aerix-nl/nota",
   "license": "MIT",
   "keywords": [
