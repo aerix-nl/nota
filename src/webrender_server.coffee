@@ -1,6 +1,6 @@
 mkdirp     = require('mkdirp')
 bodyParser = require('body-parser')
-Mustache   = require('mustache')
+Handlebars = require('handlebars')
 chalk      = require('chalk')
 tmp        = require('tmp')
 Q          = require('q')
@@ -43,7 +43,8 @@ module.exports = class Webrender
 
   # Start listening for HTTP render requests
   start: ->
-    @webrenderTemplate = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    html = fs.readFileSync( "#{__dirname}/../assets/webrender.html" , encoding: 'utf8')
+    @webrenderTemplate = Handlebars.compile html
 
   logStart: ->
     @logging.log? "Listening at #{ chalk.cyan @url() } for POST requests"
@@ -67,7 +68,7 @@ module.exports = class Webrender
     local   = @ipLookupLocal()
     ext     = @ipLookupExt()
 
-    reject  = ->
+    reject = ->
       # If it's time to reject we see if any of both lookups has finished
       # and provide that (harvest what you can so to say).
       if local.inspect().status is "fulfilled"
@@ -111,7 +112,7 @@ module.exports = class Webrender
 
   # Some request handler functions to be called by Express.js
   webrenderInterface: (req, res)=>
-    html = Mustache.render @webrenderTemplate, {
+    html = @webrenderTemplate {
       template:     @helper.getTemplateDefinition @template.path
       serverPort:   @serverPort
       ip:           @ip
@@ -139,8 +140,7 @@ module.exports = class Webrender
         console.log pdf
         res.download pdf
 
-    .fail (err)=>
-      @loggin.logError err
+    .fail @loggin.logError
 
   reqPreconditions: (req, res)->
     if not req.body.data?

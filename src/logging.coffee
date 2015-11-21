@@ -19,7 +19,7 @@ module.exports = class LogginChannels
 
   logError: ( err )=>
     console.error     @prefixes.nota + chalk.bgRed.black('ERROR') + ' ' + err
-    if err instanceof Error
+    if (err instanceof Error) or err.stack?
       console.error     @prefixes.nota + chalk.gray(err.stack)
 
   logEvent: ( event )=>

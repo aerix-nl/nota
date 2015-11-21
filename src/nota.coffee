@@ -63,23 +63,23 @@ module.exports = class Nota
       @document.close()
       delete @document
 
-  # Postcondition: a document with the current template has been loaded
-  openTemplate: ->
+  # Postcondition of promise: a document with the current template has been
+  # loaded
+  openDocument: ->
     deferred = Q.defer()
 
     if not @document?
       @document = new Nota.Document(@server.url(), @logging, @options)
       @document.on 'all', @logging.logEvent, @logging
-      @document.after('page:ready').then =>
-        deferred.resolve()
-    else
-      deferred.resolve()
+
+    @document.init.promise.then deferred.resolve
+    @document.init.promise.fail deferred.reject
 
     deferred.promise
 
-  setData: (data)->
+  renderData: (data)->
     @server.setData data
-    @document?.injectData data
+    @document.renderData(data)
 
   # Call with either a JobQueue instance or
   # with (jobs , template) where
@@ -150,7 +150,7 @@ module.exports = class Nota
     job = queue.nextJob()
     start = new Date()
 
-    @openTemplate()
+    @openDocument()
     .then => @document.capture(job)
     .then (meta)=>
       finished = new Date()
@@ -162,6 +162,7 @@ module.exports = class Nota
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderStatic queue
+    .fail @logging.logError
 
   renderScripted: (queue)->
     if (inProgressJobs = queue.inProgress())
@@ -181,52 +182,31 @@ module.exports = class Nota
     job = queue.nextJob()
     start = new Date()
 
-    renderJob = (job)=>
-      deferred = Q.defer()
+    afterJob = (meta, error)=>
+      # Include the error in the meta data
+      if error?
+        meta = _.extend {}, job, { fail: error }
 
-      @document.after('page:rendered')
-      .then =>
-        @document.capture(job)
-      .then (meta)->
-        deferred.resolve meta
-
-      @document.once 'error-timeout', (err)->
-        meta = _.extend {}, job, { fail: err }
-        deferred.reject meta
-
-      deferred.promise
-
-    postRender = (meta)=>
       finished = new Date()
       meta.duration = (finished - start)
 
+      # Then mark this job as failed or completed
       if meta.fail?
         queue.jobFailed     job, meta
       else
         queue.jobCompleted  job, meta
 
-      @logging.log? "Job duration: #{(meta.duration / 1000).toFixed(2)} seconds"
-
       # Recursively continue rendering what's left of the job queue untill
       # it's empty, then we're finished.
       unless queue.isFinished() then @renderScripted queue
 
-    error = (err)=>
-      @logging.logError err
-
-    # First we need to set the data, and then open the template. This is to
-    # avoid a race condition that we get when opening the template when
-    # setting the template. In that case the template might have opened and
-    # started requesting the data before the job data has been set. Then it'll
-    # either receive no data, or possibly the example data of a template.
-    @setData(job.data or job.dataPath)
-
     # Call the promise and wait for it to finish, then do some post-render
     # administration of render meta data and see if we're done or can continue
     # with the rest of the job queue.
-    @openTemplate()
-    .then -> renderJob(job)
-    .then postRender
-    .fail error
+    @openDocument()
+    .then => @renderData(job.data or job.dataPath)
+    .then => @document.capture(job)
+    .then afterJob
+    .catch (error)-> afterJob(null, error)
 
 

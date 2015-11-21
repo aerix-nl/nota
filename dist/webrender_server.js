@@ -1,12 +1,12 @@
 (function() {
-  var Mustache, Q, TemplateHelper, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
+  var Handlebars, Q, TemplateHelper, Webrender, bodyParser, chalk, fs, mkdirp, tmp,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   mkdirp = require('mkdirp');
 
   bodyParser = require('body-parser');
 
-  Mustache = require('mustache');
+  Handlebars = require('handlebars');
 
   chalk = require('chalk');
 
@@ -53,9 +53,11 @@
     };
 
     Webrender.prototype.start = function() {
-      return this.webrenderTemplate = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
+      var html;
+      html = fs.readFileSync("" + __dirname + "/../assets/webrender.html", {
         encoding: 'utf8'
       });
+      return this.webrenderTemplate = Handlebars.compile(html);
     };
 
     Webrender.prototype.logStart = function() {
@@ -151,7 +153,7 @@
 
     Webrender.prototype.webrenderInterface = function(req, res) {
       var html;
-      html = Mustache.render(this.webrenderTemplate, {
+      html = this.webrenderTemplate({
         template: this.helper.getTemplateDefinition(this.template.path),
         serverPort: this.serverPort,
         ip: this.ip
@@ -178,11 +180,7 @@
           console.log(pdf);
           return res.download(pdf);
         }
-      }).fail((function(_this) {
-        return function(err) {
-          return _this.loggin.logError(err);
-        };
-      })(this));
+      }).fail(this.loggin.logError);
     };
 
     Webrender.prototype.reqPreconditions = function(req, res) {
