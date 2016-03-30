@@ -1,5 +1,6 @@
 # Nota
-<img src="https://dl.dropboxusercontent.com/u/5121848/Nota_demo.png">
+<img src="https://dl.dropboxusercontent.com/u/5121848/Nota/Diagram.png">
+<img src="https://dl.dropboxusercontent.com/u/5121848/Nota/Example-job.png">
 
 Nota hosts your HTML based template, allows you to render in your data and
 excretes pretty documents. Stand-alone HTML, recommended for digital transfer,
